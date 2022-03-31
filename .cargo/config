@@ -1,0 +1,7 @@
+[target.riscv32imac-unknown-none-elf]
+rustflags = [
+    "-C", "link-arg=-Tsrc/fake_rom.lds",
+]
+
+[build]
+target = "riscv32imac-unknown-none-elf"
