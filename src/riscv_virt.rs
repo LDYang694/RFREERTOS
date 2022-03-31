@@ -38,6 +38,7 @@ pub fn vSendString( s: &str )
 
 	for c in s.bytes(){
 		vOutNS16550( &dev, &c );
+		// vOutNS16550( &dev, &('c' as u8) );
 	}
 	vOutNS16550( &dev, &('\n' as u8) );
 
@@ -51,3 +52,12 @@ fn handle_trap()
 
 	}
 }
+
+// #[macro_export]
+// #[allow_internal_unstable(print_internals, format_args_nl)]
+// macro_rules! println {
+//     () => ($crate::print!("\n"));
+//     ($($arg:tt)*) => ({
+//         $crate::io::_print($crate::format_args_nl!($($arg)*));
+//     })
+// }
