@@ -4,8 +4,8 @@ ENTRY( _start )
 MEMORY
 {
 	/* Fake ROM area */
-	rom (rxa) : ORIGIN = 0x80000000, LENGTH = 512K
-	ram (wxa) : ORIGIN = 0x80080000, LENGTH = 512K
+	rom (rxa) : ORIGIN = 0x80000000, LENGTH = 8M
+	ram (wxa) : ORIGIN = 0x80800000, LENGTH = 8M
 }
 
 SECTIONS
@@ -111,8 +111,8 @@ SECTIONS
 	.stack :
 	{
 		. = ALIGN(16);
-		/* TODO: replace 300 with __stack_size */
-		. += 300;
+		/* TODO: replace 512K with __stack_size */
+		. += 512 * 1024; /* __stack_siz = 512K */
 		_stack_top = .;
 	} >ram AT>ram
 }
