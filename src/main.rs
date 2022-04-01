@@ -9,6 +9,9 @@ mod riscv_virt;
 mod allocator;
 mod linked_list;
 mod linked_list_test;
+mod portmacro;
+mod portable;
+mod config;
 
 use core::arch::global_asm;
 use core::include_str;
@@ -16,6 +19,7 @@ use core::panic::PanicInfo;
 
 use allocator::HeapAlloc;
 use linked_list_test::ll_test;
+use portable::x_port_start_scheduler;
 // use buddy_system_allocator::LockedHeap;
 
 global_asm!(include_str!("start.S"));
@@ -25,6 +29,7 @@ pub const KERNEL_HEAP_SIZE: usize = 0x8000;
 #[no_mangle]
 pub extern "C" fn main() -> ! {
     init_heap();
+    x_port_start_scheduler();
     ll_test();
     loop {}
 }

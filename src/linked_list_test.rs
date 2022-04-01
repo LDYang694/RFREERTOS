@@ -32,7 +32,7 @@ pub fn ll_test() {
     //     Arc::strong_count(&a_p),
     //     Arc::weak_count(&a_p),
     // );
-    // println!("Hello, world!");
+    //vSendString("Hello, world!");
     let s = format!("a_p strong = {}, weak = {}",
     Arc::strong_count(&a_p),
     Arc::weak_count(&a_p));
