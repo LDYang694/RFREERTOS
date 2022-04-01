@@ -5,7 +5,7 @@ use alloc::sync::Arc;
 use core::clone::Clone;
 use alloc::format;
 use crate::riscv_virt::vSendString;
-
+/*
 pub fn ll_test() {
     // let list: List<u32> = List::new();
 
@@ -37,4 +37,4 @@ pub fn ll_test() {
     Arc::strong_count(&a_p),
     Arc::weak_count(&a_p));
     vSendString(&s);
-}
+}*/

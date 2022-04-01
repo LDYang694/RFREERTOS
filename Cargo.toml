@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 spin = "0.5.2"
 buddy_system_allocator = "0.8.0"
+lazy_static = {version="1.4.0",features=["spin_no_std"]}
 
 
 [build-dependencies]

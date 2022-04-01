@@ -9,6 +9,9 @@ extern "C" {
 
 pub const PORT_ISR_STACK_FILL_BYTE:BaseType = 0xee;
 
+#[no_mangle]
+pub static mut uxTimerIncrementsForOneTick:UBaseType = 0;
+
 static mut X_ISRSTACK:[StackType;CONFIG_ISR_STACK_SIZE_WORDS]=[0;CONFIG_ISR_STACK_SIZE_WORDS];
 
 static mut ULL_NEXT_TIME:u64 = 0;
@@ -17,7 +20,6 @@ pub const ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE:UBaseType = CONFIG_MTIMECMP_BA
 extern "C"{
     pub static mut pullMachineTimerCompareRegister:u32;
     pub static mut pullNextTime:u32;
-    pub static mut uxTimerIncrementsForOneTick:UBaseType;
     pub static mut xISRStackTop: *const StackType;
 }
 //todo:safe  global var and pointer
@@ -52,7 +54,7 @@ pub fn v_port_setup_timer_interrupt(){
     //todo
 }
 
-pub fn x_port_start_scheduler()->BaseType{
+pub fn x_port_start_scheduler()->bool{
     unsafe{
         xISRStackTop=(&X_ISRSTACK[CONFIG_ISR_STACK_SIZE_WORDS-1]) as *const u32;
     }
@@ -67,7 +69,7 @@ pub fn x_port_start_scheduler()->BaseType{
         asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();
     }
-    0
+    false
 }
 
 #[no_mangle]
