@@ -1,30 +1,33 @@
-use core::cell::RefCell;
-use core::default::Default;
-use alloc::sync::{Arc, Weak};
-use alloc::boxed::Box;
-use core::clone::Clone;
-use core::option::Option;
-use alloc::format;
+// use core::cell::RwLock;
 use crate::riscv_virt::*;
-
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::sync::{Arc, Weak};
+use core::clone::Clone;
+use core::default::Default;
+use core::option::Option;
+use spin::RwLock;
+// use crate::tasks::*;
 pub type TickTypeT = u32;
 pub type UBaseTypeT = u32;
-pub type ListItemWeakLink = Weak<RefCell<XListItem>>;
-pub type ListWeakLink = Weak<RefCell<XList>>;
-pub type ListRealLink = Arc<RefCell<XList>>;
-pub type ListItemLink = Arc<RefCell<XListItem>>;
+pub type ListItemWeakLink = Weak<RwLock<XListItem>>;
+pub type ListWeakLink = Weak<RwLock<XList>>;
+pub type ListRealLink = Arc<RwLock<XList>>;
+pub type ListItemLink = Arc<RwLock<XListItem>>;
+pub type TCB_t = usize;
+pub type ListItemOwnerWeakLink = Weak<RwLock<TCB_t>>;
 const portMAX_DELAY: TickTypeT = 0xffffffff;
 //TODO: tmp define tcv_t
 pub type TCB = u32;
 
 //define list types here
-// #[derive(Debug)]
+#[derive(Debug)]
 pub struct XListItem {
     x_item_value: TickTypeT, /* 辅助值，用于帮助节点做顺序排列 */
     px_next: ListItemWeakLink,
     px_previous: ListItemWeakLink,
-    pv_owner: Option<Box<TCB>>, /* 指向拥有该节点的内核对象，通常是 TCB */
-    px_container: ListWeakLink, /* 指向该节点所在的链表 */
+    pv_owner: ListItemOwnerWeakLink, /* 指向拥有该节点的内核对象，通常是 TCB */
+    px_container: ListWeakLink,      /* 指向该节点所在的链表 */
 }
 pub type ListItemT = XListItem;
 impl XListItem {
@@ -40,7 +43,7 @@ impl XListItem {
 }
 //链表节点初始化
 impl Default for ListItemT {
-     fn default() -> Self {
+    fn default() -> Self {
         ListItemT {
             x_item_value: 0, //TODO: set
             px_next: Default::default(),
@@ -50,22 +53,21 @@ impl Default for ListItemT {
         }
     }
 }
-
-// #[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct XList {
     ux_number_of_items: UBaseTypeT,
     px_index: ListItemWeakLink,
-    x_list_end: Arc<RefCell<ListItemT>>,
+    x_list_end: Arc<RwLock<ListItemT>>,
 }
 pub type ListT = XList;
 //链表根节点初始化
 impl Default for ListT {
-     fn default() -> Self {
+    fn default() -> Self {
         //得到一个list_end 然后设置其辅助排序值 并将其next和pre指向自身
-        let x_list_end = Arc::new(RefCell::new(XListItem::default()));
-        (*x_list_end).borrow_mut().x_item_value = portMAX_DELAY;
-        (*x_list_end).borrow_mut().px_next = Arc::downgrade(&x_list_end);
-        (*x_list_end).borrow_mut().px_previous = Arc::downgrade(&x_list_end);
+        let x_list_end = Arc::new(RwLock::new(XListItem::default()));
+        (*x_list_end).write().x_item_value = portMAX_DELAY;
+        (*x_list_end).write().px_next = Arc::downgrade(&x_list_end);
+        (*x_list_end).write().px_previous = Arc::downgrade(&x_list_end);
         ListT {
             ux_number_of_items: 0,
             px_index: Arc::downgrade(&x_list_end),
@@ -74,29 +76,29 @@ impl Default for ListT {
     }
 }
 pub fn list_item_set_pre(item: &ListItemWeakLink, pre: ListItemWeakLink) {
-    (*(item.upgrade().unwrap())).borrow_mut().px_previous = pre;
+    (*(item.upgrade().unwrap())).write().px_previous = pre;
 }
 pub fn list_item_set_next(item: &ListItemWeakLink, next: ListItemWeakLink) {
-    (*(item.upgrade().unwrap())).borrow_mut().px_next = next;
+    (*(item.upgrade().unwrap())).write().px_next = next;
 }
 pub fn list_item_get_pre(item: &ListItemWeakLink) -> ListItemWeakLink {
-    let pre = Weak::clone(&(*(item.upgrade().unwrap())).borrow_mut().px_previous);
+    let pre = Weak::clone(&(*(item.upgrade().unwrap())).read().px_previous);
     pre
 }
 pub fn list_item_get_next(item: &ListItemWeakLink) -> ListItemWeakLink {
-    let next = Weak::clone(&(*(item.upgrade().unwrap())).borrow_mut().px_next);
+    let next = Weak::clone(&(*(item.upgrade().unwrap())).read().px_next);
     next
 }
 
 pub fn list_item_set_container(item: &ListItemWeakLink, container: ListWeakLink) {
-    (*(item.upgrade().unwrap())).borrow_mut().px_container = container;
+    (*(item.upgrade().unwrap())).write().px_container = container;
 }
 pub fn list_item_get_value(item: &ListItemWeakLink) -> TickTypeT {
-    let value = (*(item.upgrade().unwrap())).borrow_mut().x_item_value;
+    let value = (*(item.upgrade().unwrap())).read().x_item_value;
     value
 }
 pub fn list_item_set_value(item: &ListItemWeakLink, x_value: TickTypeT) {
-    (*(item.upgrade().unwrap())).borrow_mut().x_item_value = x_value;
+    (*(item.upgrade().unwrap())).write().x_item_value = x_value;
 }
 //TODO:/* 初始化节点的拥有者 */
 // 2 #define listSET_LIST_ITEM_OWNER( pxListItem, pxOwner )\
@@ -105,34 +107,37 @@ pub fn list_item_set_value(item: &ListItemWeakLink, x_value: TickTypeT) {
 // 6 #define listGET_LIST_ITEM_OWNER( pxListItem )\
 // 7 ( ( pxListItem )->pvOwner )
 pub fn list_get_head_entry(px_list: &ListRealLink) -> ListItemWeakLink {
-    let entry = Weak::clone(&((*(px_list)).borrow().x_list_end).borrow().px_next);
+    let entry = Weak::clone(&((*(px_list)).read().x_list_end).read().px_next);
     entry
 }
 
 pub fn list_get_end_marker(px_list: &ListRealLink) -> ListItemWeakLink {
-    let entry = Arc::downgrade(&(*(px_list)).borrow().x_list_end);
+    let entry = Arc::downgrade(&(*(px_list)).read().x_list_end);
     entry
 }
 pub fn list_item_get_container(item: &ListItemWeakLink) -> ListWeakLink {
-    let container = Weak::clone(&(*(item.upgrade().unwrap())).borrow_mut().px_container);
+    let container = Weak::clone(&(*(item.upgrade().unwrap())).read().px_container);
     container
 }
+pub fn list_item_set_owner(item: &ListItemLink, owner: ListItemOwnerWeakLink) {
+    (*(item)).write().pv_owner = Weak::clone(&owner);
+}
 pub fn list_get_num_items(px_list: &ListWeakLink) -> UBaseTypeT {
-    let num = (*(px_list.upgrade().unwrap())).borrow().ux_number_of_items;
+    let num = (*(px_list.upgrade().unwrap())).read().ux_number_of_items;
     num
 }
 pub fn list_get_pxindex(px_list: &ListWeakLink) -> ListItemWeakLink {
-    let px_index = Weak::clone(&(*(px_list.upgrade().unwrap())).borrow().px_index);
+    let px_index = Weak::clone(&(*(px_list.upgrade().unwrap())).read().px_index);
     px_index
 }
 pub fn list_set_pxindex(px_list: &ListWeakLink, item: ListItemWeakLink) {
-    (*(px_list.upgrade().unwrap())).borrow_mut().px_index = item;
+    (*(px_list.upgrade().unwrap())).write().px_index = item;
 }
 pub fn list_is_empty(px_list: &ListWeakLink) -> bool {
-    (*(px_list.upgrade().unwrap())).borrow().ux_number_of_items == 0
+    (*(px_list.upgrade().unwrap())).read().ux_number_of_items == 0
 }
 pub fn list_current_list_length(px_list: &ListWeakLink) -> UBaseTypeT {
-    (*(px_list.upgrade().unwrap())).borrow().ux_number_of_items
+    (*(px_list.upgrade().unwrap())).read().ux_number_of_items
 }
 impl ListT {
     pub fn insert_end(&mut self, px_new_list_item: ListItemWeakLink) {
@@ -212,17 +217,15 @@ impl ListT {
 //=====================对外接口=====================
 pub fn v_list_insert_end(px_list: &ListRealLink, px_new_list_item: ListItemLink) {
     px_list
-        .borrow_mut()
+        .write()
         .insert_end(Arc::downgrade(&px_new_list_item));
 
-    px_new_list_item.borrow_mut().px_container = Arc::downgrade(&px_list);
+    px_new_list_item.write().px_container = Arc::downgrade(&px_list);
 }
 pub fn v_list_insert(px_list: &ListRealLink, px_new_list_item: ListItemLink) {
-    px_list
-        .borrow_mut()
-        .insert(Arc::downgrade(&px_new_list_item));
+    px_list.write().insert(Arc::downgrade(&px_new_list_item));
 
-    px_new_list_item.borrow_mut().px_container = Arc::downgrade(&px_list);
+    px_new_list_item.write().px_container = Arc::downgrade(&px_list);
 }
 
 pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseTypeT {
@@ -243,11 +246,6 @@ pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseTypeT {
         );
     }
     //TODO:pxItemToRemove->pvContainer = NULL;
-    (*(px_list.upgrade().unwrap()))
-        .borrow_mut()
-        .ux_number_of_items -= 1;
+    (*(px_list.upgrade().unwrap())).write().ux_number_of_items -= 1;
     list_get_num_items(&px_list)
 }
-
-
-
