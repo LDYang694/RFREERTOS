@@ -19,6 +19,7 @@ use core::panic::PanicInfo;
 
 use allocator::HeapAlloc;
 use linked_list_test::ll_test;
+use buddy_system_allocator::LockedHeap;
 use portable::x_port_start_scheduler;
 // use buddy_system_allocator::LockedHeap;
 
@@ -48,6 +49,7 @@ fn init_heap() {
     static mut HEAP: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];
     unsafe {
         DYNAMIC_ALLOCATOR
+        .lock()
             .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);
         // DYNAMIC_ALLOCATOR
         //     .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);
@@ -55,8 +57,8 @@ fn init_heap() {
 }
 
 #[global_allocator]
-static DYNAMIC_ALLOCATOR: HeapAlloc = HeapAlloc{};
-// static DYNAMIC_ALLOCATOR: LockedHeap::<1> = LockedHeap::<1>::empty();
+// static DYNAMIC_ALLOCATOR: HeapAlloc = HeapAlloc{};
+static DYNAMIC_ALLOCATOR: LockedHeap::<32> = LockedHeap::<32>::empty();
 
 #[alloc_error_handler]
 fn alloc_error_handler(_: core::alloc::Layout) -> ! {
