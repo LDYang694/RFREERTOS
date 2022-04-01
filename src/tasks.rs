@@ -10,6 +10,7 @@ pub type TaskFunction_t = dyn Fn(usize);
 // use std::cell::RefCell;
 use crate::alloc::sync::{Arc, Weak};
 use alloc::string::String;
+use crate::riscv_virt::*;
 
 #[no_mangle]
 extern "C"{
@@ -57,10 +58,11 @@ pub fn xTaskCreateStatic(
     // }else{
     //     None
     // }
+    vSendString("xTaskCreateStatic 1111");
     //TODO:assert if =true
     let pxNewTCB: TCB_t_link = pxTaskBuffer.unwrap().clone();
     TCB_set_pxStack(&pxNewTCB, puxStackBuffer.unwrap());
-
+    vSendString("xTaskCreateStatic 2222"); 
     let xReturn = prvInitialiseNewTask(
         pxTaskCode,
         pcName,
@@ -69,7 +71,7 @@ pub fn xTaskCreateStatic(
         &xReturn,
         pxNewTCB,
     );
-
+    vSendString("xTaskCreateStatic 3333"); 
     Some(xReturn)
 }
 pub fn prvInitialiseNewTask(
@@ -85,17 +87,20 @@ pub fn prvInitialiseNewTask(
     pxTopOfStack = pxTopOfStack & (!(0x0007usize));
     let mut x: UBaseType = 0;
     //TODO: name length
+    vSendString("prvInitialiseNewTask 1111");
     pxNewTCB.write().pcTaskName = pcName.to_string();
-    //auto init
+    //TODO:auto init
+    vSendString("prvInitialiseNewTask 2222");
     list_item_set_owner(
         &pxNewTCB.write().xStateListItem,
         Arc::downgrade(&pxNewTCB),
     );
+    vSendString("prvInitialiseNewTask 33333");
     //TODO: connect
     unsafe{
         pxNewTCB.write().pxTopOfStack = pxPortInitialiseStack();
     }
-    
+    vSendString("prvInitialiseNewTask 4444");
     //TODO: return
     pxNewTCB
 }
