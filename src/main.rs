@@ -4,49 +4,54 @@
 
 extern crate alloc;
 
-mod ns16550;
-mod riscv_virt;
 mod allocator;
+mod config;
 mod linked_list;
 mod linked_list_test;
-mod portmacro;
+mod ns16550;
 mod portable;
-mod config;
+mod portmacro;
+mod riscv_virt;
 mod tasks;
 
-use core::arch::global_asm;
-use core::include_str;
-use core::panic::PanicInfo;
-use linked_list_test::*;
+use crate::alloc::sync::{Arc, Weak};
+use alloc::boxed::Box;
 use allocator::HeapAlloc;
 use buddy_system_allocator::LockedHeap;
-use portable::*;
+use core::arch::global_asm;
+use core::ffi::c_void;
+use core::include_str;
+use core::panic::PanicInfo;
 use lazy_static::*;
 use linked_list::*;
-use tasks::*;
+use linked_list_test::*;
+use portable::*;
 use riscv_virt::*;
 use spin::RwLock;
-use crate::alloc::sync::{Arc, Weak};
-
+use tasks::*;
 // use buddy_system_allocator::LockedHeap;
 
 global_asm!(include_str!("start.S"));
 
-pub const KERNEL_HEAP_SIZE: usize =0x400000;
+pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 
 lazy_static! {
     //TODO: tmp size
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
     pub static ref TASK1_STACK:[u32;100]= [0;100] ;
     pub static ref TASK2_STACK:[u32;100]=[0;100];
-    pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
+    pub static ref pxCurrentTCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
-
 }
+
+// pub static mut pxCurrentTCB:RwLock<Option<TaskHandle_t>> = RwLock::new(None);
+
 // pub static mut TASK1_STACK: &'static mut [u8] = &mut [0; 1000];
 // pub static mut TASK2_STACK: &'static mut [u8] = &mut [0; 1000];
-fn task1(t: usize) {}
-fn task2(t: usize) {}
+fn task1(t: *mut c_void) {
+    vSendString("task1 gogogogo!~!");
+}
+fn task2(t: *mut c_void) {}
 
 #[no_mangle]
 pub extern "C" fn main() -> ! {
@@ -56,7 +61,6 @@ pub extern "C" fn main() -> ! {
     vSendString("begin loop!!!!!");
     loop {}
 }
-
 
 fn main_new() {
     // let Task1TCB = TCB_t::default();
@@ -70,21 +74,20 @@ fn main_new() {
     //println!("{:?}", *TASK1_STACK);
     // let TCB1_p = Arc::new(RwLock::new(*Task1TCB));
     // let TCB2_p = Arc::new(RwLock::new(Task2TCB));
+    let task1_box: Box<fn(*mut c_void)> = Box::new(task1);
+    let taks1_fn: TaskFunction_t = task1_box.as_ref() as *const fn(*mut c_void) as TaskFunction_t;
     vSendString("task1handler");
     let Task1Handler = xTaskCreateStatic(
-        &task1,
+        taks1_fn,
         "task1",
         10,
         Some(param1),
         Some(Stack1ptr),
         Some(TCB1_p.clone()),
     );
-    
+
     vSendString("task insert");
-    v_list_insert_end(
-        &READY_TASK_LISTS[1],
-        (TCB1_p.read().xStateListItem).clone(),
-    );
+    v_list_insert_end(&READY_TASK_LISTS[1], (TCB1_p.read().xStateListItem).clone());
     // let list: List<u32> = List::new();
     //println!("{:?}", READY_TASK_LISTS[1]);
     let a: ListItemT = ListItemT::default();
@@ -120,7 +123,8 @@ fn main_new() {
 }
 
 pub fn vTaskStartScheduler() {
-    *CURRENT_TCB.write()=Some(TCB1_p.clone());
+    *pxCurrentTCB.write() = Some(TCB1_p.clone());
+    // pxCurrentTCB=&(*CURRENT_TCB.read().unwrap().as_ref().clone().read()) as * const tskTaskControlBlock as usize;
     if x_port_start_scheduler() != pdFALSE!() {
         panic!("error scheduler!!!!!!");
     }
@@ -131,7 +135,6 @@ macro_rules! pdFALSE {
         false
     };
 }
-
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -147,7 +150,7 @@ fn init_heap() {
     static mut HEAP: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];
     unsafe {
         DYNAMIC_ALLOCATOR
-        .lock()
+            .lock()
             .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);
         // DYNAMIC_ALLOCATOR
         //     .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);
@@ -156,7 +159,7 @@ fn init_heap() {
 
 #[global_allocator]
 // static DYNAMIC_ALLOCATOR: HeapAlloc = HeapAlloc{};
-static DYNAMIC_ALLOCATOR: LockedHeap::<32> = LockedHeap::<32>::empty();
+static DYNAMIC_ALLOCATOR: LockedHeap<32> = LockedHeap::<32>::empty();
 
 #[alloc_error_handler]
 fn alloc_error_handler(_: core::alloc::Layout) -> ! {

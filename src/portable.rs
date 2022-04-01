@@ -2,7 +2,7 @@ use crate::portmacro::*;
 use crate::config::*;
 use crate::riscv_virt::*;
 use core::arch::asm;
-
+// use crate::pxCurrentTCB;
 extern "C" {
     fn xPortStartFirstTask();
 }
@@ -65,6 +65,7 @@ pub fn x_port_start_scheduler()->bool{
         tmp=0x880;
     }
     vSendString("start first task");
+  
     unsafe{
         asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();

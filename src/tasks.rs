@@ -3,18 +3,25 @@ use crate::linked_list::*;
 use crate::alloc::string::ToString;
 use crate::portable::*;
 use spin::RwLock;
+pub type StackType_t=usize;
 pub type StackType_t_link = usize;
 pub type Param_link = usize;
 pub type TCB_t_link = Arc<RwLock<TCB_t>>;
-pub type TaskFunction_t = dyn Fn(usize);
+// pub type TaskFunction_t = dyn Fn(usize);
+// pub type TaskFunction_t=fn(*mut c_void);
+pub type TaskFunction_t=*mut fn(*mut c_void);
 // use std::cell::RefCell;
 use crate::alloc::sync::{Arc, Weak};
 use alloc::string::String;
 use crate::riscv_virt::*;
-
+use core::ffi::c_void;
 #[no_mangle]
 extern "C"{
-    pub fn pxPortInitialiseStack()->StackType_t_link;
+    pub fn pxPortInitialiseStack(
+        pxTopOfStack: *mut StackType_t,
+        pxCode: TaskFunction_t,
+        pvParameters: *mut c_void,
+    ) -> *mut StackType_t;
 }
 
 #[derive(Debug)]
@@ -43,7 +50,7 @@ pub type TCB_t = tskTCB;
 //TaskHandle_t=tskTaskControlBlock*
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
 pub fn xTaskCreateStatic(
-    pxTaskCode: &TaskFunction_t,
+    pxTaskCode: TaskFunction_t,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -75,7 +82,7 @@ pub fn xTaskCreateStatic(
     Some(xReturn)
 }
 pub fn prvInitialiseNewTask(
-    pxTaskCode: &TaskFunction_t,
+    pxTaskCode: TaskFunction_t,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -98,7 +105,7 @@ pub fn prvInitialiseNewTask(
     vSendString("prvInitialiseNewTask 33333");
     //TODO: connect
     unsafe{
-        pxNewTCB.write().pxTopOfStack = pxPortInitialiseStack();
+        pxNewTCB.write().pxTopOfStack = *pxPortInitialiseStack(pxTopOfStack as *mut _,pxTaskCode,0 as *mut _);
     }
     vSendString("prvInitialiseNewTask 4444");
     //TODO: return
