@@ -17,7 +17,7 @@ mod tasks;
 use core::arch::global_asm;
 use core::include_str;
 use core::panic::PanicInfo;
-
+use linked_list_test::*;
 use allocator::HeapAlloc;
 use buddy_system_allocator::LockedHeap;
 use portable::*;
@@ -34,28 +34,29 @@ global_asm!(include_str!("start.S"));
 
 pub const KERNEL_HEAP_SIZE: usize = 0x8000;
 
-lazy_static! {
-    //TODO: tmp size
-    pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
-    pub static ref TASK1_STACK:[u32;100]= [0;100] ;
-    pub static ref TASK2_STACK:[u32;100]=[0;100];
-    pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
-    pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
+// lazy_static! {
+//     //TODO: tmp size
+//     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
+//     pub static ref TASK1_STACK:[u32;100]= [0;100] ;
+//     pub static ref TASK2_STACK:[u32;100]=[0;100];
+//     pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
+//     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 
-}
+// }
 // pub static mut TASK1_STACK: &'static mut [u8] = &mut [0; 1000];
 // pub static mut TASK2_STACK: &'static mut [u8] = &mut [0; 1000];
-fn task1(t: usize) {}
-fn task2(t: usize) {}
+// fn task1(t: usize) {}
+// fn task2(t: usize) {}
 
 #[no_mangle]
 pub extern "C" fn main() -> ! {
     init_heap();
-    main_new();
+    ll_test();
+    // main_new();
     loop {}
 }
 
-
+/*
 fn main_new() {
     // let Task1TCB = TCB_t::default();
     vSendString("main new");
@@ -115,13 +116,13 @@ fn main_new() {
         panic! {"error in loop!!!!!"};
     }
 }
-
-pub fn vTaskStartScheduler() {
-    *CURRENT_TCB.write()=Some(TCB1_p.clone());
-    if x_port_start_scheduler() != pdFALSE!() {
-        panic!("error scheduler!!!!!!");
-    }
-}
+*/
+// pub fn vTaskStartScheduler() {
+//     *CURRENT_TCB.write()=Some(TCB1_p.clone());
+//     if x_port_start_scheduler() != pdFALSE!() {
+//         panic!("error scheduler!!!!!!");
+//     }
+// }
 #[macro_export]
 macro_rules! pdFALSE {
     () => {
