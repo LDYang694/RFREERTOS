@@ -132,7 +132,7 @@ pub fn vTaskStartScheduler() {
         pxCurrentTCB_=Some((& *TCB1_p.read()));
         let s=format!("TCB1_p:{:X}",&(*TCB1_p.read()) as *const tskTaskControlBlock as usize);
         vSendString(&s);
-        
+
     }
     // pxCurrentTCB=&(*CURRENT_TCB.read().unwrap().as_ref().clone().read()) as * const tskTaskControlBlock as usize;
     if x_port_start_scheduler() != pdFALSE!() {

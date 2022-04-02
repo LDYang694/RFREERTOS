@@ -45,6 +45,9 @@ pub fn v_port_setup_timer_interrupt(){
     let mut ul_current_time_high:UBaseType;
     
     unsafe{
+        pullNextTime=&ULL_NEXT_TIME as *const u64 as u32;
+        let s=format!("pullNextTime={:X}",pullNextTime);
+        vSendString(&s);
         uxTimerIncrementsForOneTick=CONFIG_CPU_CLOCK_HZ/CONFIG_TICK_RATE_HZ;
         asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
         pullMachineTimerCompareRegister=ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE+ul_hart_id*4;
@@ -115,4 +118,5 @@ pub extern "C" fn xTaskIncrementTick(){
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext(){
     //todo
+    vSendString("vTaskSwitchContext");
 }
