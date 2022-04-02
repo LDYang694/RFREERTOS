@@ -15,7 +15,7 @@ use crate::alloc::sync::{Arc, Weak};
 use alloc::string::String;
 use crate::riscv_virt::*;
 use core::ffi::c_void;
-#[no_mangle]
+
 extern "C"{
     pub fn pxPortInitialiseStack(
         pxTopOfStack: *mut StackType_t,
