@@ -3,6 +3,7 @@ use crate::linked_list::*;
 use crate::alloc::string::ToString;
 use crate::portable::*;
 use spin::RwLock;
+use alloc::format;
 pub type StackType_t=usize;
 pub type StackType_t_link = usize;
 pub type Param_link = usize;
@@ -19,7 +20,7 @@ use core::ffi::c_void;
 extern "C"{
     pub fn pxPortInitialiseStack(
         pxTopOfStack: *mut StackType_t,
-        pxCode: TaskFunction_t,
+        pxCode: u32,
         pvParameters: *mut c_void,
     ) -> *mut StackType_t;
 }
@@ -50,7 +51,7 @@ pub type TCB_t = tskTCB;
 //TaskHandle_t=tskTaskControlBlock*
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
 pub fn xTaskCreateStatic(
-    pxTaskCode: TaskFunction_t,
+    pxTaskCode: u32,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -82,7 +83,7 @@ pub fn xTaskCreateStatic(
     Some(xReturn)
 }
 pub fn prvInitialiseNewTask(
-    pxTaskCode: TaskFunction_t,
+    pxTaskCode: u32,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -90,8 +91,9 @@ pub fn prvInitialiseNewTask(
     pxNewTCB: TCB_t_link,
 ) -> TaskHandle_t {
     let mut pxTopOfStack: StackType_t_link =
-        pxNewTCB.read().pxStack + (ulStackDepth as usize - 1);
+        pxNewTCB.read().pxStack;
     pxTopOfStack = pxTopOfStack & (!(0x0007usize));
+    
     let mut x: UBaseType = 0;
     //TODO: name length
     vSendString("prvInitialiseNewTask 1111");
@@ -104,9 +106,13 @@ pub fn prvInitialiseNewTask(
     );
     vSendString("prvInitialiseNewTask 33333");
     //TODO: connect
+    let s_=format!("top of stack{:X}",pxTopOfStack);
+    vSendString(&s_);
     unsafe{
-        pxNewTCB.write().pxTopOfStack = *pxPortInitialiseStack(pxTopOfStack as *mut _,pxTaskCode,0 as *mut _);
+        pxNewTCB.write().pxTopOfStack = pxPortInitialiseStack(pxTopOfStack as *mut _,pxTaskCode,0 as *mut _) as usize;
     }
+    let s_=format!("top of stack{:X}",pxNewTCB.read().pxTopOfStack);
+    vSendString(&s_);
     vSendString("prvInitialiseNewTask 4444");
     //TODO: return
     pxNewTCB

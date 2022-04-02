@@ -14,7 +14,7 @@ qemu-system-riscv32 -nographic -machine virt -net none   -chardev stdio,id=con,m
 -kernel (可执行文件路径)
 
 # qemu调试：
-qemu-system-riscv32 -nographic -machine virt -net none   -chardev stdio,id=con,mux=on -serial chardev:con   -mon chardev=con,mode=readline -bios none   -smp 4 -kernel /home/chenyy/FreeRTOSv202112.00/dev-cyy/target/riscv32imac-unknown-none-elf/debug/dev-cyy -s -S
+qemu-system-riscv32 -nographic -machine virt -net none   -chardev stdio,id=con,mux=on -serial chardev:con   -mon chardev=con,mode=readline -bios none   -smp 4 -kernel ./target/riscv32imac-unknown-none-elf/debug/r_freertos -s -S
 （新终端）
 riscv64-unknown-elf-gdb -q ./target/riscv32imac-unknown-none-elf/debug/r_freertos
 target remote localhost:1234

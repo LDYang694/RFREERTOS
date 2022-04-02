@@ -16,6 +16,7 @@ mod tasks;
 
 use crate::alloc::sync::{Arc, Weak};
 use alloc::boxed::Box;
+use alloc::format;
 use allocator::HeapAlloc;
 use buddy_system_allocator::LockedHeap;
 use core::arch::global_asm;
@@ -35,11 +36,13 @@ global_asm!(include_str!("start.S"));
 
 pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 
+pub const user_stack_size:usize=0x10000;
+
 lazy_static! {
     //TODO: tmp size
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
-    pub static ref TASK1_STACK:[u32;100]= [0;100] ;
-    pub static ref TASK2_STACK:[u32;100]=[0;100];
+    pub static ref TASK1_STACK:[u32;user_stack_size]= [0;user_stack_size] ;
+    pub static ref TASK2_STACK:[u32;user_stack_size]=[0;user_stack_size];
     //pub static ref pxCurrentTCB_: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
@@ -70,8 +73,8 @@ fn main_new() {
     vSendString("task2tcb");
     let param1: Param_link = 0;
     let param2: Param_link = 0;
-    let Stack1ptr: StackType_t_link = &*TASK1_STACK as *const [u32; 100] as *const u32 as usize;
-    let Stack2ptr: StackType_t_link = &*TASK2_STACK as *const [u32; 100] as *const u32 as usize;
+    let Stack1ptr: StackType_t_link = &*TASK1_STACK as *const [u32; user_stack_size] as *const u32 as usize + user_stack_size*4-4;
+    let Stack2ptr: StackType_t_link = &*TASK2_STACK as *const [u32; user_stack_size] as *const u32 as usize + user_stack_size*4-4;
     //println!("{:?}", *TASK1_STACK);
     // let TCB1_p = Arc::new(RwLock::new(*Task1TCB));
     // let TCB2_p = Arc::new(RwLock::new(Task2TCB));
@@ -79,9 +82,9 @@ fn main_new() {
     let taks1_fn: TaskFunction_t = task1_box.as_ref() as *const fn(*mut c_void) as TaskFunction_t;
     vSendString("task1handler");
     let Task1Handler = xTaskCreateStatic(
-        taks1_fn,
+        task1 as u32,
         "task1",
-        10,
+        user_stack_size as u32,
         Some(param1),
         Some(Stack1ptr),
         Some(TCB1_p.clone()),
@@ -127,6 +130,9 @@ pub fn vTaskStartScheduler() {
     //*pxCurrentTCB_.write() = Some(TCB1_p.clone());
     unsafe{
         pxCurrentTCB_=Some((& *TCB1_p.read()));
+        let s=format!("TCB1_p:{:X}",&(*TCB1_p.read()) as *const tskTaskControlBlock as usize);
+        vSendString(&s);
+        
     }
     // pxCurrentTCB=&(*CURRENT_TCB.read().unwrap().as_ref().clone().read()) as * const tskTaskControlBlock as usize;
     if x_port_start_scheduler() != pdFALSE!() {

@@ -90,20 +90,15 @@ pub fn x_port_start_scheduler()->bool{
             Some(x)=>val=(*x).pxTopOfStack as u32,
             None=>val=0,
         }
-        vSendString("testfunc ready");
-        let mut temp:u32=testfunc(pxCurrentTCB);
-        vSendString("testfunc returned");
-        if temp==val
-        {
-            vSendString("correct!");
-        }
-        else{
-            vSendString("incorrect!");
-        }
-        temp=testfunc(temp);
-        let s=format!("temp={}",temp);
+        let s=format!("currentTCB={:X}",pxCurrentTCB);
         vSendString(&s);
-        let s_=format!("fn={}",task1 as u32);
+        let mut temp:u32=testfunc(pxCurrentTCB);
+        let s=format!("temp={:X}",temp);
+        vSendString(&s);
+        temp=testfunc(temp);
+        let s=format!("temp={:X}",temp);
+        vSendString(&s);
+        let s_=format!("fn={:X}",task1 as u32);
         vSendString(&s_);
         
         asm!("csrs mie,{0}",in(reg) tmp);
