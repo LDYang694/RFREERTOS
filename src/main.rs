@@ -40,7 +40,7 @@ lazy_static! {
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
     pub static ref TASK1_STACK:[u32;100]= [0;100] ;
     pub static ref TASK2_STACK:[u32;100]=[0;100];
-    pub static ref pxCurrentTCB_: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
+    //pub static ref pxCurrentTCB_: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
 
@@ -50,6 +50,7 @@ lazy_static! {
 // pub static mut TASK2_STACK: &'static mut [u8] = &mut [0; 1000];
 fn task1(t: *mut c_void) {
     vSendString("task1 gogogogo!~!");
+    loop{}
 }
 fn task2(t: *mut c_void) {}
 
@@ -125,7 +126,7 @@ fn main_new() {
 pub fn vTaskStartScheduler() {
     //*pxCurrentTCB_.write() = Some(TCB1_p.clone());
     unsafe{
-        pxCurrentTCB=Some((& *TCB1_p.read()));
+        pxCurrentTCB_=Some((& *TCB1_p.read()));
     }
     // pxCurrentTCB=&(*CURRENT_TCB.read().unwrap().as_ref().clone().read()) as * const tskTaskControlBlock as usize;
     if x_port_start_scheduler() != pdFALSE!() {

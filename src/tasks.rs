@@ -26,7 +26,7 @@ extern "C"{
 
 #[derive(Debug)]
 pub struct tskTaskControlBlock {
-    pxTopOfStack: StackType_t_link,
+    pub pxTopOfStack: StackType_t_link,
     pxStack: StackType_t_link,
     pcTaskName: String,
     pub xStateListItem: ListItemLink,

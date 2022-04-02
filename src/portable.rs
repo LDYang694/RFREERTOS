@@ -4,10 +4,13 @@ use crate::riscv_virt::*;
 use core::arch::asm;
 use crate::tasks::*;
 use crate::alloc::sync::{Arc, Weak};
-use crate::pxCurrentTCB_;
+use crate::task1;
+use alloc::format;
+//use crate::pxCurrentTCB_;
 // use crate::pxCurrentTCB;
 extern "C" {
     fn xPortStartFirstTask();
+    fn testfunc(x:u32) ->u32;
 }
 
 pub const PORT_ISR_STACK_FILL_BYTE:BaseType = 0xee;
@@ -16,7 +19,11 @@ pub const PORT_ISR_STACK_FILL_BYTE:BaseType = 0xee;
 pub static mut uxTimerIncrementsForOneTick:UBaseType = 0;
 
 #[no_mangle]
-pub static mut pxCurrentTCB:Option<*const tskTaskControlBlock> = None;
+pub static mut pxCurrentTCB:UBaseType=0;
+
+pub static mut pxCurrentTCB_:Option<*const tskTaskControlBlock>=None;
+
+
 
 static mut X_ISRSTACK:[StackType;CONFIG_ISR_STACK_SIZE_WORDS]=[0;CONFIG_ISR_STACK_SIZE_WORDS];
 
@@ -74,6 +81,31 @@ pub fn x_port_start_scheduler()->bool{
     //let temp=Arc::into_raw(pxCurrentTCB_.read().unwrap()).read();
     //pxCurrentTCB=Some(temp);
     unsafe{
+        match pxCurrentTCB_{
+            Some(x)=>pxCurrentTCB=x as u32,
+            None=>pxCurrentTCB=0,
+        }
+        let mut val:u32;
+        match pxCurrentTCB_{
+            Some(x)=>val=(*x).pxTopOfStack as u32,
+            None=>val=0,
+        }
+        vSendString("testfunc ready");
+        let mut temp:u32=testfunc(pxCurrentTCB);
+        vSendString("testfunc returned");
+        if temp==val
+        {
+            vSendString("correct!");
+        }
+        else{
+            vSendString("incorrect!");
+        }
+        temp=testfunc(temp);
+        let s=format!("temp={}",temp);
+        vSendString(&s);
+        let s_=format!("fn={}",task1 as u32);
+        vSendString(&s_);
+        
         asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();
     }
