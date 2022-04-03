@@ -1,4 +1,4 @@
-use crate::config::*;
+use crate::TCB1_p;
 use crate::linked_list::*;
 use crate::alloc::string::ToString;
 use crate::mt_coverage_test_marker;
@@ -23,7 +23,21 @@ use crate::riscv_virt::*;
 use core::ffi::c_void;
 use core::arch::asm;
 
-pub static mut xSchedulerRunning: bool = pdFALSE!();
+pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
+
+#[macro_export]
+macro_rules! pdFALSE {
+    () => {
+        false
+    };
+}
+
+#[macro_export]
+macro_rules! pdTRUE {
+    () => {
+        true
+    };
+}
 
 extern "C"{
     pub fn pxPortInitialiseStack(
@@ -62,7 +76,7 @@ pub type TCB_t = tskTCB;
 //TaskHandle_t=tskTaskControlBlock*
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
 
-pub fn xTaskCreateStatic(
+pub fn x_task_create_static(
     pxTaskCode: u32,
     pcName: &str,
     ulStackDepth: u32,
@@ -131,24 +145,27 @@ pub fn prvInitialiseNewTask(
     //TODO: return
     pxNewTCB
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_all() {
-        println!("test world!");
+
+pub fn v_task_start_scheduler() {
+    unsafe {
+        X_SCHEDULER_RUNNING = pdTRUE!();
+    }
+    set_current_tcb(Some(&*TCB1_p.read()));
+    if x_port_start_scheduler() != pdFALSE!() {
+        panic!("error scheduler!!!!!!");
     }
 }
+
 
 // pub fn x_task_create_static() {}
 fn prvInitialiseTaskLists() {
     //initial in list impl
 }
 
-pub fn vTaskEnterCritical(){
+pub fn v_task_enter_critical(){
     port_disable_interrupts!();
     unsafe{
-        if xSchedulerRunning != pdFALSE!() {
+        if X_SCHEDULER_RUNNING != pdFALSE!() {
             (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).uxCriticalNesting += 1;
             if  (*(pxCurrentTCB_.unwrap())).uxCriticalNesting == 1{
                 // TODO: portASSERT_IF_IN_ISR
@@ -161,13 +178,13 @@ pub fn vTaskEnterCritical(){
     
 }
 
-pub fn vTaskExitCritical(){
+pub fn v_task_exit_critical(){
     unsafe{
-        let curTCB = pxCurrentTCB_.unwrap();
-        if xSchedulerRunning != pdFALSE!() {
-            if (*curTCB).uxCriticalNesting > 0{
-                (*(curTCB as *mut tskTaskControlBlock)).uxCriticalNesting -= 1;
-                if (*(curTCB)).uxCriticalNesting == 0{
+        let cur_tcb = pxCurrentTCB_.unwrap();
+        if X_SCHEDULER_RUNNING != pdFALSE!() {
+            if (*cur_tcb).uxCriticalNesting > 0{
+                (*(cur_tcb as *mut tskTaskControlBlock)).uxCriticalNesting -= 1;
+                if (*(cur_tcb)).uxCriticalNesting == 0{
                     port_enable_interrupts!();
                 }
                 else{

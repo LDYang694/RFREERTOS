@@ -3,7 +3,7 @@ use crate::portmacro::*;
 use crate::riscv_virt::*;
 use crate::task1;
 use crate::tasks::*;
-use crate::{config::*, set_current_tcb_test};
+use crate::{config::*};
 use crate::{TCB1_p, TCB2_p};
 use alloc::format;
 use core::arch::asm;
@@ -13,8 +13,6 @@ extern "C" {
     fn xPortStartFirstTask();
     fn testfunc(x: u32) -> u32;
 }
-
-pub const PORT_ISR_STACK_FILL_BYTE: BaseType = 0xee;
 
 #[no_mangle]
 pub static mut uxTimerIncrementsForOneTick: UBaseType = 0;
@@ -67,6 +65,7 @@ pub fn v_port_setup_timer_interrupt() {
 
     //todo
 }
+
 pub fn auto_set_currentTcb() {
     unsafe {
         match pxCurrentTCB_ {
@@ -85,30 +84,18 @@ pub fn x_port_start_scheduler() -> bool {
         tmp = 0x880;
     }
     print("start first task");
-    //let temp=Arc::into_raw(pxCurrentTCB_.read().unwrap()).read();
-    //pxCurrentTCB=Some(temp);
     unsafe {
         auto_set_currentTcb();
-        // let mut val:u32;
-        // match pxCurrentTCB_{
-        //     Some(x)=>val=(*x).pxTopOfStack as u32,
-        //     None=>val=0,
-        // }
-        // let s=format!("currentTCB={:X}",pxCurrentTCB);
-        // print(&s);
-        // let mut temp:u32=testfunc(pxCurrentTCB);
-        // let s=format!("temp={:X}",temp);
-        // print(&s);
-        // temp=testfunc(temp);
-        // let s=format!("temp={:X}",temp);
-        // print(&s);
-        // let s_=format!("fn={:X}",task1 as u32);
-        // print(&s_);
-
         asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();
     }
     false
+}
+
+pub fn set_current_tcb(tcb: Option<*const tskTaskControlBlock>) {
+    unsafe {
+        pxCurrentTCB_ = tcb;
+    }
 }
 
 #[no_mangle]
@@ -122,10 +109,10 @@ pub extern "C" fn vTaskSwitchContext() {
     // // print("vTaskSwitchContext");
     unsafe {
         if pxCurrentTCB_.unwrap() == &*TCB1_p.read() {
-            set_current_tcb_test(Some(&*TCB2_p.read()));
+            set_current_tcb(Some(&*TCB2_p.read()));
         } else {
             if pxCurrentTCB_.unwrap() == &*TCB2_p.read() {
-                set_current_tcb_test(Some(&*TCB1_p.read()));
+                set_current_tcb(Some(&*TCB1_p.read()));
             }
         }
         auto_set_currentTcb();
