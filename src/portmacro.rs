@@ -57,7 +57,7 @@ macro_rules!  port_clear_interrupt_mask_from_isr{
 macro_rules! port_disable_interrupts{
     ()=>{
         unsafe{
-            asm!("csrc mstatus, 8");
+            asm!("csrci mstatus, 8");
         }
     }
 }
@@ -66,7 +66,7 @@ macro_rules! port_disable_interrupts{
 macro_rules! port_enable_interrupts{
     ()=>{
         unsafe{
-            asm!("csrc mstatus, 8");
+            asm!("csrsi mstatus, 8");
         }
     }
 }

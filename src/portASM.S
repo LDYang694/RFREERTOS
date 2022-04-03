@@ -297,6 +297,7 @@ xPortStartFirstTask:
 	outside of this file. */
 	la t0, freertos_risc_v_trap_handler
 	csrw mtvec, t0
+
 #endif /* portasmHAS_CLILNT */
 
 	load_x  sp, pxCurrentTCB			/* Load pxCurrentTCB. */

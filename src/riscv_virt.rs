@@ -4,6 +4,8 @@
 
 // #include "riscv-virt.h"
 // #include "ns16550.h"
+use crate::port_disable_interrupts;
+use crate::port_enable_interrupts;
 use crate::ns16550::*;
 use core::arch::asm;
 use alloc::string::String;
@@ -35,6 +37,7 @@ pub fn vSendString( s: &str )
 	};
 
 	// portENTER_CRITICAL();
+	//port_disable_interrupts!();
 
 	for c in s.bytes(){
 		vOutNS16550( &dev, &c );
@@ -42,6 +45,7 @@ pub fn vSendString( s: &str )
 	}
 	vOutNS16550( &dev, &('\n' as u8) );
 
+	//port_enable_interrupts!();
 	// portEXIT_CRITICAL();
 }
 

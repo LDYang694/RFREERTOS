@@ -77,13 +77,20 @@ fn task1(t: *mut c_void) {
     // for i in 0..100{
     //     // let x=1;
     // }
+    //let mut x=1;
+    //let mut y=2;
+    
     loop {
         // vSendString("3");
-        let x=1;
+            
         // for i in 0..100 {
         //     // let x=1;
         // }
         vSendString("2");
+    }
+    loop{}
+    {
+
     }
 }
 fn task2(t: *mut c_void) {}
