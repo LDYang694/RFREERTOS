@@ -1,6 +1,9 @@
 use crate::config::*;
 use crate::linked_list::*;
 use crate::alloc::string::ToString;
+use crate::pdFALSE;
+use crate::port_disable_interrupts;
+use crate::port_enable_interrupts;
 use crate::portable::*;
 use spin::RwLock;
 use alloc::format;
@@ -16,6 +19,9 @@ use crate::alloc::sync::{Arc, Weak};
 use alloc::string::String;
 use crate::riscv_virt::*;
 use core::ffi::c_void;
+use core::arch::asm;
+
+static mut xSchedulerRunning: bool = pdFALSE!();
 
 extern "C"{
     pub fn pxPortInitialiseStack(
@@ -46,10 +52,12 @@ pub fn TCB_set_pxStack(tcb: &TCB_t_link, item: StackType_t_link) {
     //TODO: item owner
     tcb.write().pxStack = item;
 }
+
 pub type tskTCB = tskTaskControlBlock;
 pub type TCB_t = tskTCB;
 //TaskHandle_t=tskTaskControlBlock*
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
+
 pub fn xTaskCreateStatic(
     pxTaskCode: u32,
     pcName: &str,
@@ -82,6 +90,7 @@ pub fn xTaskCreateStatic(
     vSendString("xTaskCreateStatic 3333"); 
     Some(xReturn)
 }
+
 pub fn prvInitialiseNewTask(
     pxTaskCode: u32,
     pcName: &str,
@@ -129,4 +138,16 @@ mod tests {
 // pub fn x_task_create_static() {}
 fn prvInitialiseTaskLists() {
     //initial in list impl
+}
+
+pub fn vTaskEnterCritical(){
+    port_disable_interrupts!();
+
+    if unsafe{xSchedulerRunning != pdFALSE!()} {
+        
+    }
+}
+
+pub fn vTaskExitCritical(){
+    port_enable_interrupts!();
 }

@@ -6,7 +6,7 @@
 // #include "ns16550.h"
 use crate::ns16550::*;
 use core::arch::asm;
-use alloc::string::String;
+use crate::tasks::*;
 pub const PRIM_HART: usize = 0;
 pub const CLINT_ADDR: u32 = 0x02000000;
 pub const CLINT_MSIP: u32 = 0x0000;
@@ -29,12 +29,13 @@ pub fn xGetCoreID() -> i32 {
 // 暴露给应用的打印字符串接口
 pub fn vSendString( s: &str )
 {
+	
 	// 初始化串口
 	let dev = Device{
 		addr: NS16550_ADDR,
 	};
 
-	// portENTER_CRITICAL();
+	// vTaskEnterCritical();
 
 	for c in s.bytes(){
 		vOutNS16550( &dev, &c );
@@ -42,7 +43,26 @@ pub fn vSendString( s: &str )
 	}
 	vOutNS16550( &dev, &('\n' as u8) );
 
-	// portEXIT_CRITICAL();
+	// vTaskExitCritical();
+}
+
+pub fn vSendStringDebug( s: &str )
+{
+	
+	// 初始化串口
+	let dev = Device{
+		addr: NS16550_ADDR,
+	};
+
+	vTaskEnterCritical();
+
+	for c in s.bytes(){
+		vOutNS16550( &dev, &c );
+		// vOutNS16550( &dev, &('c' as u8) );
+	}
+	vOutNS16550( &dev, &('\n' as u8) );
+
+	vTaskExitCritical();
 }
 
 fn handle_trap()

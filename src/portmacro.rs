@@ -66,7 +66,7 @@ macro_rules! port_disable_interrupts{
 macro_rules! port_enable_interrupts{
     ()=>{
         unsafe{
-            asm!("csrc mstatus, 8");
+            asm!("csrs mstatus, 8");
         }
     }
 }
@@ -120,5 +120,15 @@ macro_rules! port_nop{
 #[macro_export]
 macro_rules! port_memory_barrier{
     ()=>{}
+        
+}
+
+#[macro_export]
+macro_rules! mt_coverage_test_marker{
+    ()=>{
+        unsafe{
+            asm!("nop");
+        }
+    }
         
 }
