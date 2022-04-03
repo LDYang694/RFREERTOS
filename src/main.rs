@@ -45,19 +45,33 @@ lazy_static! {
     pub static ref TASK2_STACK:[u32;user_stack_size]=[0;user_stack_size];
     //pub static ref pxCurrentTCB_: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
+    pub static ref TCB2_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
 
 // pub static mut pxCurrentTCB:RwLock<Option<TaskHandle_t>> = RwLock::new(None);
 
 // pub static mut TASK1_STACK: &'static mut [u8] = &mut [0; 1000];
 // pub static mut TASK2_STACK: &'static mut [u8] = &mut [0; 1000];
-fn task1(t: *mut c_void) {
-    vSendString("tsask1 gogogogo!!!");
-    loop {
-        vSendString("tsask1 gogogogo!!!(in loop)");
+fn delay(time: u32) {
+    let mut x = 1;
+    for i in 0..time {
+        x += i;
     }
 }
-fn task2(t: *mut c_void) {}
+fn task1(t: *mut c_void) {
+    vSendString("11111 gogogogo!!!");
+    loop {
+        delay(10000);
+        vSendString("11111 gogogogo!!!(in loop)");
+    }
+}
+fn task2(t: *mut c_void) {
+    vSendString("22222 gogogogo!!!");
+    loop {
+        delay(10000);
+        vSendString("22222 gogogogo!!!(in loop)");
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn main() -> ! {
@@ -71,7 +85,7 @@ pub extern "C" fn main() -> ! {
 fn main_new() {
     // let Task1TCB = TCB_t::default();
     print("main new");
-    let Task2TCB = TCB_t::default();
+    // let Task2TCB = TCB_t::default();
     print("task2tcb");
     let param1: Param_link = 0;
     let param2: Param_link = 0;
@@ -84,6 +98,8 @@ fn main_new() {
     //println!("{:?}", *TASK1_STACK);
     // let TCB1_p = Arc::new(RwLock::new(*Task1TCB));
     // let TCB2_p = Arc::new(RwLock::new(Task2TCB));
+
+
     let task1_box: Box<fn(*mut c_void)> = Box::new(task1);
     let taks1_fn: TaskFunction_t = task1_box.as_ref() as *const fn(*mut c_void) as TaskFunction_t;
     print("task1handler");
@@ -98,10 +114,26 @@ fn main_new() {
 
     print("task insert");
     v_list_insert_end(&READY_TASK_LISTS[1], (TCB1_p.read().xStateListItem).clone());
+
+
+    let task2_box: Box<fn(*mut c_void)> = Box::new(task2);
+    let taks2_fn: TaskFunction_t = task2_box.as_ref() as *const fn(*mut c_void) as TaskFunction_t;
+    print("task2handler");
+    let Task2Handler = xTaskCreateStatic(
+        task2 as u32,
+        "task2",
+        user_stack_size as u32,
+        Some(param2),
+        Some(Stack2ptr),
+        Some(TCB2_p.clone()),
+    );
+
+    print("task insert");
+    v_list_insert_end(&READY_TASK_LISTS[2], (TCB2_p.read().xStateListItem).clone());
     // let list: List<u32> = List::new();
     //println!("{:?}", READY_TASK_LISTS[1]);
-    let a: ListItemT = ListItemT::default();
-    let mut l: ListT = ListT::default();
+    // let a: ListItemT = ListItemT::default();
+    // let mut l: ListT = ListT::default();
     // let a_p = Arc::new(RwLock::new(a));
     // let l_p = Arc::new(RwLock::new(l));
     // let a_p2 = Arc::new(RwLock::new(ListItemT::new(2)));
@@ -140,7 +172,9 @@ pub fn set_current_tcb_test(tcb: Option<*const tskTaskControlBlock>) {
 
 pub fn vTaskStartScheduler() {
     //*pxCurrentTCB_.write() = Some(TCB1_p.clone());
-    unsafe{xSchedulerRunning = pdTRUE!();}
+    unsafe {
+        xSchedulerRunning = pdTRUE!();
+    }
     set_current_tcb_test(Some((&*TCB1_p.read())));
     // unsafe {
     //     pxCurrentTCB_ = Some((&*TCB1_p.read()));
