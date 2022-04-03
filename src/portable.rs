@@ -118,5 +118,10 @@ pub extern "C" fn xTaskIncrementTick(){
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext(){
     //todo
-    vSendString("vTaskSwitchContext");
+    // // vSendString("vTaskSwitchContext");
+    // if pxCurrentTCB_== {
+
+    // }else if {
+
+    // }
 }
