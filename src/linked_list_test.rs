@@ -5,7 +5,7 @@ use core::default::Default;
 use alloc::sync::Arc;
 use core::clone::Clone;
 use alloc::format;
-use crate::riscv_virt::vSendString;
+use crate::riscv_virt::print;
 
 pub fn ll_test() {
     // let list: List<u32> = List::new();
@@ -33,9 +33,9 @@ pub fn ll_test() {
     //     Arc::strong_count(&a_p),
     //     Arc::weak_count(&a_p),
     // );
-    //vSendString("Hello, world!");
+    //print("Hello, world!");
     let s = format!("a_p strong = {}, weak = {}",
     Arc::strong_count(&a_p),
     Arc::weak_count(&a_p));
-    vSendString(&s);
+    print(&s);
 }

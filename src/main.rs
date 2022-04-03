@@ -52,45 +52,9 @@ lazy_static! {
 // pub static mut TASK1_STACK: &'static mut [u8] = &mut [0; 1000];
 // pub static mut TASK2_STACK: &'static mut [u8] = &mut [0; 1000];
 fn task1(t: *mut c_void) {
-    vSendString("t");
-    vSendString("tsask12 gogogogo!~!");
-    vSendString("tsask13 gogogogo!~!");
-    vSendString("tsask14 gogogogo!~!");
-    vSendString("tsask15 gogogogo!~!");
-    vSendString("tsask16 gogogogo!~!");
-    vSendString("tsask17 gogogogo!~!");
-    vSendString("tsask18 gogogogo!~!");
-    vSendString("tsask1 9gogogogo!~!");
-
-    vSendString("tsask1q gogogogo!~!");
-    vSendString("tsask1w gogogogo!~!");
-    vSendString("tsask1e gogogogo!~!");
-    vSendString("tsask1r gogogogo!~!");
-    vSendString("tsask1t gogogogo!~!");
-    vSendString("tsask1y gogogogo!~!");
-    vSendString("tsask1u gogogogo!~!");
-    vSendString("tsask1i gogogogo!~!");
-    vSendString("tsask1o gogogogo!~!");
-    vSendString("tsask1 pgogogogo!~!");
-    vSendString("tsask1[ gogogogo!~!");
-    vSendString("tsask1 gogogogo!~!");
-    // for i in 0..100{
-    //     // let x=1;
-    // }
-    //let mut x=1;
-    //let mut y=2;
-    
+    vSendString("tsask1 gogogogo!!!");
     loop {
-        // vSendString("3");
-            
-        // for i in 0..100 {
-        //     // let x=1;
-        // }
-        vSendString("2");
-    }
-    loop{}
-    {
-
+        vSendString("tsask1 gogogogo!!!(in loop)");
     }
 }
 fn task2(t: *mut c_void) {}
@@ -100,15 +64,15 @@ pub extern "C" fn main() -> ! {
     init_heap();
     // ll_test();
     main_new();
-    vSendString("begin loop!!!!!");
+    print("begin loop!!!!!");
     loop {}
 }
 
 fn main_new() {
     // let Task1TCB = TCB_t::default();
-    vSendString("main new");
+    print("main new");
     let Task2TCB = TCB_t::default();
-    vSendString("task2tcb");
+    print("task2tcb");
     let param1: Param_link = 0;
     let param2: Param_link = 0;
     let Stack1ptr: StackType_t_link =
@@ -122,7 +86,7 @@ fn main_new() {
     // let TCB2_p = Arc::new(RwLock::new(Task2TCB));
     let task1_box: Box<fn(*mut c_void)> = Box::new(task1);
     let taks1_fn: TaskFunction_t = task1_box.as_ref() as *const fn(*mut c_void) as TaskFunction_t;
-    vSendString("task1handler");
+    print("task1handler");
     let Task1Handler = xTaskCreateStatic(
         task1 as u32,
         "task1",
@@ -132,7 +96,7 @@ fn main_new() {
         Some(TCB1_p.clone()),
     );
 
-    vSendString("task insert");
+    print("task insert");
     v_list_insert_end(&READY_TASK_LISTS[1], (TCB1_p.read().xStateListItem).clone());
     // let list: List<u32> = List::new();
     //println!("{:?}", READY_TASK_LISTS[1]);
@@ -161,7 +125,7 @@ fn main_new() {
     // );
     // println!("{:?}",*READY_TASK_LISTS);
     // println!("Hello, world!");
-    vSendString("start scheduler!!!!!!!!!");
+    print("start scheduler!!!!!!!!!");
     vTaskStartScheduler();
     loop {
         panic! {"error in loop!!!!!"};
@@ -176,6 +140,7 @@ pub fn set_current_tcb_test(tcb: Option<*const tskTaskControlBlock>) {
 
 pub fn vTaskStartScheduler() {
     //*pxCurrentTCB_.write() = Some(TCB1_p.clone());
+    unsafe{xSchedulerRunning = pdTRUE!();}
     set_current_tcb_test(Some((&*TCB1_p.read())));
     // unsafe {
     //     pxCurrentTCB_ = Some((&*TCB1_p.read()));
@@ -194,6 +159,13 @@ pub fn vTaskStartScheduler() {
 macro_rules! pdFALSE {
     () => {
         false
+    };
+}
+
+#[macro_export]
+macro_rules! pdTRUE {
+    () => {
+        true
     };
 }
 

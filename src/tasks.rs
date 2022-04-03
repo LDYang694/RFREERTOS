@@ -1,6 +1,7 @@
 use crate::config::*;
 use crate::linked_list::*;
 use crate::alloc::string::ToString;
+use crate::mt_coverage_test_marker;
 use crate::pdFALSE;
 use crate::port_disable_interrupts;
 use crate::port_enable_interrupts;
@@ -11,6 +12,7 @@ pub type StackType_t=usize;
 pub type StackType_t_link = usize;
 pub type Param_link = usize;
 pub type TCB_t_link = Arc<RwLock<TCB_t>>;
+pub type UBaseType_t=usize;
 // pub type TaskFunction_t = dyn Fn(usize);
 // pub type TaskFunction_t=fn(*mut c_void);
 pub type TaskFunction_t=*mut fn(*mut c_void);
@@ -21,7 +23,7 @@ use crate::riscv_virt::*;
 use core::ffi::c_void;
 use core::arch::asm;
 
-static mut xSchedulerRunning: bool = pdFALSE!();
+pub static mut xSchedulerRunning: bool = pdFALSE!();
 
 extern "C"{
     pub fn pxPortInitialiseStack(
@@ -37,6 +39,7 @@ pub struct tskTaskControlBlock {
     pxStack: StackType_t_link,
     pcTaskName: String,
     pub xStateListItem: ListItemLink,
+    pub uxCriticalNesting: UBaseType_t,
 }
 impl Default for tskTaskControlBlock {
     fn default() -> Self {
@@ -45,6 +48,7 @@ impl Default for tskTaskControlBlock {
             pxTopOfStack: 0,
             pcTaskName: String::new(),
             xStateListItem: Default::default(),
+            uxCriticalNesting: 0
         }
     }
 }
@@ -74,11 +78,11 @@ pub fn xTaskCreateStatic(
     // }else{
     //     None
     // }
-    vSendString("xTaskCreateStatic 1111");
+    print("xTaskCreateStatic 1111");
     //TODO:assert if =true
     let pxNewTCB: TCB_t_link = pxTaskBuffer.unwrap().clone();
     TCB_set_pxStack(&pxNewTCB, puxStackBuffer.unwrap());
-    vSendString("xTaskCreateStatic 2222"); 
+    print("xTaskCreateStatic 2222"); 
     let xReturn = prvInitialiseNewTask(
         pxTaskCode,
         pcName,
@@ -87,7 +91,7 @@ pub fn xTaskCreateStatic(
         &xReturn,
         pxNewTCB,
     );
-    vSendString("xTaskCreateStatic 3333"); 
+    print("xTaskCreateStatic 3333"); 
     Some(xReturn)
 }
 
@@ -105,24 +109,25 @@ pub fn prvInitialiseNewTask(
     
     let mut x: UBaseType = 0;
     //TODO: name length
-    vSendString("prvInitialiseNewTask 1111");
+    print("prvInitialiseNewTask 1111");
     pxNewTCB.write().pcTaskName = pcName.to_string();
     //TODO:auto init
-    vSendString("prvInitialiseNewTask 2222");
+    print("prvInitialiseNewTask 2222");
     list_item_set_owner(
         &pxNewTCB.write().xStateListItem,
         Arc::downgrade(&pxNewTCB),
     );
-    vSendString("prvInitialiseNewTask 33333");
+    print("prvInitialiseNewTask 33333");
     //TODO: connect
     let s_=format!("top of stack{:X}",pxTopOfStack);
-    vSendString(&s_);
+    print(&s_);
     unsafe{
         pxNewTCB.write().pxTopOfStack = pxPortInitialiseStack(pxTopOfStack as *mut _,pxTaskCode,0 as *mut _) as usize;
+        pxNewTCB.write().uxCriticalNesting = 0;
     }
     let s_=format!("top of stack{:X}",pxNewTCB.read().pxTopOfStack);
-    vSendString(&s_);
-    vSendString("prvInitialiseNewTask 4444");
+    print(&s_);
+    print("prvInitialiseNewTask 4444");
     //TODO: return
     pxNewTCB
 }
@@ -142,12 +147,39 @@ fn prvInitialiseTaskLists() {
 
 pub fn vTaskEnterCritical(){
     port_disable_interrupts!();
-
-    if unsafe{xSchedulerRunning != pdFALSE!()} {
-        
+    unsafe{
+        if xSchedulerRunning != pdFALSE!() {
+            (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).uxCriticalNesting += 1;
+            if  (*(pxCurrentTCB_.unwrap())).uxCriticalNesting == 1{
+                // TODO: portASSERT_IF_IN_ISR
+            }
+        }
+        else {
+            mt_coverage_test_marker!();
+        }
     }
+    
 }
 
 pub fn vTaskExitCritical(){
-    port_enable_interrupts!();
+    unsafe{
+        let curTCB = pxCurrentTCB_.unwrap();
+        if xSchedulerRunning != pdFALSE!() {
+            if (*curTCB).uxCriticalNesting > 0{
+                (*(curTCB as *mut tskTaskControlBlock)).uxCriticalNesting -= 1;
+                if (*(curTCB)).uxCriticalNesting == 0{
+                    port_enable_interrupts!();
+                }
+                else{
+                    mt_coverage_test_marker!();
+                }
+            }
+            else {
+                mt_coverage_test_marker!();
+            }
+        }
+        else {
+            mt_coverage_test_marker!();
+        }
+    }
 }

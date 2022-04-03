@@ -47,7 +47,7 @@ pub fn v_port_setup_timer_interrupt(){
     unsafe{
         pullNextTime=&ULL_NEXT_TIME as *const u64 as u32;
         let s=format!("pullNextTime={:X}",pullNextTime);
-        vSendString(&s);
+        print(&s);
         uxTimerIncrementsForOneTick=CONFIG_CPU_CLOCK_HZ/CONFIG_TICK_RATE_HZ;
         asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
         pullMachineTimerCompareRegister=ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE+ul_hart_id*4;
@@ -80,7 +80,7 @@ pub fn x_port_start_scheduler()->bool{
     {
         tmp=0x880;
     }
-    vSendString("start first task");
+    print("start first task");
     //let temp=Arc::into_raw(pxCurrentTCB_.read().unwrap()).read();
     //pxCurrentTCB=Some(temp);
     unsafe{
@@ -94,15 +94,15 @@ pub fn x_port_start_scheduler()->bool{
             None=>val=0,
         }
         let s=format!("currentTCB={:X}",pxCurrentTCB);
-        vSendString(&s);
+        print(&s);
         let mut temp:u32=testfunc(pxCurrentTCB);
         let s=format!("temp={:X}",temp);
-        vSendString(&s);
+        print(&s);
         temp=testfunc(temp);
         let s=format!("temp={:X}",temp);
-        vSendString(&s);
+        print(&s);
         let s_=format!("fn={:X}",task1 as u32);
-        vSendString(&s_);
+        print(&s_);
         
         asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();
@@ -118,7 +118,7 @@ pub extern "C" fn xTaskIncrementTick(){
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext(){
     //todo
-    // // vSendString("vTaskSwitchContext");
+    // // print("vTaskSwitchContext");
     // if pxCurrentTCB_== {
 
     // }else if {

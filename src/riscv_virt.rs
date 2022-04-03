@@ -28,8 +28,7 @@ pub fn xGetCoreID() -> i32 {
 	id
 }
 
-// 暴露给应用的打印字符串接口
-pub fn vSendString( s: &str )
+pub fn print( s: &str )
 {
 	
 	// 初始化串口
@@ -48,7 +47,8 @@ pub fn vSendString( s: &str )
 	// vTaskExitCritical();
 }
 
-pub fn vSendStringDebug( s: &str )
+// 暴露给应用的打印字符串接口
+pub fn vSendString( s: &str )
 {
 	
 	// 初始化串口
