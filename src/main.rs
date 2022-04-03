@@ -36,7 +36,7 @@ global_asm!(include_str!("start.S"));
 
 pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 
-pub const user_stack_size:usize=0x10000;
+pub const user_stack_size: usize = 0x10000;
 
 lazy_static! {
     //TODO: tmp size
@@ -52,8 +52,46 @@ lazy_static! {
 // pub static mut TASK1_STACK: &'static mut [u8] = &mut [0; 1000];
 // pub static mut TASK2_STACK: &'static mut [u8] = &mut [0; 1000];
 fn task1(t: *mut c_void) {
-    vSendString("task1 gogogogo!~!");
+    vSendString("t");
+    vSendString("tsask12 gogogogo!~!");
+    vSendString("tsask13 gogogogo!~!");
+    vSendString("tsask14 gogogogo!~!");
+    vSendString("tsask15 gogogogo!~!");
+    vSendString("tsask16 gogogogo!~!");
+    vSendString("tsask17 gogogogo!~!");
+    vSendString("tsask18 gogogogo!~!");
+    vSendString("tsask1 9gogogogo!~!");
+
+    vSendString("tsask1q gogogogo!~!");
+    vSendString("tsask1w gogogogo!~!");
+    vSendString("tsask1e gogogogo!~!");
+    vSendString("tsask1r gogogogo!~!");
+    vSendString("tsask1t gogogogo!~!");
+    vSendString("tsask1y gogogogo!~!");
+    vSendString("tsask1u gogogogo!~!");
+    vSendString("tsask1i gogogogo!~!");
+    vSendString("tsask1o gogogogo!~!");
+    vSendString("tsask1 pgogogogo!~!");
+    vSendString("tsask1[ gogogogo!~!");
+    vSendString("tsask1 gogogogo!~!");
+    // for i in 0..100{
+    //     // let x=1;
+    // }
+    //let mut x=1;
+    //let mut y=2;
+    
+    loop {
+        // vSendString("3");
+            
+        // for i in 0..100 {
+        //     // let x=1;
+        // }
+        vSendString("2");
+    }
     loop{}
+    {
+
+    }
 }
 fn task2(t: *mut c_void) {}
 
@@ -73,8 +111,12 @@ fn main_new() {
     vSendString("task2tcb");
     let param1: Param_link = 0;
     let param2: Param_link = 0;
-    let Stack1ptr: StackType_t_link = &*TASK1_STACK as *const [u32; user_stack_size] as *const u32 as usize + user_stack_size*4-4;
-    let Stack2ptr: StackType_t_link = &*TASK2_STACK as *const [u32; user_stack_size] as *const u32 as usize + user_stack_size*4-4;
+    let Stack1ptr: StackType_t_link =
+        &*TASK1_STACK as *const [u32; user_stack_size] as *const u32 as usize + user_stack_size * 4
+            - 4;
+    let Stack2ptr: StackType_t_link =
+        &*TASK2_STACK as *const [u32; user_stack_size] as *const u32 as usize + user_stack_size * 4
+            - 4;
     //println!("{:?}", *TASK1_STACK);
     // let TCB1_p = Arc::new(RwLock::new(*Task1TCB));
     // let TCB2_p = Arc::new(RwLock::new(Task2TCB));
@@ -125,15 +167,24 @@ fn main_new() {
         panic! {"error in loop!!!!!"};
     }
 }
+pub fn set_current_tcb_test(tcb: Option<*const tskTaskControlBlock>) {
+    unsafe {
+        // pxCurrentTCB_ = Some((&*TCB1_p.read()));
+        pxCurrentTCB_ = tcb;
+    }
+}
 
 pub fn vTaskStartScheduler() {
     //*pxCurrentTCB_.write() = Some(TCB1_p.clone());
-    unsafe{
-        pxCurrentTCB_=Some((& *TCB1_p.read()));
-        let s=format!("TCB1_p:{:X}",&(*TCB1_p.read()) as *const tskTaskControlBlock as usize);
-        vSendString(&s);
-
-    }
+    set_current_tcb_test(Some((&*TCB1_p.read())));
+    // unsafe {
+    //     pxCurrentTCB_ = Some((&*TCB1_p.read()));
+    //     let s = format!(
+    //         "TCB1_p:{:X}",
+    //         &(*TCB1_p.read()) as *const tskTaskControlBlock as usize
+    //     );
+    //     vSendString(&s);
+    // }
     // pxCurrentTCB=&(*CURRENT_TCB.read().unwrap().as_ref().clone().read()) as * const tskTaskControlBlock as usize;
     if x_port_start_scheduler() != pdFALSE!() {
         panic!("error scheduler!!!!!!");

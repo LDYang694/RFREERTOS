@@ -4,6 +4,8 @@
 
 // #include "riscv-virt.h"
 // #include "ns16550.h"
+use crate::port_disable_interrupts;
+use crate::port_enable_interrupts;
 use crate::ns16550::*;
 use core::arch::asm;
 use crate::tasks::*;

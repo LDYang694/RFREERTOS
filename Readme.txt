@@ -19,7 +19,7 @@ qemu-system-riscv32 -nographic -machine virt -net none   -chardev stdio,id=con,m
 riscv64-unknown-elf-gdb -q ./target/riscv32imac-unknown-none-elf/debug/r_freertos
 target remote localhost:1234
 break main_new
-
+b r_freertos::portable::x_port_start_scheduler
 <dev_cyy::init_heap::HEAP+3980>
 
 pub fn lock(&self) -> TicketMutexGuard<T>
