@@ -7,6 +7,11 @@ use crate::{config::*};
 use crate::{TCB1_p, TCB2_p};
 use alloc::format;
 use core::arch::asm;
+use crate::linked_list::*;
+use crate::READY_TASK_LISTS;
+use crate::port_disable_interrupts;
+use crate::port_enable_interrupts;
+use spin::RwLock;
 //use crate::pxCurrentTCB_;
 // use crate::pxCurrentTCB;
 extern "C" {
@@ -103,11 +108,77 @@ pub extern "C" fn xTaskIncrementTick() {
     //todo
 }
 
+fn taskSELECT_HIGHEST_PRIORITY()->usize{
+    for i in 1..15
+    {
+        let j=16-i;
+        if !list_is_empty(&Arc::downgrade(&READY_TASK_LISTS[j].clone())){
+            return j;
+        }
+    }
+    return 0;
+}
+
+static mut removed:bool=false;
+static mut printed:bool=false;
+
+fn test()
+{}
+
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext() {
     //todo
     // // print("vTaskSwitchContext");
-    unsafe {
+    //port_disable_interrupts!();
+    let max_prio=taskSELECT_HIGHEST_PRIORITY();
+    let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
+    let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
+    unsafe{
+        set_current_tcb(Some(&*(*owner.into_raw()).read()));
+        auto_set_currentTcb();
+    }
+
+    ux_list_remove(target.clone());
+    let target_:ListItemLink=target.upgrade().unwrap();
+    //let mut new_item:XListItem=XListItem::new(2);
+    //new_item.pv_owner=(*target_).read().pv_owner.clone();
+    v_list_insert_end(&READY_TASK_LISTS[max_prio],target_.clone());
+
+    //test();
+    //port_enable_interrupts!();
+
+    /*unsafe{
+        if removed==false
+        {
+            
+            removed=true;
+            let temp1:ListItemLink=target.clone().upgrade().unwrap();
+            let temp2:*const ListItemT=&*temp1.read();
+            let s=format!("{}",(*temp2).x_item_value);
+            print(&s);
+        }
+        else{
+            if printed==false
+            {
+                let temp:ListItemWeakLink=list_item_get_next(&target.clone());
+                let temp1:ListItemLink=temp.clone().upgrade().unwrap();
+                let temp2:*const ListItemT=&*temp1.read();
+                let s=format!("{}",(*temp2).x_item_value);
+                print(&s);
+                printed=true;
+            }
+            
+        }
+    }*/
+    
+    
+   
+    
+    
+    //match target_
+    //&READY_TASK_LISTS[max_prio].write().insert_end(target);
+    
+    /*unsafe {
         if pxCurrentTCB_.unwrap() == &*TCB1_p.read() {
             set_current_tcb(Some(&*TCB2_p.read()));
         } else {
@@ -116,5 +187,5 @@ pub extern "C" fn vTaskSwitchContext() {
             }
         }
         auto_set_currentTcb();
-    }
+    }*/
 }

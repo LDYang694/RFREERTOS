@@ -5,12 +5,12 @@ use spin::RwLock;
 use crate::tasks::*;
 // use std::rc::Weak;
 //use std::boxed::Box;
+use crate::portable::*;
+use crate::portmacro::*;
 use core::clone::Clone;
 use core::default::Default;
 use crate::alloc::sync::{Arc, Weak};
 // type Link<T> = Option<Box<Node<T>>>;
-pub type TickType = u32;
-pub type UBaseType = u32;
 pub type ListItemWeakLink = Weak<RwLock<XListItem>>;
 pub type ListWeakLink = Weak<RwLock<XList>>;
 pub type ListRealLink = Arc<RwLock<XList>>;
@@ -24,11 +24,11 @@ use alloc::string;
 //define list types here
 #[derive(Debug)]
 pub struct XListItem {
-    x_item_value: TickType, /* 辅助值，用于帮助节点做顺序排列 */
-    px_next: ListItemWeakLink,
-    px_previous: ListItemWeakLink,
-    pv_owner: ListItemOwnerWeakLink, /* 指向拥有该节点的内核对象，通常是 TCB */
-    px_container: ListWeakLink,      /* 指向该节点所在的链表 */
+    pub x_item_value: TickType, /* 辅助值，用于帮助节点做顺序排列 */
+    pub px_next: ListItemWeakLink,
+    pub px_previous: ListItemWeakLink,
+    pub pv_owner: ListItemOwnerWeakLink, /* 指向拥有该节点的内核对象，通常是 TCB */
+    pub px_container: ListWeakLink,      /* 指向该节点所在的链表 */
 }
 pub type ListItemT = XListItem;
 impl XListItem {
@@ -128,6 +128,12 @@ pub fn list_item_get_container(item: &ListItemWeakLink) -> ListWeakLink {
 pub fn list_item_set_owner(item: &ListItemLink, owner: ListItemOwnerWeakLink) {
     (*(item)).write().pv_owner = Weak::clone(&owner);
 }
+
+pub fn list_item_get_owner(item: &ListItemWeakLink) -> ListItemOwnerWeakLink {
+    let owner = Weak::clone(&(*(item.upgrade().unwrap())).read().pv_owner);
+    owner
+}
+
 pub fn list_get_num_items(px_list: &ListWeakLink) -> UBaseType {
     let num = (*(px_list.upgrade().unwrap()))
         .read()

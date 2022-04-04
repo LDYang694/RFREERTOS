@@ -50,6 +50,8 @@ fn delay(time: u32) {
     }
 }
 fn task1(t: *mut c_void) {
+    let a=0;
+    let b=a+1;
     v_send_string("11111 gogogogo!!!");
     loop {
         delay(10000);
@@ -57,11 +59,18 @@ fn task1(t: *mut c_void) {
     }
 }
 fn task2(t: *mut c_void) {
+    let b=0;
+    let a=b+1;
     v_send_string("22222 gogogogo!!!");
     loop {
         delay(10000);
         v_send_string("22222 gogogogo!!!(in loop)");
     }
+}
+
+fn tf()
+{
+    let a=0;
 }
 
 #[no_mangle]
@@ -94,7 +103,7 @@ fn main_new() {
         Some(TCB1_p.clone()),
     );
     print("task insert");
-    v_list_insert_end(&READY_TASK_LISTS[1], (TCB1_p.read().xStateListItem).clone());
+    v_list_insert_end(&READY_TASK_LISTS[2], (TCB1_p.read().xStateListItem).clone());
 
     print("task2handler");
     x_task_create_static(
