@@ -39,6 +39,21 @@ extern "C" {
 }
 //todo:safe  global var and pointer
 
+fn get_mtime()->u64{
+    let mut result:u64=0;
+    let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
+    let pul_time_low: *const UBaseType = CONFIG_MTIME_BASE_ADDRESS as *const UBaseType;
+    unsafe{
+        let mut ul_current_time_low: UBaseType= *pul_time_high;
+        let mut ul_current_time_high: UBaseType= *pul_time_low;
+        result= ul_current_time_high as u64;
+        result=result<<32;
+        result+= (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
+    }
+    
+    result
+}
+
 pub fn v_port_setup_timer_interrupt() {
     let mut ul_hart_id: UBaseType;
     let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
@@ -48,8 +63,6 @@ pub fn v_port_setup_timer_interrupt() {
 
     unsafe {
         pullNextTime = &ULL_NEXT_TIME as *const u64 as u32;
-        let s = format!("pullNextTime={:X}", pullNextTime);
-        print(&s);
         uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ;
         asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
         pullMachineTimerCompareRegister = ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE + ul_hart_id * 4;
@@ -130,8 +143,13 @@ pub extern "C" fn vTaskSwitchContext() {
     //todo
     // // print("vTaskSwitchContext");
     //port_disable_interrupts!();
+
+    
     let max_prio=taskSELECT_HIGHEST_PRIORITY();
+
     let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
+
+
     let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
     unsafe{
         set_current_tcb(Some(&*(*owner.into_raw()).read()));
@@ -140,6 +158,7 @@ pub extern "C" fn vTaskSwitchContext() {
 
     ux_list_remove(target.clone());
     let target_:ListItemLink=target.upgrade().unwrap();
+
     //let mut new_item:XListItem=XListItem::new(2);
     //new_item.pv_owner=(*target_).read().pv_owner.clone();
     v_list_insert_end(&READY_TASK_LISTS[max_prio],target_.clone());
@@ -170,9 +189,6 @@ pub extern "C" fn vTaskSwitchContext() {
             
         }
     }*/
-    
-    
-   
     
     
     //match target_
