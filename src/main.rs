@@ -66,7 +66,7 @@ fn task1(t: *mut c_void) {
         }
         v_send_string("11111 gogogogo!!!(in loop)");
         unsafe{
-            vTaskPrioritySet(task1handler.clone(),2);
+            vTaskPrioritySet(None,2);
         }
     }
 }
@@ -82,7 +82,7 @@ fn task2(t: *mut c_void) {
         }
         v_send_string("22222 gogogogo!!!(in loop)");
         unsafe{
-            vTaskPrioritySet(task2handler.clone(),2);
+            vTaskPrioritySet(None,2);
         }
     }
 }

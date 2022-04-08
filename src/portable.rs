@@ -143,13 +143,15 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
         Some(x)=>{
             ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
             v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
+            x.write().priority=uxNewPriority;
         }
         None=>{
             unsafe{
                 match pxCurrentTCB_{
                     Some(x)=>{
-                        ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
-                        v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
+                        
+                        ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
+                        v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
                     }
                     None=>{}
                 }
@@ -159,9 +161,17 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
     v_task_exit_critical();
 }
 
-pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)
+pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
 {
-
+    unsafe{
+        match pxCurrentTCB_{
+            Some(x)=>unsafe {
+                return (*x).priority;
+            }
+            None=>{return 0;}
+        }
+    }
+    
 }
 
 #[no_mangle]
