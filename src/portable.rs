@@ -111,11 +111,12 @@ pub extern "C" fn xTaskIncrementTick() {
 fn taskSELECT_HIGHEST_PRIORITY() -> usize {
     for i in 1..15 {
         let j = 16 - i;
-        if !list_is_empty(&Arc::downgrade(&READY_TASK_LISTS[j].clone())) {
+        if !list_is_empty(&READY_TASK_LISTS[j]) {
             return j;
         }
     }
     return 0;
+    // return 2;
 }
 
 static mut removed: bool = false;
