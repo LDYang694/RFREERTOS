@@ -125,7 +125,7 @@ fn taskSELECT_HIGHEST_PRIORITY()->usize{
     for i in 1..16
     {
         let j=16-i;
-        if !list_is_empty(&Arc::downgrade(&READY_TASK_LISTS[j].clone())){
+        if !list_is_empty(&READY_TASK_LISTS[j]){
             return j;
         }
     }

@@ -147,8 +147,8 @@ pub fn list_get_pxindex(px_list: &ListWeakLink) -> ListItemWeakLink {
 pub fn list_set_pxindex(px_list: &ListWeakLink, item: ListItemWeakLink) {
     (*(px_list.upgrade().unwrap())).write().px_index = item;
 }
-pub fn list_is_empty(px_list: &ListWeakLink) -> bool {
-    (*(px_list.upgrade().unwrap()))
+pub fn list_is_empty(px_list: &ListRealLink) -> bool {
+    (*(px_list))
         .read()
         .ux_number_of_items
         == 0
