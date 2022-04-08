@@ -5,11 +5,11 @@ use spin::RwLock;
 use crate::tasks::*;
 // use std::rc::Weak;
 //use std::boxed::Box;
+use crate::alloc::sync::{Arc, Weak};
 use crate::portable::*;
 use crate::portmacro::*;
 use core::clone::Clone;
 use core::default::Default;
-use crate::alloc::sync::{Arc, Weak};
 // type Link<T> = Option<Box<Node<T>>>;
 pub type ListItemWeakLink = Weak<RwLock<XListItem>>;
 pub type ListWeakLink = Weak<RwLock<XList>>;
@@ -19,8 +19,8 @@ pub type ListItemOwnerWeakLink = Weak<RwLock<TCB_t>>;
 const portMAX_DELAY: TickType = 0xffffffff;
 //TODO: tmp define tcv_t
 // pub type TCB = u32;
-use core::option::Option;
 use alloc::string;
+use core::option::Option;
 //define list types here
 #[derive(Debug)]
 pub struct XListItem {
@@ -109,11 +109,7 @@ pub fn list_item_set_value(item: &ListItemWeakLink, x_value: TickType) {
 // 6 #define listGET_LIST_ITEM_OWNER( pxListItem )\
 // 7 ( ( pxListItem )->pvOwner )
 pub fn list_get_head_entry(px_list: &ListRealLink) -> ListItemWeakLink {
-    let entry = Weak::clone(
-        &((*(px_list)).read().x_list_end)
-            .read()
-            .px_next,
-    );
+    let entry = Weak::clone(&((*(px_list)).read().x_list_end).read().px_next);
     entry
 }
 
@@ -135,9 +131,7 @@ pub fn list_item_get_owner(item: &ListItemWeakLink) -> ListItemOwnerWeakLink {
 }
 
 pub fn list_get_num_items(px_list: &ListWeakLink) -> UBaseType {
-    let num = (*(px_list.upgrade().unwrap()))
-        .read()
-        .ux_number_of_items;
+    let num = (*(px_list.upgrade().unwrap())).read().ux_number_of_items;
     num
 }
 pub fn list_get_pxindex(px_list: &ListWeakLink) -> ListItemWeakLink {
@@ -154,9 +148,12 @@ pub fn list_is_empty(px_list: &ListRealLink) -> bool {
         == 0
 }
 pub fn list_current_list_length(px_list: &ListWeakLink) -> UBaseType {
-    (*(px_list.upgrade().unwrap()))
-        .read()
-        .ux_number_of_items
+    (*(px_list.upgrade().unwrap())).read().ux_number_of_items
+}
+pub fn list_get_owner_of_next_entry(px_list: &ListRealLink) -> ListItemOwnerWeakLink {
+    //add index and return owner
+    let owner = px_list.write().get_owner_of_next_entry();
+    owner
 }
 impl ListT {
     pub fn insert_end(&mut self, px_new_list_item: ListItemWeakLink) {
@@ -200,6 +197,16 @@ impl ListT {
         list_item_set_pre(&px_iterator, Weak::clone(&px_new_list_item));
         self.ux_number_of_items += 1;
     }
+
+    pub fn get_owner_of_next_entry(&mut self) -> ListItemOwnerWeakLink {
+        self.px_index = list_item_get_next(&self.px_index);
+        if Weak::ptr_eq(&self.px_index, &Arc::downgrade(&self.x_list_end)) {
+            self.px_index = list_item_get_next(&self.px_index);
+        }
+
+        let owner = Weak::clone(&self.px_index.upgrade().unwrap().read().pv_owner);
+        owner
+    }
 }
 
 // fn main() {
@@ -240,9 +247,7 @@ pub fn v_list_insert_end(px_list: &ListRealLink, px_new_list_item: ListItemLink)
     px_new_list_item.write().px_container = Arc::downgrade(&px_list);
 }
 pub fn v_list_insert(px_list: &ListRealLink, px_new_list_item: ListItemLink) {
-    px_list
-        .write()
-        .insert(Arc::downgrade(&px_new_list_item));
+    px_list.write().insert(Arc::downgrade(&px_new_list_item));
 
     px_new_list_item.write().px_container = Arc::downgrade(&px_list);
 }
@@ -265,8 +270,6 @@ pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
         );
     }
     //TODO:pxItemToRemove->pvContainer = NULL;
-    (*(px_list.upgrade().unwrap()))
-        .write()
-        .ux_number_of_items -= 1;
+    (*(px_list.upgrade().unwrap())).write().ux_number_of_items -= 1;
     list_get_num_items(&px_list)
 }

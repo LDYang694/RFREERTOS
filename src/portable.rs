@@ -1,16 +1,16 @@
 use crate::alloc::sync::{Arc, Weak};
+use crate::config::*;
+use crate::linked_list::*;
+use crate::port_disable_interrupts;
+use crate::port_enable_interrupts;
 use crate::portmacro::*;
 use crate::riscv_virt::*;
 use crate::task1;
 use crate::tasks::*;
-use crate::{config::*};
+use crate::READY_TASK_LISTS;
 use crate::{TCB1_p, TCB2_p};
 use alloc::format;
 use core::arch::asm;
-use crate::linked_list::*;
-use crate::READY_TASK_LISTS;
-use crate::port_disable_interrupts;
-use crate::port_enable_interrupts;
 use spin::RwLock;
 //use crate::pxCurrentTCB_;
 // use crate::pxCurrentTCB;
@@ -133,8 +133,6 @@ fn taskSELECT_HIGHEST_PRIORITY()->usize{
     return 0;
 }
 
-static mut removed:bool=false;
-static mut printed:bool=false;
 
 pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
 {
@@ -198,7 +196,7 @@ pub extern "C" fn vTaskSwitchContext() {
     
     //match target_
     //&READY_TASK_LISTS[max_prio].write().insert_end(target);
-    
+
     /*unsafe {
         if pxCurrentTCB_.unwrap() == &*TCB1_p.read() {
             set_current_tcb(Some(&*TCB2_p.read()));

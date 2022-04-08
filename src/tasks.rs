@@ -1,28 +1,29 @@
-use crate::TCB1_p;
-use crate::linked_list::*;
 use crate::alloc::string::ToString;
+use crate::linked_list::*;
 use crate::mt_coverage_test_marker;
 use crate::pdFALSE;
 use crate::port_disable_interrupts;
 use crate::port_enable_interrupts;
 use crate::portable::*;
 use crate::portmacro::*;
-use spin::RwLock;
+use crate::TCB1_p;
+use crate::READY_TASK_LISTS;
 use alloc::format;
-pub type StackType_t=usize;
+use spin::RwLock;
+pub type StackType_t = usize;
 pub type StackType_t_link = usize;
 pub type Param_link = usize;
 pub type TCB_t_link = Arc<RwLock<TCB_t>>;
-pub type UBaseType_t=usize;
+pub type UBaseType_t = usize;
 // pub type TaskFunction_t = dyn Fn(usize);
 // pub type TaskFunction_t=fn(*mut c_void);
-pub type TaskFunction_t=*mut fn(*mut c_void);
+pub type TaskFunction_t = *mut fn(*mut c_void);
 // use std::cell::RefCell;
 use crate::alloc::sync::{Arc, Weak};
-use alloc::string::String;
 use crate::riscv_virt::*;
-use core::ffi::c_void;
+use alloc::string::String;
 use core::arch::asm;
+use core::ffi::c_void;
 
 pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
 
@@ -40,7 +41,7 @@ macro_rules! pdTRUE {
     };
 }
 
-extern "C"{
+extern "C" {
     pub fn pxPortInitialiseStack(
         pxTopOfStack: *mut StackType_t,
         pxCode: u32,
@@ -93,7 +94,7 @@ pub fn x_task_create_static(
     //TODO:assert if =true
     let pxNewTCB: TCB_t_link = pxTaskBuffer.unwrap().clone();
     TCB_set_pxStack(&pxNewTCB, puxStackBuffer.unwrap());
-    print("xTaskCreateStatic 2222"); 
+    print("xTaskCreateStatic 2222");
     let xReturn = prvInitialiseNewTask(
         pxTaskCode,
         pcName,
@@ -103,7 +104,7 @@ pub fn x_task_create_static(
         priority,
         pxNewTCB,
     );
-    print("xTaskCreateStatic 3333"); 
+    print("xTaskCreateStatic 3333");
     Some(xReturn)
 }
 
@@ -116,10 +117,9 @@ pub fn prvInitialiseNewTask(
     priority: UBaseType,
     pxNewTCB: TCB_t_link,
 ) -> TaskHandle_t {
-    let mut pxTopOfStack: StackType_t_link =
-        pxNewTCB.read().pxStack;
+    let mut pxTopOfStack: StackType_t_link = pxNewTCB.read().pxStack;
     pxTopOfStack = pxTopOfStack & (!(0x0007usize));
-    
+
     let mut x: UBaseType = 0;
     //TODO: name length
     print("prvInitialiseNewTask 1111");
@@ -127,19 +127,17 @@ pub fn prvInitialiseNewTask(
     pxNewTCB.write().priority=priority;
     //TODO:auto init
     print("prvInitialiseNewTask 2222");
-    list_item_set_owner(
-        &pxNewTCB.write().xStateListItem,
-        Arc::downgrade(&pxNewTCB),
-    );
+    list_item_set_owner(&pxNewTCB.write().xStateListItem, Arc::downgrade(&pxNewTCB));
     print("prvInitialiseNewTask 33333");
     //TODO: connect
-    let s_=format!("top of stack{:X}",pxTopOfStack);
+    let s_ = format!("top of stack{:X}", pxTopOfStack);
     print(&s_);
-    unsafe{
-        pxNewTCB.write().pxTopOfStack = pxPortInitialiseStack(pxTopOfStack as *mut _,pxTaskCode,0 as *mut _) as usize;
+    unsafe {
+        pxNewTCB.write().pxTopOfStack =
+            pxPortInitialiseStack(pxTopOfStack as *mut _, pxTaskCode, 0 as *mut _) as usize;
         pxNewTCB.write().uxCriticalNesting = 0;
     }
-    let s_=format!("top of stack{:X}",pxNewTCB.read().pxTopOfStack);
+    let s_ = format!("top of stack{:X}", pxNewTCB.read().pxTopOfStack);
     print(&s_);
     print("prvInitialiseNewTask 4444");
     //TODO: return
@@ -156,47 +154,64 @@ pub fn v_task_start_scheduler() {
     }
 }
 
-
 // pub fn x_task_create_static() {}
 fn prvInitialiseTaskLists() {
     //initial in list impl
 }
 
-pub fn v_task_enter_critical(){
+pub fn v_task_enter_critical() {
     port_disable_interrupts!();
-    unsafe{
+    unsafe {
         if X_SCHEDULER_RUNNING != pdFALSE!() {
             (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).uxCriticalNesting += 1;
-            if  (*(pxCurrentTCB_.unwrap())).uxCriticalNesting == 1{
+            if (*(pxCurrentTCB_.unwrap())).uxCriticalNesting == 1 {
                 // TODO: portASSERT_IF_IN_ISR
             }
-        }
-        else {
+        } else {
             mt_coverage_test_marker!();
         }
     }
-    
 }
 
-pub fn v_task_exit_critical(){
-    unsafe{
+pub fn v_task_exit_critical() {
+    unsafe {
         let cur_tcb = pxCurrentTCB_.unwrap();
         if X_SCHEDULER_RUNNING != pdFALSE!() {
-            if (*cur_tcb).uxCriticalNesting > 0{
+            if (*cur_tcb).uxCriticalNesting > 0 {
                 (*(cur_tcb as *mut tskTaskControlBlock)).uxCriticalNesting -= 1;
-                if (*(cur_tcb)).uxCriticalNesting == 0{
+                if (*(cur_tcb)).uxCriticalNesting == 0 {
                     port_enable_interrupts!();
-                }
-                else{
+                } else {
                     mt_coverage_test_marker!();
                 }
-            }
-            else {
+            } else {
                 mt_coverage_test_marker!();
             }
-        }
-        else {
+        } else {
             mt_coverage_test_marker!();
         }
     }
+}
+
+pub fn taskSELECT_HIGHEST_PRIORITY_TASK() {
+    //TODO: uxTopReadyPriority全局变量设置和更新
+    //TODO: 函数规范化
+    let max_prio = taskSELECT_HIGHEST_PRIORITY();
+    // let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
+    // let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
+    let owner: ListItemOwnerWeakLink = list_get_owner_of_next_entry(&READY_TASK_LISTS[max_prio]);
+    unsafe {
+        set_current_tcb(Some(&*(*owner.into_raw()).read()));
+        auto_set_currentTcb();
+    }
+}
+
+pub fn taskSELECT_HIGHEST_PRIORITY() -> usize {
+    for i in 1..15 {
+        let j = 16 - i;
+        if !list_is_empty(&READY_TASK_LISTS[j]) {
+            return j;
+        }
+    }
+    return 0;
 }
