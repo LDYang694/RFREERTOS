@@ -34,9 +34,11 @@ lazy_static! {
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
     pub static ref TASK1_STACK:[u32;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
     pub static ref TASK2_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
+    pub static ref TASK3_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
     //pub static ref pxCurrentTCB_: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
     pub static ref TCB2_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
+    pub static ref TCB3_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
 
 // pub static mut pxCurrentTCB:RwLock<Option<TaskHandle_t>> = RwLock::new(None);
@@ -68,6 +70,16 @@ fn task2(t: *mut c_void) {
     }
 }
 
+fn task3(t: *mut c_void) {
+    let b=0;
+    let a=b+1;
+    v_send_string("33333 gogogogo!!!");
+    loop {
+        delay(10000);
+        v_send_string("33333 gogogogo!!!(in loop)");
+    }
+}
+
 fn tf()
 {
     let a=0;
@@ -86,12 +98,16 @@ fn main_new() {
     print("main new");
     let param1: Param_link = 0;
     let param2: Param_link = 0;
+    let param3: Param_link = 0;
     let stack1ptr: StackType_t_link =
         &*TASK1_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
             - 4;
     let stack2ptr: StackType_t_link =
         &*TASK2_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
             - 4;
+    let stack3ptr: StackType_t_link =
+        &*TASK3_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
+                - 4;
 
     print("task1handler");
     x_task_create_static(
@@ -116,6 +132,18 @@ fn main_new() {
     );
     print("task insert");
     v_list_insert_end(&READY_TASK_LISTS[2], (TCB2_p.read().xStateListItem).clone());
+
+    print("task3handler");
+    x_task_create_static(
+        task3 as u32,
+        "task3",
+        USER_STACK_SIZE as u32,
+        Some(param3),
+        Some(stack3ptr),
+        Some(TCB3_p.clone()),
+    );
+    print("task insert");
+    v_list_insert_end(&READY_TASK_LISTS[2], (TCB3_p.read().xStateListItem).clone());
 
     print("start scheduler!!!!!!!!!");
     v_task_start_scheduler();
