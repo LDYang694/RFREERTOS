@@ -108,16 +108,7 @@ pub extern "C" fn xTaskIncrementTick() {
     //todo
 }
 
-fn taskSELECT_HIGHEST_PRIORITY() -> usize {
-    for i in 1..15 {
-        let j = 16 - i;
-        if !list_is_empty(&READY_TASK_LISTS[j]) {
-            return j;
-        }
-    }
-    return 0;
-    // return 2;
-}
+
 
 static mut removed: bool = false;
 static mut printed: bool = false;
@@ -126,17 +117,11 @@ fn test() {}
 
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext() {
-    //todo
-    // // print("vTaskSwitchContext");
-    //port_disable_interrupts!();
-    let max_prio = taskSELECT_HIGHEST_PRIORITY();
-    // let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
-    // let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
-    let owner: ListItemOwnerWeakLink = list_get_owner_of_next_entry(&READY_TASK_LISTS[max_prio]);
-    unsafe {
-        set_current_tcb(Some(&*(*owner.into_raw()).read()));
-        auto_set_currentTcb();
-    }
+    //TODO:
+    //1.scheduler suspended check
+
+    //2.configGENERATE_RUN_TIME_STATS
+    taskSELECT_HIGHEST_PRIORITY_TASK();
 
     // ux_list_remove(target.clone());
     // let target_: ListItemLink = target.upgrade().unwrap();
