@@ -26,6 +26,7 @@ use spin::RwLock;
 use tasks::*;
 use crate::config::*;
 use crate::allocator::init_heap;
+use crate::portable::*;
 
 global_asm!(include_str!("start.S"));
 
@@ -43,6 +44,10 @@ lazy_static! {
 
 // pub static mut TASK1_STACK: &'static mut [u8] = &mut [0; 1000];
 // pub static mut TASK2_STACK: &'static mut [u8] = &mut [0; 1000];
+
+static mut task1handler:Option<TaskHandle_t>=None;
+static mut task2handler:Option<TaskHandle_t>=None;
+
 fn delay(time: u32) {
     let mut x = 1;
     for i in 0..time {
@@ -53,18 +58,32 @@ fn task1(t: *mut c_void) {
     let a=0;
     let b=a+1;
     v_send_string("11111 gogogogo!!!");
+    
     loop {
         delay(10000);
+        unsafe{
+            vTaskPrioritySet(task1handler.clone(),1);
+        }
         v_send_string("11111 gogogogo!!!(in loop)");
+        unsafe{
+            vTaskPrioritySet(task1handler.clone(),2);
+        }
     }
 }
 fn task2(t: *mut c_void) {
     let b=0;
     let a=b+1;
     v_send_string("22222 gogogogo!!!");
+    
     loop {
         delay(10000);
+        unsafe{
+            vTaskPrioritySet(task2handler.clone(),1);
+        }
         v_send_string("22222 gogogogo!!!(in loop)");
+        unsafe{
+            vTaskPrioritySet(task2handler.clone(),2);
+        }
     }
 }
 
@@ -94,28 +113,36 @@ fn main_new() {
             - 4;
 
     print("task1handler");
-    x_task_create_static(
-        task1 as u32,
-        "task1",
-        USER_STACK_SIZE as u32,
-        Some(param1),
-        Some(stack1ptr),
-        Some(TCB1_p.clone()),
-    );
+    unsafe{
+        task1handler=x_task_create_static(
+            task1 as u32,
+            "task1",
+            USER_STACK_SIZE as u32,
+            Some(param1),
+            Some(stack1ptr),
+            Some(TCB1_p.clone()),
+            2
+        );
+    }
+    
     print("task insert");
     v_list_insert_end(&READY_TASK_LISTS[2], (TCB1_p.read().xStateListItem).clone());
 
     print("task2handler");
-    x_task_create_static(
-        task2 as u32,
-        "task2",
-        USER_STACK_SIZE as u32,
-        Some(param2),
-        Some(stack2ptr),
-        Some(TCB2_p.clone()),
-    );
+    unsafe{
+        task2handler=x_task_create_static(
+            task2 as u32,
+            "task2",
+            USER_STACK_SIZE as u32,
+            Some(param2),
+            Some(stack2ptr),
+            Some(TCB2_p.clone()),
+            1
+        );
+    }
+    
     print("task insert");
-    v_list_insert_end(&READY_TASK_LISTS[2], (TCB2_p.read().xStateListItem).clone());
+    v_list_insert_end(&READY_TASK_LISTS[1], (TCB2_p.read().xStateListItem).clone());
 
     print("start scheduler!!!!!!!!!");
     v_task_start_scheduler();

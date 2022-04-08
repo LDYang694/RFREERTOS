@@ -122,21 +122,47 @@ pub extern "C" fn xTaskIncrementTick() {
 }
 
 fn taskSELECT_HIGHEST_PRIORITY()->usize{
-    for i in 1..15
+    for i in 1..16
     {
         let j=16-i;
         if !list_is_empty(&Arc::downgrade(&READY_TASK_LISTS[j].clone())){
             return j;
         }
     }
+    print("empty!");
     return 0;
 }
 
 static mut removed:bool=false;
 static mut printed:bool=false;
 
-fn test()
-{}
+pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
+{
+    v_task_enter_critical();
+    match pxTask{
+        Some(x)=>{
+            ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
+            v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
+        }
+        None=>{
+            unsafe{
+                match pxCurrentTCB_{
+                    Some(x)=>{
+                        ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
+                        v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
+                    }
+                    None=>{}
+                }
+            }
+        }
+    }
+    v_task_exit_critical();
+}
+
+pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)
+{
+
+}
 
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext() {
@@ -144,12 +170,8 @@ pub extern "C" fn vTaskSwitchContext() {
     // // print("vTaskSwitchContext");
     //port_disable_interrupts!();
 
-    
     let max_prio=taskSELECT_HIGHEST_PRIORITY();
-
     let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
-
-
     let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
     unsafe{
         set_current_tcb(Some(&*(*owner.into_raw()).read()));
@@ -162,33 +184,6 @@ pub extern "C" fn vTaskSwitchContext() {
     //let mut new_item:XListItem=XListItem::new(2);
     //new_item.pv_owner=(*target_).read().pv_owner.clone();
     v_list_insert_end(&READY_TASK_LISTS[max_prio],target_.clone());
-
-    //test();
-    //port_enable_interrupts!();
-
-    /*unsafe{
-        if removed==false
-        {
-            
-            removed=true;
-            let temp1:ListItemLink=target.clone().upgrade().unwrap();
-            let temp2:*const ListItemT=&*temp1.read();
-            let s=format!("{}",(*temp2).x_item_value);
-            print(&s);
-        }
-        else{
-            if printed==false
-            {
-                let temp:ListItemWeakLink=list_item_get_next(&target.clone());
-                let temp1:ListItemLink=temp.clone().upgrade().unwrap();
-                let temp2:*const ListItemT=&*temp1.read();
-                let s=format!("{}",(*temp2).x_item_value);
-                print(&s);
-                printed=true;
-            }
-            
-        }
-    }*/
     
     
     //match target_

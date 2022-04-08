@@ -55,6 +55,7 @@ pub struct tskTaskControlBlock {
     pcTaskName: String,
     pub xStateListItem: ListItemLink,
     pub uxCriticalNesting: UBaseType_t,
+    pub priority:UBaseType,
 }
 impl Default for tskTaskControlBlock {
     fn default() -> Self {
@@ -63,7 +64,8 @@ impl Default for tskTaskControlBlock {
             pxTopOfStack: 0,
             pcTaskName: String::new(),
             xStateListItem: Default::default(),
-            uxCriticalNesting: 0
+            uxCriticalNesting: 0,
+            priority: 0
         }
     }
 }
@@ -84,15 +86,9 @@ pub fn x_task_create_static(
     pvParameters: Option<Param_link>,
     puxStackBuffer: Option<StackType_t_link>,
     pxTaskBuffer: Option<TCB_t_link>,
+    priority:UBaseType
 ) -> Option<TaskHandle_t> {
     let xReturn = Arc::new(RwLock::new(tskTaskControlBlock::default()));
-    // let xxReturn=
-    // if (pxTaskBuffer!=None && puxStackBuffer!=None){
-
-    //     None
-    // }else{
-    //     None
-    // }
     print("xTaskCreateStatic 1111");
     //TODO:assert if =true
     let pxNewTCB: TCB_t_link = pxTaskBuffer.unwrap().clone();
@@ -104,6 +100,7 @@ pub fn x_task_create_static(
         ulStackDepth,
         pvParameters,
         &xReturn,
+        priority,
         pxNewTCB,
     );
     print("xTaskCreateStatic 3333"); 
@@ -116,6 +113,7 @@ pub fn prvInitialiseNewTask(
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
     pxCreatedTask: &TaskHandle_t,
+    priority: UBaseType,
     pxNewTCB: TCB_t_link,
 ) -> TaskHandle_t {
     let mut pxTopOfStack: StackType_t_link =
@@ -126,6 +124,7 @@ pub fn prvInitialiseNewTask(
     //TODO: name length
     print("prvInitialiseNewTask 1111");
     pxNewTCB.write().pcTaskName = pcName.to_string();
+    pxNewTCB.write().priority=priority;
     //TODO:auto init
     print("prvInitialiseNewTask 2222");
     list_item_set_owner(
