@@ -121,17 +121,17 @@ pub extern "C" fn xTaskIncrementTick() {
     //todo
 }
 
-fn taskSELECT_HIGHEST_PRIORITY()->usize{
-    for i in 1..16
-    {
-        let j=16-i;
-        if !list_is_empty(&READY_TASK_LISTS[j]){
-            return j;
-        }
-    }
-    print("empty!");
-    return 0;
-}
+// fn taskSELECT_HIGHEST_PRIORITY()->usize{
+//     for i in 1..16
+//     {
+//         let j=16-i;
+//         if !list_is_empty(&READY_TASK_LISTS[j]){
+//             return j;
+//         }
+//     }
+//     print("empty!");
+//     return 0;
+// }
 
 
 pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
@@ -177,21 +177,21 @@ pub extern "C" fn vTaskSwitchContext() {
     //todo
     // // print("vTaskSwitchContext");
     //port_disable_interrupts!();
+    taskSELECT_HIGHEST_PRIORITY_TASK();
+    // let max_prio=taskSELECT_HIGHEST_PRIORITY();
+    // let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
+    // let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
+    // unsafe{
+    //     set_current_tcb(Some(&*(*owner.into_raw()).read()));
+    //     auto_set_currentTcb();
+    // }
 
-    let max_prio=taskSELECT_HIGHEST_PRIORITY();
-    let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
-    let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
-    unsafe{
-        set_current_tcb(Some(&*(*owner.into_raw()).read()));
-        auto_set_currentTcb();
-    }
+    // ux_list_remove(target.clone());
+    // let target_:ListItemLink=target.upgrade().unwrap();
 
-    ux_list_remove(target.clone());
-    let target_:ListItemLink=target.upgrade().unwrap();
-
-    //let mut new_item:XListItem=XListItem::new(2);
-    //new_item.pv_owner=(*target_).read().pv_owner.clone();
-    v_list_insert_end(&READY_TASK_LISTS[max_prio],target_.clone());
+    // //let mut new_item:XListItem=XListItem::new(2);
+    // //new_item.pv_owner=(*target_).read().pv_owner.clone();
+    // v_list_insert_end(&READY_TASK_LISTS[max_prio],target_.clone());
     
     
     //match target_

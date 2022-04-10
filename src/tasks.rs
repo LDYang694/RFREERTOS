@@ -56,7 +56,7 @@ pub struct tskTaskControlBlock {
     pcTaskName: String,
     pub xStateListItem: ListItemLink,
     pub uxCriticalNesting: UBaseType_t,
-    pub priority:UBaseType,
+    pub priority: UBaseType,
 }
 impl Default for tskTaskControlBlock {
     fn default() -> Self {
@@ -66,7 +66,7 @@ impl Default for tskTaskControlBlock {
             pcTaskName: String::new(),
             xStateListItem: Default::default(),
             uxCriticalNesting: 0,
-            priority: 0
+            priority: 0,
         }
     }
 }
@@ -87,7 +87,7 @@ pub fn x_task_create_static(
     pvParameters: Option<Param_link>,
     puxStackBuffer: Option<StackType_t_link>,
     pxTaskBuffer: Option<TCB_t_link>,
-    priority:UBaseType
+    priority: UBaseType,
 ) -> Option<TaskHandle_t> {
     let xReturn = Arc::new(RwLock::new(tskTaskControlBlock::default()));
     print("xTaskCreateStatic 1111");
@@ -124,7 +124,7 @@ pub fn prvInitialiseNewTask(
     //TODO: name length
     print("prvInitialiseNewTask 1111");
     pxNewTCB.write().pcTaskName = pcName.to_string();
-    pxNewTCB.write().priority=priority;
+    pxNewTCB.write().priority = priority;
     //TODO:auto init
     print("prvInitialiseNewTask 2222");
     list_item_set_owner(&pxNewTCB.write().xStateListItem, Arc::downgrade(&pxNewTCB));
@@ -207,7 +207,7 @@ pub fn taskSELECT_HIGHEST_PRIORITY_TASK() {
 }
 
 pub fn taskSELECT_HIGHEST_PRIORITY() -> usize {
-    for i in 1..15 {
+    for i in 1..16 {
         let j = 16 - i;
         if !list_is_empty(&READY_TASK_LISTS[j]) {
             return j;
