@@ -1,4 +1,5 @@
-use crate::alloc::sync::{Arc, Weak};
+extern crate alloc;
+use alloc::sync::{Arc, Weak};
 use crate::config::*;
 use crate::linked_list::*;
 use crate::port_disable_interrupts;
@@ -6,8 +7,8 @@ use crate::port_enable_interrupts;
 use crate::portmacro::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
-use crate::READY_TASK_LISTS;
-use crate::{TCB1_p, TCB2_p};
+use crate::kernel::kernel::READY_TASK_LISTS;
+use crate::kernel::kernel::{TCB1_p, TCB2_p};
 use alloc::format;
 use core::arch::asm;
 use spin::RwLock;

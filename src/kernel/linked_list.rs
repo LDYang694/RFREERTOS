@@ -1,11 +1,13 @@
 // use std::cell::RefCell;
+#![allow(non_snake_case)]
 use spin::RwLock;
 // use std::collections::LinkedList;
 // use std::rc::Rc;
+extern crate alloc;
 use crate::tasks::*;
 // use std::rc::Weak;
 //use std::boxed::Box;
-use crate::alloc::sync::{Arc, Weak};
+use alloc::sync::{Arc, Weak};
 use crate::portable::*;
 use crate::portmacro::*;
 use core::clone::Clone;

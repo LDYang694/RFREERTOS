@@ -71,6 +71,7 @@ _start:
 	li  a0, 0
 	li  a1, 0
 	li  a2, 0
+	jal kernel_init
 	jal main
 1:
 	wfi

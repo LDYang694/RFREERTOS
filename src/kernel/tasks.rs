@@ -1,16 +1,18 @@
+extern crate alloc;
 
-
-use crate::alloc::string::ToString;
-use crate::linked_list::*;
+use crate::kernel::linked_list::*;
+use crate::kernel::portable::*;
 use crate::mt_coverage_test_marker;
 use crate::pdFALSE;
 use crate::port_disable_interrupts;
 use crate::port_enable_interrupts;
-use crate::portable::*;
+use crate::port_yield;
+use alloc::string::ToString;
+use alloc::sync::{Arc, Weak};
 use crate::portmacro::*;
-use crate::TCB1_p;
-use crate::READY_TASK_LISTS;
-use crate::DELAYED_TASK_LIST;
+use crate::kernel::kernel::TCB1_p;
+use crate::kernel::kernel::DELAYED_TASK_LIST;
+use crate::kernel::kernel::READY_TASK_LISTS;
 use alloc::format;
 use spin::RwLock;
 pub type StackType_t = usize;
@@ -22,15 +24,15 @@ pub type UBaseType_t = usize;
 // pub type TaskFunction_t=fn(*mut c_void);
 pub type TaskFunction_t = *mut fn(*mut c_void);
 // use std::cell::RefCell;
-use crate::alloc::sync::{Arc, Weak};
+// use alloc::sync::{Arc, Weak};
 use crate::riscv_virt::*;
 use alloc::string::String;
 use core::arch::asm;
 use core::ffi::c_void;
 
 pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
-pub static mut xTickCount:UBaseType=0;
-pub static mut xNextTaskUnblockTime:UBaseType=PORT_MAX_DELAY;
+pub static mut xTickCount: UBaseType = 0;
+pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
 
 #[macro_export]
 macro_rules! pdFALSE {
@@ -221,65 +223,58 @@ pub fn taskSELECT_HIGHEST_PRIORITY() -> usize {
     return 0;
 }
 
-pub fn taskYield()
-{
+pub fn taskYield() {
     port_yield!();
 }
 
-pub fn prvAddCurrentTaskToDelayedList()
-{
+pub fn prvAddCurrentTaskToDelayedList() {}
 
-}
-
-pub fn vTaskDelay( xTicksToDelay:UBaseType)
-{
+pub fn vTaskDelay(xTicksToDelay: UBaseType) {
     v_task_enter_critical();
-    unsafe{
-        if xTicksToDelay<xNextTaskUnblockTime{
-            xNextTaskUnblockTime=xTicksToDelay+xTickCount;
+    unsafe {
+        if xTicksToDelay < xNextTaskUnblockTime {
+            xNextTaskUnblockTime = xTicksToDelay + xTickCount;
         }
         let cur_tcb = pxCurrentTCB_.unwrap();
-        let list_item=&(*cur_tcb).xStateListItem;
-        list_item_set_value(&Arc::downgrade(&list_item),xTicksToDelay+xTickCount);
+        let list_item = &(*cur_tcb).xStateListItem;
+        list_item_set_value(&Arc::downgrade(&list_item), xTicksToDelay + xTickCount);
         ux_list_remove(Arc::downgrade(&list_item));
-        v_list_insert(&DELAYED_TASK_LIST,list_item.clone());
+        v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
     }
     v_task_exit_critical();
     taskYield();
 }
 
-
 #[no_mangle]
 pub extern "C" fn xTaskIncrementTick() {
     //todo
-    unsafe{
-        xTickCount+=1;
-        if xTickCount>=xNextTaskUnblockTime{
-            loop{
-                if list_is_empty(&DELAYED_TASK_LIST){
-                    xNextTaskUnblockTime=PORT_MAX_DELAY;
+    unsafe {
+        xTickCount += 1;
+        if xTickCount >= xNextTaskUnblockTime {
+            loop {
+                if list_is_empty(&DELAYED_TASK_LIST) {
+                    xNextTaskUnblockTime = PORT_MAX_DELAY;
                     break;
-                }
-                else{
-                    let head:ListItemLink=list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
-                    if head.read().x_item_value<=xTickCount{
+                } else {
+                    let head: ListItemLink =
+                        list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
+                    if head.read().x_item_value <= xTickCount {
                         ux_list_remove(Arc::downgrade(&head));
-                        let owner_:ListItemOwnerWeakLink=list_item_get_owner(&Arc::downgrade(&head));
-                        let prio:UBaseType=owner_.upgrade().unwrap().read().priority;
-                        v_list_insert_end(&READY_TASK_LISTS[prio as usize],head);
-                    }
-                    else{
-                        xNextTaskUnblockTime=head.read().x_item_value;
+                        let owner_: ListItemOwnerWeakLink =
+                            list_item_get_owner(&Arc::downgrade(&head));
+                        let prio: UBaseType = owner_.upgrade().unwrap().read().priority;
+                        v_list_insert_end(&READY_TASK_LISTS[prio as usize], head);
+                    } else {
+                        xNextTaskUnblockTime = head.read().x_item_value;
                         break;
                     }
                 }
             }
         }
     }
-    
 }
 
-pub fn xPortSysTickHandler(){
+pub fn xPortSysTickHandler() {
     v_task_enter_critical();
     xTaskIncrementTick();
     v_task_exit_critical();
