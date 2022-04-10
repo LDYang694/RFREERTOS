@@ -34,6 +34,8 @@ global_asm!(include_str!("start.S"));
 lazy_static! {
     //TODO: tmp size
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
+    pub static ref DELAYED_TASK_LIST: ListRealLink = Default::default();
+    //todo: overflow task list
     pub static ref TASK1_STACK:[u32;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
     pub static ref TASK2_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
     pub static ref TASK3_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
@@ -63,11 +65,12 @@ fn task1(t: *mut c_void) {
     v_send_string("11111 gogogogo!!!");
     
     loop {
-        delay(10000);
+        //delay(10000);
         /*unsafe{
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
         v_send_string("11111 gogogogo!!!(in loop)");
+        vTaskDelay(1);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
@@ -80,7 +83,6 @@ fn task2(t: *mut c_void) {
     v_send_string("22222 gogogogo!!!");
     
     loop {
-        delay(10000);
         /*unsafe{
             vTaskPrioritySet(task2handler.clone(),1);
         }*/

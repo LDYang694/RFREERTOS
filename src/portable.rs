@@ -5,7 +5,6 @@ use crate::port_disable_interrupts;
 use crate::port_enable_interrupts;
 use crate::portmacro::*;
 use crate::riscv_virt::*;
-use crate::task1;
 use crate::tasks::*;
 use crate::READY_TASK_LISTS;
 use crate::{TCB1_p, TCB2_p};
@@ -116,10 +115,8 @@ pub fn set_current_tcb(tcb: Option<*const tskTaskControlBlock>) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn xTaskIncrementTick() {
-    //todo
-}
+
+
 
 // fn taskSELECT_HIGHEST_PRIORITY()->usize{
 //     for i in 1..16
@@ -150,6 +147,7 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
                         
                         ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
                         v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
+                        (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).priority=uxNewPriority;
                     }
                     None=>{}
                 }
