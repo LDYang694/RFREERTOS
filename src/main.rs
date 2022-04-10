@@ -10,6 +10,7 @@ mod linked_list;
 mod linked_list_test;
 mod ns16550;
 mod portable;
+#[macro_use]
 mod portmacro;
 mod riscv_virt;
 mod tasks;
@@ -63,13 +64,14 @@ fn task1(t: *mut c_void) {
     
     loop {
         delay(10000);
-        unsafe{
+        /*unsafe{
             vTaskPrioritySet(task1handler.clone(),1);
-        }
+        }*/
         v_send_string("11111 gogogogo!!!(in loop)");
-        unsafe{
+        /*unsafe{
             vTaskPrioritySet(None,2);
-        }
+        }*/
+        taskYield();
     }
 }
 fn task2(t: *mut c_void) {
@@ -79,13 +81,14 @@ fn task2(t: *mut c_void) {
     
     loop {
         delay(10000);
-        unsafe{
+        /*unsafe{
             vTaskPrioritySet(task2handler.clone(),1);
-        }
+        }*/
         v_send_string("22222 gogogogo!!!(in loop)");
-        unsafe{
+        /*unsafe{
             vTaskPrioritySet(None,2);
-        }
+        }*/
+        taskYield();
     }
 }
 
@@ -158,7 +161,7 @@ fn main_new() {
     }
     
     print("task insert");
-    v_list_insert_end(&READY_TASK_LISTS[1], (TCB2_p.read().xStateListItem).clone());
+    v_list_insert_end(&READY_TASK_LISTS[2], (TCB2_p.read().xStateListItem).clone());
 
     // print("task3handler");
     // x_task_create_static(

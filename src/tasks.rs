@@ -1,3 +1,5 @@
+
+
 use crate::alloc::string::ToString;
 use crate::linked_list::*;
 use crate::mt_coverage_test_marker;
@@ -214,4 +216,9 @@ pub fn taskSELECT_HIGHEST_PRIORITY() -> usize {
         }
     }
     return 0;
+}
+
+pub fn taskYield()
+{
+    port_yield!();
 }
