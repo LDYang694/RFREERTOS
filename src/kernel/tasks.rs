@@ -12,6 +12,7 @@ use alloc::sync::{Arc, Weak};
 use crate::portmacro::*;
 use crate::kernel::kernel::TCB1_p;
 use crate::kernel::kernel::DELAYED_TASK_LIST;
+use crate::kernel::kernel::OVERFLOW_DELAYED_TASK_LIST;
 use crate::kernel::kernel::READY_TASK_LISTS;
 use alloc::format;
 use spin::RwLock;
@@ -232,17 +233,36 @@ pub fn prvAddCurrentTaskToDelayedList() {}
 pub fn vTaskDelay(xTicksToDelay: UBaseType) {
     v_task_enter_critical();
     unsafe {
-        if xTicksToDelay < xNextTaskUnblockTime {
-            xNextTaskUnblockTime = xTicksToDelay + xTickCount;
-        }
+        let xTimeToWake=xTicksToDelay + xTickCount;
         let cur_tcb = pxCurrentTCB_.unwrap();
         let list_item = &(*cur_tcb).xStateListItem;
-        list_item_set_value(&Arc::downgrade(&list_item), xTicksToDelay + xTickCount);
+        list_item_set_value(&Arc::downgrade(&list_item), xTimeToWake);
         ux_list_remove(Arc::downgrade(&list_item));
-        v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
+        if xTimeToWake>xTickCount{
+            v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
+            if xTicksToDelay < xNextTaskUnblockTime {
+                xNextTaskUnblockTime = xTimeToWake;
+            }
+        }
+        else{
+            v_list_insert(&OVERFLOW_DELAYED_TASK_LIST, list_item.clone());
+        }
+        
     }
     v_task_exit_critical();
     taskYield();
+}
+
+fn prvResetNextTaskUnblockTime(){
+
+}
+
+fn taskSWITCH_DELAYED_LISTS() {
+    let mut delayed = DELAYED_TASK_LIST.write();
+    let mut overflowed = OVERFLOW_DELAYED_TASK_LIST.write();
+    let tmp = (*delayed).clone();
+    *delayed = (*overflowed).clone();
+    *overflowed = tmp;
 }
 
 #[no_mangle]
@@ -250,6 +270,10 @@ pub extern "C" fn xTaskIncrementTick() {
     //todo
     unsafe {
         xTickCount += 1;
+        if xTickCount==0{
+            taskSWITCH_DELAYED_LISTS();
+        }
+
         if xTickCount >= xNextTaskUnblockTime {
             loop {
                 if list_is_empty(&DELAYED_TASK_LIST) {

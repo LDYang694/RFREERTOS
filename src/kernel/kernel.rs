@@ -35,6 +35,7 @@ lazy_static! {
     //TODO: tmp size
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
     pub static ref DELAYED_TASK_LIST: ListRealLink = Default::default();
+    pub static ref OVERFLOW_DELAYED_TASK_LIST: ListRealLink = Default::default();
     //todo: overflow task list
     pub static ref TASK1_STACK:[u32;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
     pub static ref TASK2_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];

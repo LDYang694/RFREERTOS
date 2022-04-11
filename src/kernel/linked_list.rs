@@ -18,7 +18,7 @@ pub type ListWeakLink = Weak<RwLock<XList>>;
 pub type ListRealLink = Arc<RwLock<XList>>;
 pub type ListItemLink = Arc<RwLock<XListItem>>;
 pub type ListItemOwnerWeakLink = Weak<RwLock<TCB_t>>;
-const portMAX_DELAY: TickType = 0xffffffff;
+
 //TODO: tmp define tcv_t
 // pub type TCB = u32;
 use alloc::string;
@@ -56,8 +56,8 @@ impl Default for ListItemT {
         }
     }
 }
-#[derive(Debug)]
-// #[derive(Clone, Debug)]
+//#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct XList {
     ux_number_of_items: UBaseType,
     px_index: ListItemWeakLink,
@@ -69,7 +69,7 @@ impl Default for ListT {
     fn default() -> Self {
         //得到一个list_end 然后设置其辅助排序值 并将其next和pre指向自身
         let x_list_end = Arc::new(RwLock::new(XListItem::default()));
-        (*x_list_end).write().x_item_value = portMAX_DELAY;
+        (*x_list_end).write().x_item_value = PORT_MAX_DELAY;
         (*x_list_end).write().px_next = Arc::downgrade(&x_list_end);
         (*x_list_end).write().px_previous = Arc::downgrade(&x_list_end);
         ListT {
@@ -79,6 +79,7 @@ impl Default for ListT {
         }
     }
 }
+
 pub fn list_item_set_pre(item: &ListItemWeakLink, pre: ListItemWeakLink) {
     (*(item.upgrade().unwrap())).write().px_previous = pre;
 }
@@ -172,7 +173,7 @@ impl ListT {
     pub fn insert(&mut self, px_new_list_item: ListItemWeakLink) {
         let x_value_of_insertion = list_item_get_value(&px_new_list_item);
         //println!("{}", x_value_of_insertion);
-        let px_iterator = if x_value_of_insertion == portMAX_DELAY {
+        let px_iterator = if x_value_of_insertion == PORT_MAX_DELAY {
             list_item_get_pre(&(Arc::downgrade(&self.x_list_end)))
         } else {
             let mut iterator = Arc::downgrade(&self.x_list_end);
