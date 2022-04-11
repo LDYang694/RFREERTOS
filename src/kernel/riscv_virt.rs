@@ -30,7 +30,7 @@ pub fn print( s: &str )
 }
 
 // 暴露给应用的打印字符串接口
-pub fn v_send_string( s: &str )
+pub fn vSendString( s: &str )
 {
 	// 初始化串口
 	let dev = Device{

@@ -1,6 +1,5 @@
 use crate::config::*;
 
-
 pub type StackType = u32;
 pub type BaseType = i32;
 pub type UBaseType = u32;
@@ -9,35 +8,35 @@ pub type TickType = u32;
 pub const PORT_MAX_DELAY: TickType = 0xffffffff;
 pub const PORT_TICK_TYPE_IS_ATOMIC: BaseType = 1;
 pub const PORT_STACK_GROWTH: BaseType = -1;
-pub const PORT_TICK_PERIOD_MS: TickType = 1000/CONFIG_TICK_RATE_HZ;
+pub const PORT_TICK_PERIOD_MS: TickType = 1000 / CONFIG_TICK_RATE_HZ;
 pub const PORT_BYTE_ALIGNMENT: BaseType = 16;
 
 #[macro_export]
-macro_rules! port_yield{
-    () =>{
-        unsafe{
+macro_rules! portYIELD {
+    () => {
+        unsafe {
             asm!("ecall");
         }
-    }
+    };
 }
 
 #[macro_export]
-macro_rules! port_end_switching_isr{
-    ($x:expr)=>{
+macro_rules! portEND_SWITCHING_ISR {
+    ($x:expr) => {
         if $x {
-            v_task_switch_context();
+            vTaskSwitchContext();
         }
-    }
+    };
 }
 
 #[macro_export]
-macro_rules! port_yield_from_isr{
-    ($x:expr)=>{
-        port_end_switching_isr!($x);
-    }
+macro_rules! portYIELD_FROM_ISR {
+    ($x:expr) => {
+        portEND_SWITCHING_ISR!($x);
+    };
 }
 
-pub const PORT_CRITICAL_NESTING_IN_TCB:BaseType = 1;
+pub const PORT_CRITICAL_NESTING_IN_TCB: BaseType = 1;
 
 #[macro_export]
 macro_rules! port_set_interrupt_mask_from_isr {
@@ -47,88 +46,88 @@ macro_rules! port_set_interrupt_mask_from_isr {
 }
 
 #[macro_export]
-macro_rules!  port_clear_interrupt_mask_from_isr{
-    ($x:expr)=>{
+macro_rules! portCLEAR_INTERRUPT_MASK_FROM_ISR {
+    ($x:expr) => {
         $x
-    }
+    };
 }
 
 #[macro_export]
-macro_rules! port_disable_interrupts{
-    ()=>{
-        unsafe{
+macro_rules! portDISABLE_INTERRUPTS {
+    () => {
+        unsafe {
             asm!("csrci mstatus, 8");
         }
-    }
+    };
 }
 
 #[macro_export]
-macro_rules! port_enable_interrupts{
-    ()=>{
-        unsafe{
+macro_rules! portENABLE_INTERRUPTS {
+    () => {
+        unsafe {
             asm!("csrsi mstatus, 8");
         }
-    }
+    };
 }
 
 #[macro_export]
-macro_rules! portENTER_CRITICAL{
-    ()=>{
+macro_rules! portENTER_CRITICAL {
+    () => {
         vTaskEnterCritical();
-    }
+    };
 }
 
 #[macro_export]
-macro_rules! portEXIT_CRITICAL{
-    ()=>{
+macro_rules! portEXIT_CRITICAL {
+    () => {
         vTaskExitCritical();
-    }
+    };
 }
 
-pub const USE_PORT_OPTIMISED_TASK_SELECTION:BaseType = 1;
+pub const USE_PORT_OPTIMISED_TASK_SELECTION: BaseType = 1;
 
 #[macro_export]
-macro_rules! port_record_ready_priority{
-    ($x:expr,$y:expr)=>{
-        $y=$y|(1<<$x);
-    }
+macro_rules! portRECORD_READY_PRIORITY {
+    ($x:expr,$y:expr) => {
+        $y = $y | (1 << $x);
+    };
 }
 
 #[macro_export]
-macro_rules! port_reset_ready_priority{
+macro_rules! portRESET_READY_PRIORITY{
     ($x:expr,$y:expr)=>{
         $y=$y&(~(1<<$x));
     }
 }
 
 #[macro_export]
-macro_rules! port_get_highest_priority{
-    ($x:expr,$y:expr)=>{
-        $x=31-$y.leading_zeros();
-    }
+macro_rules! portGET_HIGHEST_PRIORITY {
+    ($x:expr,$y:expr) => {
+        $x = 31 - $y.leading_zeros();
+    };
 }
 
 #[macro_export]
-macro_rules! port_nop{
-    ()=>{
-        unsafe{
+macro_rules! portNOP {
+    () => {
+        unsafe {
             asm!("nop");
         }
-    }
+    };
 }
 
 #[macro_export]
-macro_rules! port_memory_barrier{
-    ()=>{}
-        
+macro_rules! portMEMORY_BARRIER {
+    () => {
+        //TODO:
+    };
 }
 
 #[macro_export]
-macro_rules! mt_coverage_test_marker{
-    ()=>{
-        unsafe{
+macro_rules! mtCOVERAGE_TEST_MARKER {
+    () => {
+        unsafe {
             asm!("nop");
         }
-    }
-        
+    };
 }

@@ -6,11 +6,11 @@ use crate::kernel::kernel::OVERFLOW_DELAYED_TASK_LIST;
 use crate::kernel::kernel::READY_TASK_LISTS;
 use crate::kernel::linked_list::*;
 use crate::kernel::portable::*;
-use crate::mt_coverage_test_marker;
+use crate::mtCOVERAGE_TEST_MARKER;
 use crate::pdFALSE;
-use crate::port_disable_interrupts;
-use crate::port_enable_interrupts;
-use crate::port_yield;
+use crate::portDISABLE_INTERRUPTS;
+use crate::portENABLE_INTERRUPTS;
+use crate::portYIELD;
 use crate::portmacro::*;
 use alloc::format;
 use alloc::string::ToString;
@@ -206,7 +206,7 @@ pub fn prvInitialiseNewTask(
     pxNewTCB
 }
 
-pub fn v_task_start_scheduler() {
+pub fn vTaskStartScheduler() {
     unsafe {
         X_SCHEDULER_RUNNING = pdTRUE!();
     }
@@ -221,7 +221,7 @@ fn prvInitialiseTaskLists() {
 }
 
 pub fn vTaskEnterCritical() {
-    port_disable_interrupts!();
+    portDISABLE_INTERRUPTS!();
     unsafe {
         if X_SCHEDULER_RUNNING != pdFALSE!() {
             (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).uxCriticalNesting += 1;
@@ -229,7 +229,7 @@ pub fn vTaskEnterCritical() {
                 // TODO: portASSERT_IF_IN_ISR
             }
         } else {
-            mt_coverage_test_marker!();
+            mtCOVERAGE_TEST_MARKER!();
         }
     }
 }
@@ -241,15 +241,15 @@ pub fn vTaskExitCritical() {
             if (*cur_tcb).uxCriticalNesting > 0 {
                 (*(cur_tcb as *mut tskTaskControlBlock)).uxCriticalNesting -= 1;
                 if (*(cur_tcb)).uxCriticalNesting == 0 {
-                    port_enable_interrupts!();
+                    portENABLE_INTERRUPTS!();
                 } else {
-                    mt_coverage_test_marker!();
+                    mtCOVERAGE_TEST_MARKER!();
                 }
             } else {
-                mt_coverage_test_marker!();
+                mtCOVERAGE_TEST_MARKER!();
             }
         } else {
-            mt_coverage_test_marker!();
+            mtCOVERAGE_TEST_MARKER!();
         }
     }
 }
@@ -278,7 +278,7 @@ pub fn taskSELECT_HIGHEST_PRIORITY() -> usize {
 }
 
 pub fn taskYield() {
-    port_yield!();
+    portYIELD!();
 }
 
 pub fn prvAddCurrentTaskToDelayedList() {}

@@ -46,9 +46,7 @@ lazy_static! {
     pub static ref TCB3_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
 
-fn tf() {
-    let a = 0;
-}
+
 
 #[no_mangle]
 pub extern "C" fn kernel_init() {

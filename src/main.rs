@@ -24,14 +24,14 @@ fn delay(time: u32) {
 fn task1(t: *mut c_void) {
     let a=0;
     let b=a+1;
-    v_send_string("11111 gogogogo!!!");
+    vSendString("11111 gogogogo!!!");
     
     loop {
         //delay(10000);
         /*unsafe{
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
-        v_send_string("11111 gogogogo!!!(in loop)");
+        vSendString("11111 gogogogo!!!(in loop)");
         vTaskDelay(1);
         /*unsafe{
             vTaskPrioritySet(None,2);
@@ -42,13 +42,13 @@ fn task1(t: *mut c_void) {
 fn task2(t: *mut c_void) {
     let b=0;
     let a=b+1;
-    v_send_string("22222 gogogogo!!!");
+    vSendString("22222 gogogogo!!!");
     
     loop {
         /*unsafe{
             vTaskPrioritySet(task2handler.clone(),1);
         }*/
-        v_send_string("22222 gogogogo!!!(in loop)");
+        vSendString("22222 gogogogo!!!(in loop)");
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
@@ -59,10 +59,10 @@ fn task2(t: *mut c_void) {
 fn task3(t: *mut c_void) {
     let b=0;
     let a=b+1;
-    v_send_string("33333 gogogogo!!!");
+    vSendString("33333 gogogogo!!!");
     loop {
         delay(10000);
-        v_send_string("33333 gogogogo!!!(in loop)");
+        vSendString("33333 gogogogo!!!(in loop)");
     }
 }
 pub fn main_new() {
@@ -130,7 +130,7 @@ pub fn main_new_1() {
     // v_list_insert_end(&READY_TASK_LISTS[2], (TCB3_p.read().xStateListItem).clone());
 
     print("start scheduler!!!!!!!!!");
-    v_task_start_scheduler();
+    vTaskStartScheduler();
     loop {
         panic! {"error in loop!!!!!"};
     }

@@ -2,8 +2,8 @@ extern crate alloc;
 use alloc::sync::{Arc, Weak};
 use crate::config::*;
 use crate::linked_list::*;
-use crate::port_disable_interrupts;
-use crate::port_enable_interrupts;
+use crate::portDISABLE_INTERRUPTS;
+use crate::portENABLE_INTERRUPTS;
 use crate::portmacro::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
@@ -119,17 +119,7 @@ pub fn set_current_tcb(tcb: Option<*const tskTaskControlBlock>) {
 
 
 
-// fn taskSELECT_HIGHEST_PRIORITY()->usize{
-//     for i in 1..16
-//     {
-//         let j=16-i;
-//         if !list_is_empty(&READY_TASK_LISTS[j]){
-//             return j;
-//         }
-//     }
-//     print("empty!");
-//     return 0;
-// }
+
 
 
 pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
