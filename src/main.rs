@@ -87,7 +87,7 @@ pub fn main_new_1() {
 
     print("task1handler");
     unsafe{
-        task1handler=x_task_create_static(
+        task1handler=xTaskCreateStatic(
             task1 as u32,
             "task1",
             USER_STACK_SIZE as u32,
@@ -103,7 +103,7 @@ pub fn main_new_1() {
 
     print("task2handler");
     unsafe{
-        task2handler=x_task_create_static(
+        task2handler=xTaskCreateStatic(
             task2 as u32,
             "task2",
             USER_STACK_SIZE as u32,

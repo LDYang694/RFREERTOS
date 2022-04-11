@@ -36,14 +36,14 @@ pub fn v_send_string( s: &str )
 	let dev = Device{
 		addr: NS16550_ADDR,
 	};
-	v_task_enter_critical();
+	vTaskEnterCritical();
 
 	for c in s.bytes(){
 		v_out_ns16550( &dev, &c );
 	}
 	v_out_ns16550( &dev, &('\n' as u8) );
 
-	v_task_exit_critical();
+	vTaskExitCritical();
 }
 
 fn handle_trap()

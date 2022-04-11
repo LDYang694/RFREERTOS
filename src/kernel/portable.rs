@@ -134,12 +134,12 @@ pub fn set_current_tcb(tcb: Option<*const tskTaskControlBlock>) {
 
 pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
 {
-    v_task_enter_critical();
+    vTaskEnterCritical();
     match pxTask{
         Some(x)=>{
             ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
             v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
-            x.write().priority=uxNewPriority;
+            x.write().uxPriority=uxNewPriority;
         }
         None=>{
             unsafe{
@@ -148,14 +148,14 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
                         
                         ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
                         v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
-                        (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).priority=uxNewPriority;
+                        (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).uxPriority=uxNewPriority;
                     }
                     None=>{}
                 }
             }
         }
     }
-    v_task_exit_critical();
+    vTaskExitCritical();
 }
 
 pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
@@ -163,7 +163,7 @@ pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
     unsafe{
         match pxCurrentTCB_{
             Some(x)=>unsafe {
-                return (*x).priority;
+                return (*x).uxPriority;
             }
             None=>{return 0;}
         }

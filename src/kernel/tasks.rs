@@ -1,5 +1,9 @@
 extern crate alloc;
 
+use crate::kernel::kernel::TCB1_p;
+use crate::kernel::kernel::DELAYED_TASK_LIST;
+use crate::kernel::kernel::OVERFLOW_DELAYED_TASK_LIST;
+use crate::kernel::kernel::READY_TASK_LISTS;
 use crate::kernel::linked_list::*;
 use crate::kernel::portable::*;
 use crate::mt_coverage_test_marker;
@@ -7,14 +11,10 @@ use crate::pdFALSE;
 use crate::port_disable_interrupts;
 use crate::port_enable_interrupts;
 use crate::port_yield;
+use crate::portmacro::*;
+use alloc::format;
 use alloc::string::ToString;
 use alloc::sync::{Arc, Weak};
-use crate::portmacro::*;
-use crate::kernel::kernel::TCB1_p;
-use crate::kernel::kernel::DELAYED_TASK_LIST;
-use crate::kernel::kernel::OVERFLOW_DELAYED_TASK_LIST;
-use crate::kernel::kernel::READY_TASK_LISTS;
-use alloc::format;
 use spin::RwLock;
 pub type StackType_t = usize;
 pub type StackType_t_link = usize;
@@ -26,11 +26,12 @@ pub type UBaseType_t = usize;
 pub type TaskFunction_t = *mut fn(*mut c_void);
 // use std::cell::RefCell;
 // use alloc::sync::{Arc, Weak};
+use crate::portENTER_CRITICAL;
+use crate::portEXIT_CRITICAL;
 use crate::riscv_virt::*;
 use alloc::string::String;
 use core::arch::asm;
 use core::ffi::c_void;
-
 pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
 pub static mut xTickCount: UBaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
@@ -41,7 +42,18 @@ macro_rules! pdFALSE {
         false
     };
 }
-
+#[macro_export]
+macro_rules! taskENTER_CRITICAL {
+    () => {
+        portENTER_CRITICAL!();
+    };
+}
+#[macro_export]
+macro_rules! taskEXIT_CRITICAL {
+    () => {
+        portEXIT_CRITICAL!();
+    };
+}
 #[macro_export]
 macro_rules! pdTRUE {
     () => {
@@ -64,7 +76,7 @@ pub struct tskTaskControlBlock {
     pcTaskName: String,
     pub xStateListItem: ListItemLink,
     pub uxCriticalNesting: UBaseType_t,
-    pub priority: UBaseType,
+    pub uxPriority: UBaseType,
 }
 impl Default for tskTaskControlBlock {
     fn default() -> Self {
@@ -74,7 +86,7 @@ impl Default for tskTaskControlBlock {
             pcTaskName: String::new(),
             xStateListItem: Default::default(),
             uxCriticalNesting: 0,
-            priority: 0,
+            uxPriority: 0,
         }
     }
 }
@@ -87,35 +99,77 @@ pub type tskTCB = tskTaskControlBlock;
 pub type TCB_t = tskTCB;
 //TaskHandle_t=tskTaskControlBlock*
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
-
-pub fn x_task_create_static(
+#[cfg(feature = "configSUPPORT_STATIC_ALLOCATION")]
+pub fn xTaskCreateStatic(
     pxTaskCode: u32,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
     puxStackBuffer: Option<StackType_t_link>,
     pxTaskBuffer: Option<TCB_t_link>,
-    priority: UBaseType,
+    uxPriority: UBaseType,
 ) -> Option<TaskHandle_t> {
-    let xReturn = Arc::new(RwLock::new(tskTaskControlBlock::default()));
     print("xTaskCreateStatic 1111");
-    //TODO:assert if =true
+    assert!(puxStackBuffer.is_some());
+    assert!(pxTaskBuffer.is_some());
+    //TODO: C:
+    //     #if ( configASSERT_DEFINED == 1 )
+    //     {
+    //         /* Sanity check that the size of the structure used to declare a
+    //          * variable of type StaticTask_t equals the size of the real task
+    //          * structure. */
+    //         volatile size_t xSize = sizeof( StaticTask_t );
+    //         configASSERT( xSize == sizeof( TCB_t ) );
+    //         ( void ) xSize; /* Prevent lint warning when configASSERT() is not used. */
+    //     }
+    // #endif /* configASSERT_DEFINED */
+    //TODO: fix xReturn
+    let xReturn = Arc::new(RwLock::new(tskTaskControlBlock::default()));
+
     let pxNewTCB: TCB_t_link = pxTaskBuffer.unwrap().clone();
     TCB_set_pxStack(&pxNewTCB, puxStackBuffer.unwrap());
-    print("xTaskCreateStatic 2222");
+    //TODO: C:
+    //     #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
+    //     {
+    //         /* Tasks can be created statically or dynamically, so note this
+    //          * task was created statically in case the task is later deleted. */
+    //         pxNewTCB->ucStaticallyAllocated = tskSTATICALLY_ALLOCATED_STACK_AND_TCB;
+    //     }
+    // #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
     let xReturn = prvInitialiseNewTask(
         pxTaskCode,
         pcName,
         ulStackDepth,
         pvParameters,
         &xReturn,
-        priority,
-        pxNewTCB,
+        uxPriority,
+        pxNewTCB.clone(),
     );
     print("xTaskCreateStatic 3333");
+    // prvAddNewTaskToReadyList(pxNewTCB.clone());
     Some(xReturn)
 }
-
+pub fn prvAddNewTaskToReadyList(pxNewTCB: TCB_t_link) {
+    // taskENTER_CRITICAL!();
+    {
+        //TODO:
+        prvAddTaskToReadyList(pxNewTCB);
+    }
+    // taskEXIT_CRITICAL!();
+}
+pub fn prvAddTaskToReadyList(pxNewTCB: TCB_t_link) {
+    let uxPriority = pxNewTCB.read().uxPriority;
+    let s_ = format!("uxPriority{:X}", uxPriority);
+    print(&s_);
+    taskRECORD_READY_PRIORITY(uxPriority);
+    v_list_insert_end(
+        &READY_TASK_LISTS[uxPriority as usize],
+        (pxNewTCB.read().xStateListItem).clone(),
+    );
+}
+pub fn taskRECORD_READY_PRIORITY(uxPriority: UBaseType) {
+    //TODO: set max uxTopReadyPriority
+}
 pub fn prvInitialiseNewTask(
     pxTaskCode: u32,
     pcName: &str,
@@ -132,7 +186,7 @@ pub fn prvInitialiseNewTask(
     //TODO: name length
     print("prvInitialiseNewTask 1111");
     pxNewTCB.write().pcTaskName = pcName.to_string();
-    pxNewTCB.write().priority = priority;
+    pxNewTCB.write().uxPriority = priority;
     //TODO:auto init
     print("prvInitialiseNewTask 2222");
     list_item_set_owner(&pxNewTCB.write().xStateListItem, Arc::downgrade(&pxNewTCB));
@@ -162,12 +216,11 @@ pub fn v_task_start_scheduler() {
     }
 }
 
-// pub fn x_task_create_static() {}
 fn prvInitialiseTaskLists() {
     //initial in list impl
 }
 
-pub fn v_task_enter_critical() {
+pub fn vTaskEnterCritical() {
     port_disable_interrupts!();
     unsafe {
         if X_SCHEDULER_RUNNING != pdFALSE!() {
@@ -181,7 +234,7 @@ pub fn v_task_enter_critical() {
     }
 }
 
-pub fn v_task_exit_critical() {
+pub fn vTaskExitCritical() {
     unsafe {
         let cur_tcb = pxCurrentTCB_.unwrap();
         if X_SCHEDULER_RUNNING != pdFALSE!() {
@@ -231,31 +284,27 @@ pub fn taskYield() {
 pub fn prvAddCurrentTaskToDelayedList() {}
 
 pub fn vTaskDelay(xTicksToDelay: UBaseType) {
-    v_task_enter_critical();
+    vTaskEnterCritical();
     unsafe {
-        let xTimeToWake=xTicksToDelay + xTickCount;
+        let xTimeToWake = xTicksToDelay + xTickCount;
         let cur_tcb = pxCurrentTCB_.unwrap();
         let list_item = &(*cur_tcb).xStateListItem;
         list_item_set_value(&Arc::downgrade(&list_item), xTimeToWake);
         ux_list_remove(Arc::downgrade(&list_item));
-        if xTimeToWake>xTickCount{
+        if xTimeToWake > xTickCount {
             v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
             if xTicksToDelay < xNextTaskUnblockTime {
                 xNextTaskUnblockTime = xTimeToWake;
             }
-        }
-        else{
+        } else {
             v_list_insert(&OVERFLOW_DELAYED_TASK_LIST, list_item.clone());
         }
-        
     }
-    v_task_exit_critical();
+    vTaskExitCritical();
     taskYield();
 }
 
-fn prvResetNextTaskUnblockTime(){
-
-}
+fn prvResetNextTaskUnblockTime() {}
 
 fn taskSWITCH_DELAYED_LISTS() {
     let mut delayed = DELAYED_TASK_LIST.write();
@@ -270,7 +319,7 @@ pub extern "C" fn xTaskIncrementTick() {
     //todo
     unsafe {
         xTickCount += 1;
-        if xTickCount==0{
+        if xTickCount == 0 {
             taskSWITCH_DELAYED_LISTS();
         }
 
@@ -286,7 +335,7 @@ pub extern "C" fn xTaskIncrementTick() {
                         ux_list_remove(Arc::downgrade(&head));
                         let owner_: ListItemOwnerWeakLink =
                             list_item_get_owner(&Arc::downgrade(&head));
-                        let prio: UBaseType = owner_.upgrade().unwrap().read().priority;
+                        let prio: UBaseType = owner_.upgrade().unwrap().read().uxPriority;
                         v_list_insert_end(&READY_TASK_LISTS[prio as usize], head);
                     } else {
                         xNextTaskUnblockTime = head.read().x_item_value;
@@ -299,7 +348,13 @@ pub extern "C" fn xTaskIncrementTick() {
 }
 
 pub fn xPortSysTickHandler() {
-    v_task_enter_critical();
+    vTaskEnterCritical();
     xTaskIncrementTick();
-    v_task_exit_critical();
+    vTaskExitCritical();
 }
+
+// macro_rules! taskENTER_CRITICAL_FROM_ISR {
+//     () => {
+//         portSET_INTERRUPT_MASK_FROM_ISR();
+//     };
+// }

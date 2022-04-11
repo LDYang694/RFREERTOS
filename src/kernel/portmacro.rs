@@ -72,16 +72,16 @@ macro_rules! port_enable_interrupts{
 }
 
 #[macro_export]
-macro_rules! port_enter_critical{
+macro_rules! portENTER_CRITICAL{
     ()=>{
-        v_task_enter_critical();
+        vTaskEnterCritical();
     }
 }
 
 #[macro_export]
-macro_rules! port_exit_critical{
+macro_rules! portEXIT_CRITICAL{
     ()=>{
-        v_task_exit_critical();
+        vTaskExitCritical();
     }
 }
 
