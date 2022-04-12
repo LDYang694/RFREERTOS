@@ -31,7 +31,12 @@ use crate::portEXIT_CRITICAL;
 use crate::riscv_virt::*;
 use alloc::string::String;
 use core::arch::asm;
+use core::clone;
 use core::ffi::c_void;
+
+use super::config::USER_STACK_SIZE;
+use super::kernel::IDLE_STACK;
+use super::kernel::IDLE_p;
 pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
 pub static mut xTickCount: UBaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
@@ -69,7 +74,7 @@ extern "C" {
     ) -> *mut StackType_t;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct tskTaskControlBlock {
     pub pxTopOfStack: StackType_t_link,
     pxStack: StackType_t_link,
@@ -136,7 +141,7 @@ pub fn xTaskCreateStatic(
     //         pxNewTCB->ucStaticallyAllocated = tskSTATICALLY_ALLOCATED_STACK_AND_TCB;
     //     }
     // #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
-    let xReturn = prvInitialiseNewTask(
+    prvInitialiseNewTask(
         pxTaskCode,
         pcName,
         ulStackDepth,
@@ -146,7 +151,7 @@ pub fn xTaskCreateStatic(
         pxNewTCB.clone(),
     );
     print("xTaskCreateStatic 3333");
-    // prvAddNewTaskToReadyList(pxNewTCB.clone());
+    prvAddNewTaskToReadyList(pxNewTCB.clone());
     Some(xReturn)
 }
 pub fn prvAddNewTaskToReadyList(pxNewTCB: TCB_t_link) {
@@ -203,14 +208,36 @@ pub fn prvInitialiseNewTask(
     print(&s_);
     print("prvInitialiseNewTask 4444");
     //TODO: return
+    *pxCreatedTask.write() = (*(pxNewTCB.write())).clone();
     pxNewTCB
 }
-
+pub fn prvIdleTask(t: *mut c_void) {
+    vSendString("idle gogogogo");
+    loop {
+        vSendString("idle gogogogo!!!(in loop)");
+    }
+}
 pub fn vTaskStartScheduler() {
     unsafe {
         X_SCHEDULER_RUNNING = pdTRUE!();
     }
-    set_current_tcb(Some(&*TCB1_p.read()));
+    if cfg!(feature = "configSUPPORT_STATIC_ALLOCATION") {
+        let param: Param_link = 0;
+        let stack2ptr: StackType_t_link =
+        &*IDLE_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
+            - 4;
+        xTaskCreateStatic(
+            prvIdleTask as u32,
+            "idle",
+            USER_STACK_SIZE as u32,
+            Some(param),
+            Some(stack2ptr),
+            Some(IDLE_p.clone()),
+            0,
+        );
+    }
+    set_current_tcb(Some(&*IDLE_p.read()));
+    print("set tcb success");
     if x_port_start_scheduler() != pdFALSE!() {
         panic!("error scheduler!!!!!!");
     }
@@ -352,7 +379,50 @@ pub fn xPortSysTickHandler() {
     xTaskIncrementTick();
     vTaskExitCritical();
 }
+#[cfg(feature = "configSUPPORT_DYNAMIC_ALLOCATION")]
 
+pub fn xTaskCreate(
+    pxTaskCode: u32,
+    pcName: &str,
+    ulStackDepth: u32,
+    pvParameters: Option<Param_link>,
+
+    uxPriority: UBaseType,
+    pxCreatedTask: Option<TaskHandle_t>,
+) -> BaseType {
+    let xReturn: BaseType = 0;
+    let mut pxStack: StackType_t_link = 0;
+    // let stack:[u32;ulStackDepth]= [0;ulStackDepth];
+    print("xTaskCreate 11111111");
+    use alloc::alloc::Layout;
+
+    use alloc::vec::Vec;
+    let layout = Layout::from_size_align(ulStackDepth as usize * 4, 4)
+        .ok()
+        .unwrap();
+    let stack_ptr: *mut u8;
+    unsafe {
+        stack_ptr = alloc::alloc::alloc(layout);
+    }
+    pxStack = stack_ptr as usize + ulStackDepth as usize * 4 - 4;
+    // let stack: Vec<usize> = Vec::with_capacity(ulStackDepth as usize);
+
+    let pxNewTCB: TCB_t_link = Arc::new(RwLock::new(tskTaskControlBlock::default()));
+    TCB_set_pxStack(&pxNewTCB, pxStack);
+    let s_ = format!("top of stack{:X}", pxNewTCB.read().pxTopOfStack);
+    print(&s_);
+    prvInitialiseNewTask(
+        pxTaskCode,
+        pcName,
+        ulStackDepth,
+        pvParameters,
+        &pxCreatedTask.unwrap(),
+        uxPriority,
+        pxNewTCB.clone(),
+    );
+    prvAddNewTaskToReadyList(pxNewTCB.clone());
+    1
+}
 // macro_rules! taskENTER_CRITICAL_FROM_ISR {
 //     () => {
 //         portSET_INTERRUPT_MASK_FROM_ISR();

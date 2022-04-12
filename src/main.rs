@@ -3,11 +3,12 @@
 #![feature(alloc_error_handler)]
 #![allow(non_snake_case)]
 mod kernel;
-
-use core::ffi::c_void;
-
-use kernel::{*, riscv_virt::*, tasks::*, kernel::*, config::*, linked_list::*,};
-
+extern crate alloc;
+use alloc::sync::Arc;
+use core::{borrow::Borrow, ffi::c_void};
+use kernel::{config::*, kernel::*, linked_list::*, riscv_virt::*, tasks::*, *};
+use lazy_static::{__Deref, lazy_static};
+use spin::RwLock;
 
 #[no_mangle]
 pub extern "C" fn main() -> ! {
@@ -22,28 +23,28 @@ fn delay(time: u32) {
     }
 }
 fn task1(t: *mut c_void) {
-    let a=0;
-    let b=a+1;
+    let a = 0;
+    let b = a + 1;
     vSendString("11111 gogogogo!!!");
-    
+
     loop {
-        //delay(10000);
+        // delay(10000);
         /*unsafe{
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
         vSendString("11111 gogogogo!!!(in loop)");
-        vTaskDelay(1);
+        // vTaskDelay(10);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
-        taskYield();
+        // taskYield();
     }
 }
 fn task2(t: *mut c_void) {
-    let b=0;
-    let a=b+1;
+    let b = 0;
+    let a = b + 1;
     vSendString("22222 gogogogo!!!");
-    
+
     loop {
         /*unsafe{
             vTaskPrioritySet(task2handler.clone(),1);
@@ -52,13 +53,13 @@ fn task2(t: *mut c_void) {
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
-        taskYield();
+        // taskYield();
     }
 }
 
 fn task3(t: *mut c_void) {
-    let b=0;
-    let a=b+1;
+    let b = 0;
+    let a = b + 1;
     vSendString("33333 gogogogo!!!");
     loop {
         delay(10000);
@@ -68,8 +69,13 @@ fn task3(t: *mut c_void) {
 pub fn main_new() {
     main_new_1();
 }
-pub static mut task1handler:Option<TaskHandle_t>=None;
-pub static mut task2handler:Option<TaskHandle_t>=None;
+lazy_static! {
+    pub static ref task1handler: Option<TaskHandle_t> =
+        Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
+    pub static ref task2handler: Option<TaskHandle_t> =
+        Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
+}
+
 pub fn main_new_1() {
     print("main new");
     let param1: Param_link = 0;
@@ -83,39 +89,70 @@ pub fn main_new_1() {
             - 4;
     let stack3ptr: StackType_t_link =
         &*TASK3_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
-                - 4;
+            - 4;
 
     print("task1handler");
-    unsafe{
-        task1handler=xTaskCreateStatic(
+    unsafe {
+        print("xTaskCreate start");
+        let x = print("xTaskCreate 1111");
+        xTaskCreate(
             task1 as u32,
             "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
-            Some(stack1ptr),
-            Some(TCB1_p.clone()),
-            2
+            2,
+            Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
         );
-    }
-    
-    print("task insert");
-    v_list_insert_end(&READY_TASK_LISTS[2], (TCB1_p.read().xStateListItem).clone());
-
-    print("task2handler");
-    unsafe{
-        task2handler=xTaskCreateStatic(
+        xTaskCreate(
             task2 as u32,
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            Some(stack2ptr),
-            Some(TCB2_p.clone()),
-            1
+            2,
+            Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
     }
-    
+    //     // xTaskCreate(
+    //     //     task2 as u32,
+    //     //     "task2",
+    //     //     USER_STACK_SIZE as u32,
+    //     //     Some(param2),
+    //     //     2,
+    //     //     Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
+    //     // );
+    // }
+    // unsafe {
+    //     let handler = xTaskCreateStatic(
+    //         task1 as u32,
+    //         "task1",
+    //         USER_STACK_SIZE as u32,
+    //         Some(param1),
+    //         Some(stack1ptr),
+    //         Some(TCB1_p.clone()),
+    //         2,
+    //     );
+    //     // task1handler.replace(handler.unwrap());
+    // }
+
+    // print("task insert");
+    // // v_list_insert_end(&READY_TASK_LISTS[2], (TCB1_p.read().xStateListItem).clone());
+
+    // print("task2handler");
+    // // unsafe{
+    // //     task2handler=
+    // xTaskCreateStatic(
+    //     task2 as u32,
+    //     "task2",
+    //     USER_STACK_SIZE as u32,
+    //     Some(param2),
+    //     Some(stack2ptr),
+    //     Some(TCB2_p.clone()),
+    //     2,
+    // );
+    // // }
+
     print("task insert");
-    v_list_insert_end(&READY_TASK_LISTS[2], (TCB2_p.read().xStateListItem).clone());
+    // v_list_insert_end(&READY_TASK_LISTS[1], (TCB2_p.read().xStateListItem).clone());
 
     // print("task3handler");
     // x_task_create_static(

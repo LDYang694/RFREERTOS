@@ -40,10 +40,12 @@ lazy_static! {
     pub static ref TASK1_STACK:[u32;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
     pub static ref TASK2_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
     pub static ref TASK3_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
+    pub static ref IDLE_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
     //pub static ref pxCurrentTCB_: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
     pub static ref TCB2_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
     pub static ref TCB3_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
+    pub static ref IDLE_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
 
 
