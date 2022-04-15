@@ -1,18 +1,10 @@
-STATE LIST
 函数参数
 ALLOC TASK STACK √
-idle
+idle √
 XQEUEU
-
-DELAY
-
+DELAY √
 延迟中断处理
-
-临界区保护
-
 低功耗模式
+信号量
 
-debug信息
-
-前后端分离
 
