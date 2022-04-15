@@ -35,12 +35,12 @@ use core::clone;
 use core::ffi::c_void;
 
 use super::config::USER_STACK_SIZE;
-use super::kernel::IDLE_STACK;
 use super::kernel::IDLE_p;
+use super::kernel::IDLE_STACK;
 pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
 pub static mut xTickCount: UBaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
-
+pub static mut uxCurrentNumberOfTasks:UBaseType=0;
 #[macro_export]
 macro_rules! pdFALSE {
     () => {
@@ -223,8 +223,9 @@ pub fn vTaskStartScheduler() {
     }
     if cfg!(feature = "configSUPPORT_STATIC_ALLOCATION") {
         let param: Param_link = 0;
-        let stack2ptr: StackType_t_link =
-        &*IDLE_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
+        let stack2ptr: StackType_t_link = &*IDLE_STACK as *const [u32; USER_STACK_SIZE]
+            as *const u32 as usize
+            + USER_STACK_SIZE * 4
             - 4;
         xTaskCreateStatic(
             prvIdleTask as u32,
@@ -394,6 +395,8 @@ pub fn xTaskCreate(
     let mut pxStack: StackType_t_link = 0;
     // let stack:[u32;ulStackDepth]= [0;ulStackDepth];
     print("xTaskCreate 11111111");
+    use core::mem;
+
     use alloc::alloc::Layout;
 
     use alloc::vec::Vec;
@@ -421,10 +424,105 @@ pub fn xTaskCreate(
         pxNewTCB.clone(),
     );
     prvAddNewTaskToReadyList(pxNewTCB.clone());
+    mem::forget(pxNewTCB);
     1
 }
 // macro_rules! taskENTER_CRITICAL_FROM_ISR {
 //     () => {
 //         portSET_INTERRUPT_MASK_FROM_ISR();
 //     };
+// }
+
+pub enum eTaskState {
+    eRunning = 0,
+    eReady = 1,
+    eBlocked = 2,
+    eSuspended = 3,
+    eDeleted = 4,
+    eInvalid = 5,
+}
+#[macro_export]
+macro_rules! get_scheduler_running {
+    () => {
+        unsafe { crate::xSchedulerRunning }
+    };
+}
+#[macro_export]
+macro_rules! get_uxCurrentNumberOfTasks {
+    () => {
+        unsafe { crate::uxCurrentNumberOfTasks }
+    };
+}
+
+#[cfg(feature = "INCLUDE_vTaskSuspend")]
+pub fn vTaskSuspend(xTaskToSuspend: TaskHandle_t) {
+    /*
+    默认传入有效handle or curtcb
+     */
+
+    use crate::kernel::kernel::SUSPENDED_TASK_LIST;
+    taskENTER_CRITICAL!();
+    {
+        let pxTCB = xTaskToSuspend.read();
+        // let pxTCB = prvGetTCBFromHandle(xTaskToSuspend);
+        /* 从就绪/阻塞列表中删除任务并放入挂起列表中。 */
+        if ux_list_remove(Arc::downgrade(&pxTCB.xStateListItem)) == 0 {
+            // taskRESET_READY_PRIORITY( pxTCB->uxPriority );
+            //TODO:
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+        /* 如果任务在等待事件，也从等待事件列表中移除 */
+        //  if ( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL ) {
+        //      ( void ) uxListRemove( &( pxTCB->xEventListItem ) ); (5)
+        //      } else {
+        //      mtCOVERAGE_TEST_MARKER();
+        //      }
+        v_list_insert_end(&SUSPENDED_TASK_LIST, pxTCB.xStateListItem.clone());
+    }
+    taskEXIT_CRITICAL!();
+    if (get_scheduler_running!() != false) {
+        taskENTER_CRITICAL!();
+        {
+            // prvResetNextTaskUnblockTime();//TODO:
+        }
+        taskEXIT_CRITICAL!();
+    } else {
+        mtCOVERAGE_TEST_MARKER!();
+    }
+    // if ( pxTCB == pxCurrentTCB ){//TODO: pxCurrentTCB
+    if 1 == 1 {
+        if get_scheduler_running!() {
+            /* The current task has just been suspended. */
+            // assert!(get_scheduler_suspended!() == 0);
+            // portYIELD_WITHIN_API!();
+        } else {
+            //             if ( listCURRENT_LIST_LENGTH( &xSuspendedTaskList )
+            // 71 == uxCurrentNumberOfTasks ) { (10)
+            // 72 /* 没有其他任务准备就绪，因此将 pxCurrentTCB 设置回 NULL，
+            // 73 以便在创建下一个任务时 pxCurrentTCB 将被设置为指向它，
+            // 74 实际上并不会执行到这里 */
+            // 75
+            // 76 pxCurrentTCB = NULL; (11)
+            // 77 } else {
+            // 78 /* 有其他任务，则切换到其他任务 */
+            // 79
+            // 80 vTaskSwitchContext(); (12)
+            // 81 }
+            // 82
+            if list_current_list_length(&SUSPENDED_TASK_LIST)!=get_uxCurrentNumberOfTasks!(){
+                // pxCurrentTCB = NULL
+            }else{
+                vTaskSwitchContext();
+            }
+        }
+    } else {
+        mtCOVERAGE_TEST_MARKER!();
+    }
+}
+pub static mut xSchedulerRunning: bool = false;
+
+// pub fn prvGetTCBFromHandle(xTaskToSuspend: TaskHandle_t) -> RwLock<TCB_t> {
+//     let x=xTaskToSuspend.read();
+//     x
 // }

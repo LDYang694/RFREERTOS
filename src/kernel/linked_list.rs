@@ -150,8 +150,8 @@ pub fn list_is_empty(px_list: &ListRealLink) -> bool {
         .ux_number_of_items
         == 0
 }
-pub fn list_current_list_length(px_list: &ListWeakLink) -> UBaseType {
-    (*(px_list.upgrade().unwrap())).read().ux_number_of_items
+pub fn list_current_list_length(px_list: &ListRealLink) -> UBaseType {
+    (*(px_list)).read().ux_number_of_items
 }
 pub fn list_get_owner_of_next_entry(px_list: &ListRealLink) -> ListItemOwnerWeakLink {
     //add index and return owner

@@ -4,16 +4,7 @@
 
 extern crate alloc;
 
-// mod allocator;
-// mod config;
-// mod linked_list;
-// mod linked_list_test;
-// mod ns16550;
-// mod portable;
-// #[macro_use]
-// mod portmacro;
-// mod riscv_virt;
-// mod tasks;
+
 
 use crate::allocator::init_heap;
 use crate::config::*;
@@ -36,6 +27,9 @@ lazy_static! {
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
     pub static ref DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref OVERFLOW_DELAYED_TASK_LIST: ListRealLink = Default::default();
+    pub static ref SUSPENDED_TASK_LIST: ListRealLink = Default::default();
+    //TODO:tmp use
+    pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     //todo: overflow task list
     pub static ref TASK1_STACK:[u32;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
     pub static ref TASK2_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
@@ -47,7 +41,22 @@ lazy_static! {
     pub static ref TCB3_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
     pub static ref IDLE_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
-
+#[macro_export]
+macro_rules! get_current_task_handle {
+    () => {
+        crate::CURRENT_TCB
+            .read()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .clone()
+    };
+}
+pub enum SchedulerState {
+    Not_Started,
+    Suspended,
+    Running,
+}
 
 
 #[no_mangle]

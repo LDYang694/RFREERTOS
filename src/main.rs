@@ -33,7 +33,7 @@ fn task1(t: *mut c_void) {
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
         vSendString("11111 gogogogo!!!(in loop)");
-        // vTaskDelay(10);
+        vTaskDelay(10);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
