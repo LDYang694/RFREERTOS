@@ -28,6 +28,7 @@ pub type TaskFunction_t = *mut fn(*mut c_void);
 // use alloc::sync::{Arc, Weak};
 use crate::portENTER_CRITICAL;
 use crate::portEXIT_CRITICAL;
+use crate::portYIELD_WITHIN_API;
 use crate::riscv_virt::*;
 use alloc::string::String;
 use core::arch::asm;
@@ -40,7 +41,7 @@ use super::kernel::IDLE_STACK;
 pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
 pub static mut xTickCount: UBaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
-pub static mut uxCurrentNumberOfTasks:UBaseType=0;
+pub static mut uxCurrentNumberOfTasks: UBaseType = 0;
 #[macro_export]
 macro_rules! pdFALSE {
     () => {
@@ -446,6 +447,12 @@ macro_rules! get_scheduler_running {
     };
 }
 #[macro_export]
+macro_rules! taskYIELD_IF_USING_PREEMPTION {
+    () => {
+        portYIELD_WITHIN_API!();
+    };
+}
+#[macro_export]
 macro_rules! get_uxCurrentNumberOfTasks {
     () => {
         unsafe { crate::uxCurrentNumberOfTasks }
@@ -494,6 +501,7 @@ pub fn vTaskSuspend(xTaskToSuspend: TaskHandle_t) {
             /* The current task has just been suspended. */
             // assert!(get_scheduler_suspended!() == 0);
             // portYIELD_WITHIN_API!();
+            print("R_FreeRTOS paniced! portYIELD_WITHIN_API");
         } else {
             //             if ( listCURRENT_LIST_LENGTH( &xSuspendedTaskList )
             // 71 == uxCurrentNumberOfTasks ) { (10)
@@ -508,9 +516,13 @@ pub fn vTaskSuspend(xTaskToSuspend: TaskHandle_t) {
             // 80 vTaskSwitchContext(); (12)
             // 81 }
             // 82
-            if list_current_list_length(&SUSPENDED_TASK_LIST)!=get_uxCurrentNumberOfTasks!(){
+            if list_current_list_length(&SUSPENDED_TASK_LIST) != get_uxCurrentNumberOfTasks!() {
+                /* 没有其他任务准备就绪，因此将 pxCurrentTCB 设置回 NULL，
+                以便在创建下一个任务时 pxCurrentTCB 将被设置为指向它，
+                实际上并不会执行到这里 */
                 // pxCurrentTCB = NULL
-            }else{
+            } else {
+                /* 有其他任务，则切换到其他任务 */
                 vTaskSwitchContext();
             }
         }
@@ -524,3 +536,31 @@ pub static mut xSchedulerRunning: bool = false;
 //     let x=xTaskToSuspend.read();
 //     x
 // }
+#[cfg(feature = "INCLUDE_vTaskSuspend")]
+pub fn vTaskResume(xTaskToResume: TaskHandle_t) {
+    //TODO: 检查要恢复的任务是否被挂起
+    //TODO：assert is not None &&pxTCB != pxCurrentTCB
+    let mut pxTCB = xTaskToResume.read();
+    taskENTER_CRITICAL!();
+    {
+        if prvTaskIsTaskSuspended(&xTaskToResume) != false {
+            ux_list_remove(Arc::downgrade(&pxTCB.xStateListItem));
+            prvAddNewTaskToReadyList(xTaskToResume.clone());
+            if (pxTCB.uxPriority >= get_current_tcb().unwrap().uxPriority) {
+                /* 因为恢复的任务在当前情况下的优先级最高
+                36 调用 taskYIELD_IF_USING_PREEMPTION()进行一次任务切换*/
+                // 37 taskYIELD_IF_USING_PREEMPTION();
+                taskYIELD_IF_USING_PREEMPTION!();
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+    }
+    taskEXIT_CRITICAL!();
+}
+
+pub fn prvTaskIsTaskSuspended(xTaskToResume: &TaskHandle_t) -> bool {
+    true
+}
