@@ -237,7 +237,7 @@ pub fn vTaskStartScheduler() {
             0,
         );
     }
-    set_current_tcb(Some(&*IDLE_p.read()));
+    set_current_tcb(Some(Arc::downgrade(&IDLE_p)));
     print("set tcb success");
     if x_port_start_scheduler() != pdFALSE!() {
         panic!("error scheduler!!!!!!");
@@ -252,8 +252,8 @@ pub fn vTaskEnterCritical() {
     portDISABLE_INTERRUPTS!();
     unsafe {
         if X_SCHEDULER_RUNNING != pdFALSE!() {
-            (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).uxCriticalNesting += 1;
-            if (*(pxCurrentTCB_.unwrap())).uxCriticalNesting == 1 {
+            get_current_tcb().unwrap().uxCriticalNesting += 1;
+            if get_current_tcb().unwrap().uxCriticalNesting == 1 {
                 // TODO: portASSERT_IF_IN_ISR
             }
         } else {
@@ -264,11 +264,10 @@ pub fn vTaskEnterCritical() {
 
 pub fn vTaskExitCritical() {
     unsafe {
-        let cur_tcb = pxCurrentTCB_.unwrap();
         if X_SCHEDULER_RUNNING != pdFALSE!() {
-            if (*cur_tcb).uxCriticalNesting > 0 {
-                (*(cur_tcb as *mut tskTaskControlBlock)).uxCriticalNesting -= 1;
-                if (*(cur_tcb)).uxCriticalNesting == 0 {
+            if get_current_tcb().unwrap().uxCriticalNesting > 0 {
+                get_current_tcb().unwrap().uxCriticalNesting -= 1;
+                if get_current_tcb().unwrap().uxCriticalNesting == 0 {
                     portENABLE_INTERRUPTS!();
                 } else {
                     mtCOVERAGE_TEST_MARKER!();
@@ -290,7 +289,7 @@ pub fn taskSELECT_HIGHEST_PRIORITY_TASK() {
     // let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
     let owner: ListItemOwnerWeakLink = list_get_owner_of_next_entry(&READY_TASK_LISTS[max_prio]);
     unsafe {
-        set_current_tcb(Some(&*(*owner.into_raw()).read()));
+        set_current_tcb(Some(owner));
         auto_set_currentTcb();
     }
 }
@@ -315,8 +314,7 @@ pub fn vTaskDelay(xTicksToDelay: UBaseType) {
     vTaskEnterCritical();
     unsafe {
         let xTimeToWake = xTicksToDelay + xTickCount;
-        let cur_tcb = pxCurrentTCB_.unwrap();
-        let list_item = &(*cur_tcb).xStateListItem;
+        let list_item = &get_current_tcb().unwrap().xStateListItem;
         list_item_set_value(&Arc::downgrade(&list_item), xTimeToWake);
         ux_list_remove(Arc::downgrade(&list_item));
         if xTimeToWake > xTickCount {
