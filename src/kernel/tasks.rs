@@ -165,8 +165,8 @@ pub fn prvAddNewTaskToReadyList(pxNewTCB: TCB_t_link) {
 }
 pub fn prvAddTaskToReadyList(pxNewTCB: TCB_t_link) {
     let uxPriority = pxNewTCB.read().uxPriority;
-    let s_ = format!("uxPriority{:X}", uxPriority);
-    print(&s_);
+    // let s_ = format!("uxPriority{:X}", uxPriority);
+    // print(&s_);
     taskRECORD_READY_PRIORITY(uxPriority);
     v_list_insert_end(
         &READY_TASK_LISTS[uxPriority as usize],
@@ -460,11 +460,11 @@ macro_rules! get_uxCurrentNumberOfTasks {
 }
 
 #[cfg(feature = "INCLUDE_vTaskSuspend")]
-pub fn vTaskSuspend(xTaskToSuspend: TaskHandle_t) {
+pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
     /*
     默认传入有效handle or curtcb
      */
-
+    let xTaskToSuspend=xTaskToSuspend_.unwrap();
     use crate::kernel::kernel::SUSPENDED_TASK_LIST;
     taskENTER_CRITICAL!();
     {
@@ -496,7 +496,7 @@ pub fn vTaskSuspend(xTaskToSuspend: TaskHandle_t) {
         mtCOVERAGE_TEST_MARKER!();
     }
     // if ( pxTCB == pxCurrentTCB ){//TODO: pxCurrentTCB
-    if 1 == 1 {
+    if is_current_tcb(Arc::downgrade(&xTaskToSuspend)) {
         if get_scheduler_running!() {
             /* The current task has just been suspended. */
             // assert!(get_scheduler_suspended!() == 0);
@@ -537,30 +537,62 @@ pub static mut xSchedulerRunning: bool = false;
 //     x
 // }
 #[cfg(feature = "INCLUDE_vTaskSuspend")]
-pub fn vTaskResume(xTaskToResume: TaskHandle_t) {
+pub fn vTaskResume(xTaskToResume_: Option<TaskHandle_t>) {
     //TODO: 检查要恢复的任务是否被挂起
     //TODO：assert is not None &&pxTCB != pxCurrentTCB
+    let xTaskToResume=xTaskToResume_.unwrap();
     let mut pxTCB = xTaskToResume.read();
-    taskENTER_CRITICAL!();
-    {
-        if prvTaskIsTaskSuspended(&xTaskToResume) != false {
-            ux_list_remove(Arc::downgrade(&pxTCB.xStateListItem));
-            prvAddNewTaskToReadyList(xTaskToResume.clone());
-            if (pxTCB.uxPriority >= get_current_tcb().unwrap().uxPriority) {
-                /* 因为恢复的任务在当前情况下的优先级最高
-                36 调用 taskYIELD_IF_USING_PREEMPTION()进行一次任务切换*/
-                // 37 taskYIELD_IF_USING_PREEMPTION();
-                taskYIELD_IF_USING_PREEMPTION!();
+    if is_current_tcb(Arc::downgrade(&xTaskToResume)) == false {
+        taskENTER_CRITICAL!();
+        {
+            if prvTaskIsTaskSuspended(&xTaskToResume) != false {
+                ux_list_remove(Arc::downgrade(&pxTCB.xStateListItem));
+                prvAddNewTaskToReadyList(xTaskToResume.clone());
+                if (pxTCB.uxPriority >= get_current_tcb().unwrap().uxPriority) {
+                    /* 因为恢复的任务在当前情况下的优先级最高
+                    36 调用 taskYIELD_IF_USING_PREEMPTION()进行一次任务切换*/
+                    // 37 taskYIELD_IF_USING_PREEMPTION();
+                    taskYIELD_IF_USING_PREEMPTION!();
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
             } else {
                 mtCOVERAGE_TEST_MARKER!();
             }
-        } else {
-            mtCOVERAGE_TEST_MARKER!();
         }
+        taskEXIT_CRITICAL!();
     }
-    taskEXIT_CRITICAL!();
 }
 
 pub fn prvTaskIsTaskSuspended(xTaskToResume: &TaskHandle_t) -> bool {
     true
+}
+
+pub fn prvGetTCBFromHandle(
+    handle: Option<TaskHandle_t>,
+) -> Option<&'static mut tskTaskControlBlock> {
+    match handle {
+        Some(x) => unsafe {
+            let temp = &*(*Arc::into_raw(x)).read() as *const tskTaskControlBlock;
+            Some(&mut *(temp as *mut tskTaskControlBlock))
+        },
+        None => get_current_tcb(),
+    }
+}
+
+pub fn vTaskDelete(xTaskToDelete: Option<TaskHandle_t>) {
+    taskENTER_CRITICAL!();
+    let pxTCB = prvGetTCBFromHandle(xTaskToDelete.clone());
+    ux_list_remove(Arc::downgrade(&pxTCB.unwrap().xStateListItem));
+    //todo：事件相关处理
+    //todo：任务和tcb内存释放
+    //todo：钩子函数
+    taskEXIT_CRITICAL!();
+    let need_yield = match xTaskToDelete {
+        Some(x) => is_current_tcb(Arc::downgrade(&x)),
+        None => true,
+    };
+    if need_yield {
+        portYIELD!();
+    }
 }

@@ -33,7 +33,8 @@ fn task1(t: *mut c_void) {
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
         vSendString("11111 gogogogo!!!(in loop)");
-        vTaskDelay(10);
+        vTaskSuspend(task1handler.clone());
+        // vTaskDelay(10);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
@@ -44,12 +45,13 @@ fn task2(t: *mut c_void) {
     let b = 0;
     let a = b + 1;
     vSendString("22222 gogogogo!!!");
-
+    //vTaskDelete(None);
     loop {
         /*unsafe{
             vTaskPrioritySet(task2handler.clone(),1);
         }*/
         vSendString("22222 gogogogo!!!(in loop)");
+        vTaskResume(task1handler.clone());
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
