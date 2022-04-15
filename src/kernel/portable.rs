@@ -136,7 +136,17 @@ pub fn get_current_tcb()->Option<&'static mut tskTaskControlBlock>{
     }
 }
 
-
+pub fn is_current_tcb(tcb: ListItemOwnerWeakLink)->bool{
+    unsafe{
+        match pxCurrentTCB_{
+            Some(x)=>{
+                let temp:*const tskTaskControlBlock=&*(*tcb.into_raw()).read();
+                temp==x
+            }
+            None=>false
+        }
+    }
+}
 
 
 

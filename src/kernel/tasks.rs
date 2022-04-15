@@ -426,3 +426,36 @@ pub fn xTaskCreate(
 //         portSET_INTERRUPT_MASK_FROM_ISR();
 //     };
 // }
+
+
+pub fn prvGetTCBFromHandle(handle:Option<TaskHandle_t>)->Option<&'static mut tskTaskControlBlock>{
+    match handle{
+        Some(x)=>{
+            unsafe{
+                let temp=&*(*Arc::into_raw(x)).read() as *const tskTaskControlBlock;
+                Some(&mut *(temp as *mut tskTaskControlBlock))
+            }
+        }
+        None=>{
+            get_current_tcb()
+        }
+    }
+}
+
+pub fn vTaskDelete(xTaskToDelete:Option<TaskHandle_t>){
+    taskENTER_CRITICAL!();
+    let pxTCB=prvGetTCBFromHandle(xTaskToDelete.clone());
+    ux_list_remove(Arc::downgrade(&pxTCB.unwrap().xStateListItem));
+    //todo：事件相关处理
+    //todo：任务和tcb内存释放
+    //todo：钩子函数
+    taskEXIT_CRITICAL!();
+    let need_yield= match xTaskToDelete{
+        Some(x)=>is_current_tcb(Arc::downgrade(&x)),
+        None=>true,
+    };
+    if need_yield{
+        portYIELD!();
+    }
+    
+}

@@ -44,7 +44,7 @@ fn task2(t: *mut c_void) {
     let b = 0;
     let a = b + 1;
     vSendString("22222 gogogogo!!!");
-
+    //vTaskDelete(None);
     loop {
         /*unsafe{
             vTaskPrioritySet(task2handler.clone(),1);
