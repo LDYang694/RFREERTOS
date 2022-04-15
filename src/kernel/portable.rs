@@ -86,8 +86,8 @@ pub fn v_port_setup_timer_interrupt() {
 
 pub fn auto_set_currentTcb() {
     unsafe {
-        match pxCurrentTCB_ {
-            Some(x) => pxCurrentTCB = x as u32,
+        match get_current_tcb(){
+            Some(x) => pxCurrentTCB = x as *const tskTaskControlBlock as u32,
             None => pxCurrentTCB = 0,
         }
     }
@@ -153,12 +153,12 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
         }
         None=>{
             unsafe{
-                match pxCurrentTCB_{
+                match get_current_tcb(){
                     Some(x)=>{
                         
                         ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
                         v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
-                        (*(pxCurrentTCB_.unwrap() as *mut tskTaskControlBlock)).uxPriority=uxNewPriority;
+                        x.uxPriority=uxNewPriority;
                     }
                     None=>{}
                 }
@@ -171,7 +171,7 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
 pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
 {
     unsafe{
-        match pxCurrentTCB_{
+        match get_current_tcb(){
             Some(x)=>unsafe {
                 return (*x).uxPriority;
             }
