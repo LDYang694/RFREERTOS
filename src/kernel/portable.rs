@@ -110,9 +110,29 @@ pub fn x_port_start_scheduler() -> bool {
     false
 }
 
-pub fn set_current_tcb(tcb: Option<*const tskTaskControlBlock>) {
+pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {
     unsafe {
-        pxCurrentTCB_ = tcb;
+        match tcb{
+            Some(x)=>{
+                pxCurrentTCB_=Some(&*(*x.into_raw()).read());
+            }
+            None=>{
+                pxCurrentTCB_=None;
+            }
+        }
+    }
+}
+
+pub fn get_current_tcb()->Option<&'static mut tskTaskControlBlock>{
+    unsafe{
+        match pxCurrentTCB_{
+            Some(x)=>{
+                Some(&mut *(x as *mut tskTaskControlBlock))
+            }
+            None=>{
+                None
+            }
+        }
     }
 }
 
