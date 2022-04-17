@@ -1,9 +1,6 @@
 extern crate alloc;
 
-use crate::kernel::kernel::TCB1_p;
-use crate::kernel::kernel::DELAYED_TASK_LIST;
-use crate::kernel::kernel::OVERFLOW_DELAYED_TASK_LIST;
-use crate::kernel::kernel::READY_TASK_LISTS;
+use crate::kernel::kernel::*;
 use crate::kernel::linked_list::*;
 use crate::kernel::portable::*;
 use crate::mtCOVERAGE_TEST_MARKER;
@@ -42,6 +39,9 @@ pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
 pub static mut xTickCount: UBaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
 pub static mut uxCurrentNumberOfTasks: UBaseType = 0;
+pub static mut uxSchedulerSuspended:UBaseType = 0;
+pub static mut xPendedTicks:UBaseType = 0;
+pub static mut xYieldPending:bool = false;
 #[macro_export]
 macro_rules! pdFALSE {
     () => {
@@ -331,7 +331,6 @@ pub fn vTaskDelay(xTicksToDelay: UBaseType) {
     taskYield();
 }
 
-fn prvResetNextTaskUnblockTime() {}
 
 fn taskSWITCH_DELAYED_LISTS() {
     let mut delayed = DELAYED_TASK_LIST.write();
@@ -345,31 +344,37 @@ fn taskSWITCH_DELAYED_LISTS() {
 pub extern "C" fn xTaskIncrementTick() {
     //todo
     unsafe {
-        xTickCount += 1;
-        if xTickCount == 0 {
-            taskSWITCH_DELAYED_LISTS();
-        }
+        if uxSchedulerSuspended==0{
 
-        if xTickCount >= xNextTaskUnblockTime {
-            loop {
-                if list_is_empty(&DELAYED_TASK_LIST) {
-                    xNextTaskUnblockTime = PORT_MAX_DELAY;
-                    break;
-                } else {
-                    let head: ListItemLink =
-                        list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
-                    if head.read().x_item_value <= xTickCount {
-                        ux_list_remove(Arc::downgrade(&head));
-                        let owner_: ListItemOwnerWeakLink =
-                            list_item_get_owner(&Arc::downgrade(&head));
-                        let prio: UBaseType = owner_.upgrade().unwrap().read().uxPriority;
-                        v_list_insert_end(&READY_TASK_LISTS[prio as usize], head);
-                    } else {
-                        xNextTaskUnblockTime = head.read().x_item_value;
+            xTickCount += 1;
+            if xTickCount == 0 {
+                taskSWITCH_DELAYED_LISTS();
+            }
+
+            if xTickCount >= xNextTaskUnblockTime {
+                loop {
+                    if list_is_empty(&DELAYED_TASK_LIST) {
+                        xNextTaskUnblockTime = PORT_MAX_DELAY;
                         break;
+                    } else {
+                        let head: ListItemLink =
+                            list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
+                        if head.read().x_item_value <= xTickCount {
+                            ux_list_remove(Arc::downgrade(&head));
+                            let owner_: ListItemOwnerWeakLink =
+                                list_item_get_owner(&Arc::downgrade(&head));
+                            let prio: UBaseType = owner_.upgrade().unwrap().read().uxPriority;
+                            v_list_insert_end(&READY_TASK_LISTS[prio as usize], head);
+                        } else {
+                            xNextTaskUnblockTime = head.read().x_item_value;
+                            break;
+                        }
                     }
                 }
             }
+        }
+        else{
+            xPendedTicks+=1;
         }
     }
 }
@@ -489,7 +494,7 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
     if (get_scheduler_running!() != false) {
         taskENTER_CRITICAL!();
         {
-            // prvResetNextTaskUnblockTime();//TODO:
+            prvResetNextTaskUnblockTime();//TODO:
         }
         taskEXIT_CRITICAL!();
     } else {
@@ -596,3 +601,69 @@ pub fn vTaskDelete(xTaskToDelete: Option<TaskHandle_t>) {
         portYIELD!();
     }
 }
+
+fn prvResetNextTaskUnblockTime() {
+    unsafe{
+        if list_is_empty(&DELAYED_TASK_LIST){
+            xNextTaskUnblockTime=PORT_MAX_DELAY;
+        }
+        else{
+            let head=list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
+            xNextTaskUnblockTime=head.read().x_item_value;
+        }
+    }
+    
+}
+
+pub fn vTaskSuspendAll(){
+    unsafe{
+        uxSchedulerSuspended+=1;
+    }
+    
+}
+
+pub fn vTaskResumeAll()->bool{
+    let mut xAlreadyYielded=false;
+    let mut moved=false;
+    unsafe{
+        uxSchedulerSuspended-=1;
+        taskENTER_CRITICAL!();
+        if uxSchedulerSuspended==0{
+
+            if get_uxCurrentNumberOfTasks!()>0{
+                while !list_is_empty(&PENDING_READY_LIST){
+                    let pxTCB=list_get_owner_of_next_entry(&PENDING_READY_LIST).upgrade().unwrap();
+                    ux_list_remove(Arc::downgrade(&pxTCB.read().xStateListItem) );
+                    //todo remove eventlist item
+                    if pxTCB.read().uxPriority>=get_current_tcb().unwrap().uxPriority{
+                        xYieldPending=true;
+                    }
+                    prvAddNewTaskToReadyList(pxTCB);
+
+                    moved=true;
+                }
+                if moved{
+                    prvResetNextTaskUnblockTime();
+                }
+                let mut xPendedTicks_=xPendedTicks;
+                if xPendedTicks_>0{
+                    while xPendedTicks_>0{
+                        xTaskIncrementTick();//todo return value
+
+                        xPendedTicks_-=1;
+                    }
+                    xYieldPending=true;
+                    xPendedTicks=0;
+                }
+                if xYieldPending {
+                    if cfg!(feature = "configUSE_PREEMPTION") {
+                        xAlreadyYielded=true;
+                    }
+                    portYIELD_WITHIN_API!();
+                }
+            }
+        }
+        taskEXIT_CRITICAL!();
+    }
+    xAlreadyYielded
+} 

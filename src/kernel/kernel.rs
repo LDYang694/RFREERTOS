@@ -28,6 +28,7 @@ lazy_static! {
     pub static ref DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref OVERFLOW_DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref SUSPENDED_TASK_LIST: ListRealLink = Default::default();
+    pub static ref PENDING_READY_LIST: ListRealLink = Default::default();
     //TODO:tmp use
     pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     //todo: overflow task list
