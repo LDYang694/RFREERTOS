@@ -46,7 +46,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use alloc::sync::{Arc, Weak};
-use core::{alloc::Layout, mem};
+use core::{alloc::Layout, mem, intrinsics::size_of};
 use spin::RwLock;
 pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
@@ -151,4 +151,15 @@ pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType
     // taskEXIT_CRITICAL!();
     vTaskExitCritical();
     1
+}
+
+pub fn vQueueDelete(xQueue: QueueHandle_t) {
+    let pxQueue = *xQueue.write();
+    let alloc_size:usize=mem::size_of::<xQUEUE>()+(xQueue.read().uxLength*xQueue.read().uxItemSize) as usize;
+    let layout = Layout::from_size_align(alloc_size as usize, 4)
+        .ok()
+        .unwrap();
+    unsafe {
+        alloc::alloc::dealloc(&pxQueue as *const Queue_t as *mut u8 , layout);
+    }
 }
