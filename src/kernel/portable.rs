@@ -196,34 +196,15 @@ pub extern "C" fn vTaskSwitchContext() {
     //todo
     // // print("vTaskSwitchContext");
     //port_disable_interrupts!();
-    taskSELECT_HIGHEST_PRIORITY_TASK();
-    // let max_prio=taskSELECT_HIGHEST_PRIORITY();
-    // let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
-    // let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
-    // unsafe{
-    //     set_current_tcb(Some(&*(*owner.into_raw()).read()));
-    //     auto_set_currentTcb();
-    // }
-
-    // ux_list_remove(target.clone());
-    // let target_:ListItemLink=target.upgrade().unwrap();
-
-    // //let mut new_item:XListItem=XListItem::new(2);
-    // //new_item.pv_owner=(*target_).read().pv_owner.clone();
-    // v_list_insert_end(&READY_TASK_LISTS[max_prio],target_.clone());
-    
-    
-    //match target_
-    //&READY_TASK_LISTS[max_prio].write().insert_end(target);
-
-    /*unsafe {
-        if pxCurrentTCB_.unwrap() == &*TCB1_p.read() {
-            set_current_tcb(Some(&*TCB2_p.read()));
-        } else {
-            if pxCurrentTCB_.unwrap() == &*TCB2_p.read() {
-                set_current_tcb(Some(&*TCB1_p.read()));
-            }
+    unsafe{
+        if uxSchedulerSuspended==0{
+                xYieldPending=false;
+            taskSELECT_HIGHEST_PRIORITY_TASK();
         }
-        auto_set_currentTcb();
-    }*/
+        else{
+                xYieldPending=true;
+        }
+    }
+    
+    
 }

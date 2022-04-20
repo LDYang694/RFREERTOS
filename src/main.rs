@@ -6,9 +6,10 @@ mod kernel;
 extern crate alloc;
 use alloc::sync::Arc;
 use core::{borrow::Borrow, ffi::c_void};
-use kernel::{config::*, kernel::*, linked_list::*, riscv_virt::*, tasks::*, *};
+use kernel::{config::*, kernel::*, linked_list::*, riscv_virt::*, tasks::*, portable::*,portmacro::*,*};
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
+use alloc::format;
 
 #[no_mangle]
 pub extern "C" fn main() -> ! {
@@ -33,8 +34,8 @@ fn task1(t: *mut c_void) {
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
         vSendString("11111 gogogogo!!!(in loop)");
-        vTaskSuspend(task1handler.clone());
-        // vTaskDelay(10);
+        //vTaskSuspend(task1handler.clone());
+        //vTaskDelay(10);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
@@ -42,8 +43,8 @@ fn task1(t: *mut c_void) {
     }
 }
 fn task2(t: *mut c_void) {
-    let b = 0;
-    let a = b + 1;
+    let mut begin:TickType=0;
+    let increment:TickType=100;
     vSendString("22222 gogogogo!!!");
     //vTaskDelete(None);
     loop {
@@ -51,7 +52,8 @@ fn task2(t: *mut c_void) {
             vTaskPrioritySet(task2handler.clone(),1);
         }*/
         vSendString("22222 gogogogo!!!(in loop)");
-        vTaskResume(task1handler.clone());
+        //vTaskResume(task1handler.clone());
+        xTaskDelayUntil(&mut begin,increment);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
@@ -102,7 +104,7 @@ pub fn main_new_1() {
             "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
-            2,
+            1,
             Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
         );
         xTaskCreate(

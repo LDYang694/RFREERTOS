@@ -309,26 +309,91 @@ pub fn taskYield() {
     portYIELD!();
 }
 
-pub fn prvAddCurrentTaskToDelayedList() {}
-
-pub fn vTaskDelay(xTicksToDelay: UBaseType) {
-    vTaskEnterCritical();
-    unsafe {
-        let xTimeToWake = xTicksToDelay + xTickCount;
-        let list_item = &get_current_tcb().unwrap().xStateListItem;
-        list_item_set_value(&Arc::downgrade(&list_item), xTimeToWake);
-        ux_list_remove(Arc::downgrade(&list_item));
-        if xTimeToWake > xTickCount {
-            v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
-            if xTicksToDelay < xNextTaskUnblockTime {
+pub fn prvAddCurrentTaskToDelayedList(xTicksToWait:TickType,xCanBlockIndefinitely:bool) {
+    //todo
+    //vTaskEnterCritical();
+    let mut xTimeToWake:TickType;
+    let mut xConstTickCount:TickType;
+    unsafe{
+        xTimeToWake=xTicksToWait+xTickCount;
+        xConstTickCount=xTickCount;
+    }
+    let list_item = &get_current_tcb().unwrap().xStateListItem;
+    list_item_set_value(&Arc::downgrade(&list_item), xTimeToWake);
+    ux_list_remove(Arc::downgrade(&list_item));
+    if xTimeToWake > xConstTickCount {
+        v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
+        unsafe{
+            if xTimeToWake < xNextTaskUnblockTime {
                 xNextTaskUnblockTime = xTimeToWake;
             }
-        } else {
-            v_list_insert(&OVERFLOW_DELAYED_TASK_LIST, list_item.clone());
         }
-    }
+        
+    } else {
+        v_list_insert(&OVERFLOW_DELAYED_TASK_LIST, list_item.clone());
+    }   
+    //vTaskExitCritical();
+}
+
+pub fn vTaskDelay(xTicksToDelay: TickType) {
+    vTaskEnterCritical();
+    //todo
+    prvAddCurrentTaskToDelayedList(xTicksToDelay,true);
+    
     vTaskExitCritical();
     taskYield();
+}
+
+pub fn xTaskDelayUntil(pxPreviousWakeTime:&mut TickType,xTimeIncrement:TickType){
+    let mut xShouldDelay:bool=false;
+    
+    vTaskSuspendAll();
+    {
+        let mut xConstTickCount:TickType;
+        unsafe{
+            xConstTickCount=xTickCount;
+        }
+        
+        let xTimeToWake:TickType=*pxPreviousWakeTime+xTimeIncrement;
+        //let s=format!("xConstTickCount:{} pxPreviousWakeTime:{} xTimeToWake:{}",xConstTickCount,*pxPreviousWakeTime,xTimeToWake);
+        //vSendString(&s);
+        if xConstTickCount<*pxPreviousWakeTime{
+            if (xTimeToWake<*pxPreviousWakeTime) && (xTimeToWake>xConstTickCount){
+                xShouldDelay=true;
+            }
+            else{
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        }
+        else{
+            if (xTimeToWake<*pxPreviousWakeTime) || (xTimeToWake>xConstTickCount){
+                xShouldDelay=true;
+            }
+            else{
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        }
+
+        *pxPreviousWakeTime=xTimeToWake;
+        
+        if xShouldDelay==true{
+            
+            prvAddCurrentTaskToDelayedList(xTimeToWake-xConstTickCount,true);
+        }
+        else{
+            //vSendString("no delay!");
+            mtCOVERAGE_TEST_MARKER!();
+        }
+    }
+    let xAlreadyYielded:bool=vTaskResumeAll();
+    if xAlreadyYielded==false{
+        portYIELD_WITHIN_API!();
+    }
+    else{
+        mtCOVERAGE_TEST_MARKER!();
+    }
+
+    xShouldDelay;
 }
 
 
