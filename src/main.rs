@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(alloc_error_handler)]
 #![allow(non_snake_case)]
+#![feature(box_into_inner)]
 mod kernel;
 extern crate alloc;
 use alloc::sync::Arc;

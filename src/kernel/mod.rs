@@ -1,5 +1,6 @@
 // pub mod tasks;
 // pub mod 
+
 pub mod kernel;
 pub mod allocator;
 pub mod config;
@@ -11,3 +12,4 @@ pub mod linked_list;
 #[macro_use]
 pub mod portmacro;
 pub mod FREERTOS;
+pub mod queue;

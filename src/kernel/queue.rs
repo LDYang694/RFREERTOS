@@ -32,14 +32,123 @@
 // /* The old xQUEUE name is maintained above then typedefed to the new Queue_t
 //  * name below to enable the use of older kernel aware debuggers. */
 // typedef xQUEUE Queue_t;
-
+extern crate alloc;
+use super::{
+    linked_list::ListRealLink,
+    portmacro::{BaseType, UBaseType},
+};
+use crate::{
+    kernel::{
+        linked_list::*,
+        tasks::{vTaskEnterCritical, vTaskExitCritical},
+    },
+    pdFALSE, taskENTER_CRITICAL, taskEXIT_CRITICAL,
+};
+use alloc::boxed::Box;
+use alloc::sync::{Arc, Weak};
+use core::{alloc::Layout, mem};
+use spin::RwLock;
+pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
+pub const queueQUEUE_TYPE_BASE: u8 = 0;
+pub type xQUEUE = QueueDefinition;
+pub type Queue_t = xQUEUE;
 pub struct QueueDefinition {
     pcHead: usize,
+    pcTail: usize,
     pcWriteTo: usize,
+    pcReadFrom: usize,
     xTasksWaitingToSend: ListRealLink,
     xTasksWaitingToReceive: ListRealLink,
     uxMessagesWaiting: UBaseType,
     uxLength: UBaseType,
-    cRxLock: i8,
-    cTxLock: i8,
+    uxItemSize: UBaseType,
+}
+//TODO: xqueue default
+pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> QueueHandle_t {
+    xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
+}
+pub fn xQueueGenericCreate(
+    uxQueueLength: UBaseType,
+    uxItemSize: UBaseType,
+    ucQueueType: u8,
+) -> QueueHandle_t {
+    assert!(uxQueueLength > 0);
+    let mut xQueueSizeInBytes: isize;
+    if uxItemSize == 0 {
+        xQueueSizeInBytes = 0;
+    } else {
+        xQueueSizeInBytes = (uxQueueLength * uxItemSize) as isize;
+    }
+    let alloc_size = mem::size_of::<Queue_t>() + xQueueSizeInBytes as usize;
+    let layout = Layout::from_size_align(alloc_size as usize, 4)
+        .ok()
+        .unwrap();
+    let pxNewQueue_ptr: *mut u8;
+    unsafe {
+        pxNewQueue_ptr = alloc::alloc::alloc(layout);
+    }
+    //TODO:
+    // if pxNewQueue_ptr!=NULL
+    let pucQueueStorage: usize = pxNewQueue_ptr as usize + mem::size_of::<Queue_t>();
+    // #if( configSUPPORT_STATIC_ALLOCATION == 1 )
+    // 29 {
+    // 30
+    // 31 pxNewQueue->ucStaticallyAllocated = pdFALSE;
+    // 32 }
+    // 33 #endif
+    prvInitialiseNewQueue(
+        uxQueueLength,
+        uxItemSize,
+        pucQueueStorage,
+        ucQueueType,
+        pxNewQueue_ptr as usize,
+    );
+    let pxNewQueue = unsafe { Box::from_raw((pxNewQueue_ptr as *mut Queue_t)) };
+
+    // unsafe {
+    //     pxNewQueue = &*(pxNewQueue_ptr as *mut Queue_t );
+    // }
+    Arc::new(RwLock::new(Box::<QueueDefinition>::into_inner(pxNewQueue)))
+}
+pub fn prvInitialiseNewQueue(
+    uxQueueLength: UBaseType,
+    uxItemSize: UBaseType,
+    pucQueueStorage: usize,
+    ucQueueType: u8,
+    pxNewQueue: usize,
+) {
+    let pxNewQueueBox = unsafe { Box::from_raw((pxNewQueue as *mut Queue_t)) };
+    let mut pxNewQueue_ = Box::<QueueDefinition>::into_inner(pxNewQueueBox);
+    if (uxItemSize == 0) {
+        pxNewQueue_.pcHead = pxNewQueue;
+    } else {
+        pxNewQueue_.pcHead = pucQueueStorage;
+    }
+    pxNewQueue_.uxLength = uxQueueLength;
+    pxNewQueue_.uxItemSize = uxItemSize;
+    xQueueGenericReset(&mut pxNewQueue_, 1);
+}
+
+pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType {
+    // taskENTER_CRITICAL!();
+    vTaskEnterCritical();
+    {
+        xQueue.pcTail = xQueue.pcHead + (xQueue.uxLength * xQueue.uxItemSize) as usize;
+        xQueue.uxMessagesWaiting = 0;
+        xQueue.pcWriteTo = xQueue.pcHead;
+        //TODO: union
+        xQueue.pcReadFrom = xQueue.pcHead + ((xQueue.uxLength - 1) * xQueue.uxItemSize) as usize;
+        //TODO:lock
+        if (xNewQueue == 0) {
+            //TODO:
+        } else {
+            xQueue.xTasksWaitingToSend = Arc::new(RwLock::new(XList::default()));
+            xQueue.xTasksWaitingToReceive = Arc::new(RwLock::new(XList::default()));
+            mem::forget(&xQueue.xTasksWaitingToSend);
+            mem::forget(&xQueue.xTasksWaitingToReceive);
+        }
+    }
+    // taskEXIT_CRITICAL!();
+    vTaskExitCritical();
+    1
 }
