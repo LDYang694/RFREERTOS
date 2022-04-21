@@ -35,7 +35,7 @@ use core::ffi::c_void;
 use super::config::USER_STACK_SIZE;
 use super::kernel::IDLE_p;
 use super::kernel::IDLE_STACK;
-pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE;
+pub static mut XSCHEDULERRUNNING: bool = pdFALSE;
 pub static mut xTickCount: UBaseType = 0;
 pub static mut xNumOfOverflows:BaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
@@ -43,7 +43,6 @@ pub static mut uxCurrentNumberOfTasks: UBaseType = 0;
 pub static mut uxSchedulerSuspended:UBaseType = 0;
 pub static mut xPendedTicks:UBaseType = 0;
 pub static mut xYieldPending:bool = false;
-
 #[macro_export]
 macro_rules! taskENTER_CRITICAL {
     () => {
@@ -216,7 +215,7 @@ pub fn prvIdleTask(t: *mut c_void) {
 }
 pub fn vTaskStartScheduler() {
     unsafe {
-        X_SCHEDULER_RUNNING = pdTRUE;
+        XSCHEDULERRUNNING = pdTRUE;
     }
     if cfg!(feature = "configSUPPORT_STATIC_ALLOCATION") {
         let param: Param_link = 0;
@@ -248,7 +247,7 @@ fn prvInitialiseTaskLists() {
 pub fn vTaskEnterCritical() {
     portDISABLE_INTERRUPTS!();
     unsafe {
-        if X_SCHEDULER_RUNNING != pdFALSE {
+        if XSCHEDULERRUNNING != pdFALSE {
             get_current_tcb().unwrap().uxCriticalNesting += 1;
             if get_current_tcb().unwrap().uxCriticalNesting == 1 {
                 // TODO: portASSERT_IF_IN_ISR
@@ -261,7 +260,7 @@ pub fn vTaskEnterCritical() {
 
 pub fn vTaskExitCritical() {
     unsafe {
-        if X_SCHEDULER_RUNNING != pdFALSE {
+        if XSCHEDULERRUNNING != pdFALSE {
             if get_current_tcb().unwrap().uxCriticalNesting > 0 {
                 get_current_tcb().unwrap().uxCriticalNesting -= 1;
                 if get_current_tcb().unwrap().uxCriticalNesting == 0 {
