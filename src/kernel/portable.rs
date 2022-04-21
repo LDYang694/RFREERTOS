@@ -2,7 +2,6 @@ extern crate alloc;
 use alloc::sync::{Arc, Weak};
 use crate::config::*;
 use crate::linked_list::*;
-use crate::pdFALSE;
 use crate::portDISABLE_INTERRUPTS;
 use crate::portENABLE_INTERRUPTS;
 use crate::portmacro::*;
@@ -93,7 +92,7 @@ pub fn auto_set_currentTcb() {
         }
     }
 }
-pub fn x_port_start_scheduler() -> BaseType {
+pub fn x_port_start_scheduler() -> bool {
     unsafe {
         xISRStackTop = (&X_ISRSTACK[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const u32;
     }
@@ -108,7 +107,7 @@ pub fn x_port_start_scheduler() -> BaseType {
         asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();
     }
-    pdFALSE!()
+    pdFALSE
 }
 
 pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {

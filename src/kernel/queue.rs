@@ -32,6 +32,7 @@
 // /* The old xQUEUE name is maintained above then typedefed to the new Queue_t
 //  * name below to enable the use of older kernel aware debuggers. */
 // typedef xQUEUE Queue_t;
+
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::tasks::*;
@@ -231,11 +232,11 @@ pub fn xQueueGenericSend(xQueue: &mut Queue_t,pvItemToQueue:usize,mut xTicksToWa
 
         vTaskSuspendAll();
         //todo:prvLockQueue
-        if xTaskCheckForTimeOut(&mut xTimeout,&mut xTicksToWait)==pdFALSE{
-            if prvIsQueueFull(xQueue)==pdTRUE{
+        if xTaskCheckForTimeOut(&mut xTimeout,&mut xTicksToWait)==false{
+            if prvIsQueueFull(xQueue)==true{
                 //todo:vTaskPlaceOnEventList
                 //todo:prvUnlockQueue
-                if vTaskResumeAll()==pdFALSE{
+                if vTaskResumeAll()==false{
                     portYIELD_WITHIN_API!();
                 }
             }
@@ -313,10 +314,10 @@ pub fn prvIsQueueFull(xQueue: &mut Queue_t)->bool{
     taskENTER_CRITICAL!();
     {
         if xQueue.uxMessagesWaiting==xQueue.uxLength{
-            xReturn=pdTRUE;
+            xReturn=true;
         }
         else{
-            xReturn=pdFALSE;
+            xReturn=false;
         }
     }
     taskEXIT_CRITICAL!();

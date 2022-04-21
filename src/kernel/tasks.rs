@@ -235,7 +235,7 @@ pub fn vTaskStartScheduler() {
     }
     set_current_tcb(Some(Arc::downgrade(&IDLE_p)));
     print("set tcb success");
-    if x_port_start_scheduler() != pdFALSE {
+    if x_port_start_scheduler() != false {
         panic!("error scheduler!!!!!!");
     }
 }
