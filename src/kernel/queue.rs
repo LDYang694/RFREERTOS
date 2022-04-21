@@ -66,7 +66,7 @@ use core::arch::asm;
 use crate::kernel::portmacro::*;
 use alloc::boxed::Box;
 use alloc::sync::{Arc, Weak};
-use core::{alloc::Layout, mem, intrinsics::size_of};
+use core::{alloc::Layout, mem};
 use spin::RwLock;
 pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
@@ -232,7 +232,7 @@ pub fn xQueueGenericSend(xQueue: &mut Queue_t,pvItemToQueue:usize,mut xTicksToWa
 
         vTaskSuspendAll();
         //todo:prvLockQueue
-        if xTaskCheckForTimeOut(&mut xTimeout,&mut xTicksToWait)==false{
+        if xTaskCheckForTimeOut(&mut xTimeout,&mut xTicksToWait)==pdFALSE{
             if prvIsQueueFull(xQueue)==true{
                 //todo:vTaskPlaceOnEventList
                 //todo:prvUnlockQueue
@@ -324,12 +324,12 @@ pub fn prvIsQueueFull(xQueue: &mut Queue_t)->bool{
     xReturn
 }
 pub fn vQueueDelete(xQueue: QueueHandle_t) {
-    let pxQueue = *xQueue.write();
+    let pxQueue = &*xQueue.write();
     let alloc_size:usize=mem::size_of::<xQUEUE>()+(xQueue.read().uxLength*xQueue.read().uxItemSize) as usize;
     let layout = Layout::from_size_align(alloc_size as usize, 4)
         .ok()
         .unwrap();
     unsafe {
-        alloc::alloc::dealloc(&pxQueue as *const Queue_t as *mut u8 , layout);
+        alloc::alloc::dealloc(pxQueue as *const Queue_t as *mut u8 , layout);
     }
 }

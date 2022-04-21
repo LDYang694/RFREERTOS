@@ -35,7 +35,7 @@ use core::ffi::c_void;
 use super::config::USER_STACK_SIZE;
 use super::kernel::IDLE_p;
 use super::kernel::IDLE_STACK;
-pub static mut XSCHEDULERRUNNING: bool = pdFALSE;
+pub static mut XSCHEDULERRUNNING: UBaseType = pdFALSE;
 pub static mut xTickCount: UBaseType = 0;
 pub static mut xNumOfOverflows:BaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
@@ -235,7 +235,7 @@ pub fn vTaskStartScheduler() {
     }
     set_current_tcb(Some(Arc::downgrade(&IDLE_p)));
     print("set tcb success");
-    if x_port_start_scheduler() != false {
+    if x_port_start_scheduler() != pdFALSE {
         panic!("error scheduler!!!!!!");
     }
 }
@@ -778,8 +778,8 @@ pub fn vTaskSetTimeOutState(pxTimeOut:&mut TimeOut){
     taskEXIT_CRITICAL!();
 }
 
-pub fn xTaskCheckForTimeOut(pxTimeOut:&mut TimeOut,pxTicksToWait:&mut TickType)->bool{
-    let xReturn:bool;
+pub fn xTaskCheckForTimeOut(pxTimeOut:&mut TimeOut,pxTicksToWait:&mut TickType)->UBaseType{
+    let xReturn:UBaseType;
     taskENTER_CRITICAL!();
     {
         let xConstTickCount:TickType;

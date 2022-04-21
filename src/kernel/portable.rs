@@ -12,6 +12,8 @@ use crate::kernel::kernel::{TCB1_p, TCB2_p};
 use alloc::format;
 use core::arch::asm;
 use spin::RwLock;
+
+use super::projdefs::pdFALSE;
 //use crate::pxCurrentTCB_;
 // use crate::pxCurrentTCB;
 extern "C" {
@@ -92,7 +94,7 @@ pub fn auto_set_currentTcb() {
         }
     }
 }
-pub fn x_port_start_scheduler() -> bool {
+pub fn x_port_start_scheduler() -> UBaseType {
     unsafe {
         xISRStackTop = (&X_ISRSTACK[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const u32;
     }
