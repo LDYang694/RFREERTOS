@@ -158,6 +158,12 @@ pub fn list_get_owner_of_next_entry(px_list: &ListRealLink) -> ListItemOwnerWeak
     let owner = px_list.write().get_owner_of_next_entry();
     owner
 }
+
+pub fn list_get_owner_of_head_entry(px_list: &ListRealLink) -> ListItemOwnerWeakLink {
+    let owner=px_list.write().get_owner_of_head_entry();
+    owner
+}
+
 impl ListT {
     pub fn insert_end(&mut self, px_new_list_item: ListItemWeakLink) {
         //插入到list末尾
@@ -209,6 +215,13 @@ impl ListT {
 
         let owner = Weak::clone(&self.px_index.upgrade().unwrap().read().pv_owner);
         owner
+    }
+
+    pub fn get_owner_of_head_entry(&mut self) -> ListItemOwnerWeakLink {
+        let end=self.x_list_end.read();
+        let target:&ListItemWeakLink=&(end.px_next);
+        
+        list_item_get_owner(target)
     }
 }
 

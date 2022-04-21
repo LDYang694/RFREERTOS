@@ -12,6 +12,7 @@ use crate::linked_list::*;
 use crate::portable::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
+use crate::projdefs::*;
 use alloc::sync::Arc;
 use core::arch::global_asm;
 use core::ffi::c_void;

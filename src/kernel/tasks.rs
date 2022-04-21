@@ -1,10 +1,10 @@
 extern crate alloc;
 
+use crate::kernel::projdefs::*;
 use crate::kernel::kernel::*;
 use crate::kernel::linked_list::*;
 use crate::kernel::portable::*;
 use crate::mtCOVERAGE_TEST_MARKER;
-use crate::pdFALSE;
 use crate::portDISABLE_INTERRUPTS;
 use crate::portENABLE_INTERRUPTS;
 use crate::portYIELD;
@@ -35,19 +35,15 @@ use core::ffi::c_void;
 use super::config::USER_STACK_SIZE;
 use super::kernel::IDLE_p;
 use super::kernel::IDLE_STACK;
-pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE!();
+pub static mut X_SCHEDULER_RUNNING: bool = pdFALSE;
 pub static mut xTickCount: UBaseType = 0;
+pub static mut xNumOfOverflows:BaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
 pub static mut uxCurrentNumberOfTasks: UBaseType = 0;
 pub static mut uxSchedulerSuspended:UBaseType = 0;
 pub static mut xPendedTicks:UBaseType = 0;
 pub static mut xYieldPending:bool = false;
-#[macro_export]
-macro_rules! pdFALSE {
-    () => {
-        false
-    };
-}
+
 #[macro_export]
 macro_rules! taskENTER_CRITICAL {
     () => {
@@ -60,12 +56,6 @@ macro_rules! taskEXIT_CRITICAL {
         portEXIT_CRITICAL!();
     };
 }
-#[macro_export]
-macro_rules! pdTRUE {
-    () => {
-        true
-    };
-}
 
 extern "C" {
     pub fn pxPortInitialiseStack(
@@ -73,6 +63,12 @@ extern "C" {
         pxCode: u32,
         pvParameters: *mut c_void,
     ) -> *mut StackType_t;
+}
+
+#[derive(Default)]
+pub struct TimeOut{
+    pub xOverflowCount:BaseType,
+    pub xTimeOnEntering:TickType
 }
 
 #[derive(Debug, Clone)]
@@ -220,7 +216,7 @@ pub fn prvIdleTask(t: *mut c_void) {
 }
 pub fn vTaskStartScheduler() {
     unsafe {
-        X_SCHEDULER_RUNNING = pdTRUE!();
+        X_SCHEDULER_RUNNING = pdTRUE;
     }
     if cfg!(feature = "configSUPPORT_STATIC_ALLOCATION") {
         let param: Param_link = 0;
@@ -240,7 +236,7 @@ pub fn vTaskStartScheduler() {
     }
     set_current_tcb(Some(Arc::downgrade(&IDLE_p)));
     print("set tcb success");
-    if x_port_start_scheduler() != pdFALSE!() {
+    if x_port_start_scheduler() != pdFALSE {
         panic!("error scheduler!!!!!!");
     }
 }
@@ -252,7 +248,7 @@ fn prvInitialiseTaskLists() {
 pub fn vTaskEnterCritical() {
     portDISABLE_INTERRUPTS!();
     unsafe {
-        if X_SCHEDULER_RUNNING != pdFALSE!() {
+        if X_SCHEDULER_RUNNING != pdFALSE {
             get_current_tcb().unwrap().uxCriticalNesting += 1;
             if get_current_tcb().unwrap().uxCriticalNesting == 1 {
                 // TODO: portASSERT_IF_IN_ISR
@@ -265,7 +261,7 @@ pub fn vTaskEnterCritical() {
 
 pub fn vTaskExitCritical() {
     unsafe {
-        if X_SCHEDULER_RUNNING != pdFALSE!() {
+        if X_SCHEDULER_RUNNING != pdFALSE {
             if get_current_tcb().unwrap().uxCriticalNesting > 0 {
                 get_current_tcb().unwrap().uxCriticalNesting -= 1;
                 if get_current_tcb().unwrap().uxCriticalNesting == 0 {
@@ -403,6 +399,10 @@ fn taskSWITCH_DELAYED_LISTS() {
     let tmp = (*delayed).clone();
     *delayed = (*overflowed).clone();
     *overflowed = tmp;
+    unsafe{
+        xNumOfOverflows+=1;
+    }
+    
 }
 
 #[no_mangle]
@@ -732,3 +732,89 @@ pub fn vTaskResumeAll()->bool{
     }
     xAlreadyYielded
 } 
+
+pub fn xTaskRemoveFromEventList(pxEventList:&ListRealLink)->bool{
+    let pxUnblockedTCB=list_get_owner_of_head_entry(pxEventList).upgrade().unwrap();
+    let xReturn:bool;
+    let uxSchedulerSuspended_:UBaseType;
+    unsafe{
+        uxSchedulerSuspended_=uxSchedulerSuspended;
+    }
+    //todo:eventlist item
+    if uxSchedulerSuspended_==0{
+        ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem) );
+        prvAddTaskToReadyList(pxUnblockedTCB.clone());
+        if cfg!(feature="configUSE_TICKLESS_IDLE"){
+            prvResetNextTaskUnblockTime();
+        }
+    }
+    else{
+        v_list_insert_end(&PENDING_READY_LIST,pxUnblockedTCB.read().xStateListItem.clone());
+    }
+    if pxUnblockedTCB.read().uxPriority>get_current_tcb().unwrap().uxPriority{
+        xReturn=true;
+        unsafe{
+            xYieldPending=true;
+        }
+    }
+    else{
+        xReturn=false;
+    }
+    xReturn
+}
+
+pub fn vTaskInternalSetTimeOutState(pxTimeOut:&mut TimeOut){
+    unsafe{
+        pxTimeOut.xOverflowCount=xNumOfOverflows;
+        pxTimeOut.xTimeOnEntering=xTickCount;
+    }
+}
+
+pub fn vTaskSetTimeOutState(pxTimeOut:&mut TimeOut){
+    taskENTER_CRITICAL!();
+    unsafe{
+        pxTimeOut.xOverflowCount=xNumOfOverflows;
+        pxTimeOut.xTimeOnEntering=xTickCount;
+    }
+    taskEXIT_CRITICAL!();
+}
+
+pub fn xTaskCheckForTimeOut(pxTimeOut:&mut TimeOut,pxTicksToWait:&mut TickType)->bool{
+    let xReturn:bool;
+    taskENTER_CRITICAL!();
+    {
+        let xConstTickCount:TickType;
+        unsafe{
+            xConstTickCount=xTickCount;
+        }
+        let xElapsedTime=xConstTickCount-pxTimeOut.xTimeOnEntering;
+        if cfg!(feature="INCLUDE_xTaskAbortDelay"){
+            //todo
+        }
+
+        if cfg!(feature="INCLUDE_vTaskSuspend"){
+            if *pxTicksToWait==PORT_MAX_DELAY{
+                taskEXIT_CRITICAL!();
+                return pdFALSE;
+            }
+        }
+        let xNumOfOverflows_:BaseType;
+        unsafe{
+            xNumOfOverflows_=xNumOfOverflows;
+        }
+        if xNumOfOverflows_ != pxTimeOut.xOverflowCount && xConstTickCount>=pxTimeOut.xTimeOnEntering{
+            xReturn=pdTRUE;
+            *pxTicksToWait=0;
+        }
+        else if xElapsedTime<*pxTicksToWait{
+            *pxTicksToWait-=xElapsedTime;
+            xReturn=pdFALSE;
+        }
+        else{
+            xReturn=pdTRUE;
+            *pxTicksToWait=0;
+        }
+    }
+    taskEXIT_CRITICAL!();
+    xReturn
+}
