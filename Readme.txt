@@ -18,4 +18,6 @@ qemu-system-riscv32 -nographic -machine virt -net none   -chardev stdio,id=con,m
 （新终端）
 riscv64-unknown-elf-gdb -q ./target/riscv32imac-unknown-none-elf/debug/r_freertos
 target remote localhost:1234
-break main_new
+break main_new_1
+break prvInitialiseNewQueue
+break xQueueGenericReset

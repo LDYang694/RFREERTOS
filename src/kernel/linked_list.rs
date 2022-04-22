@@ -59,7 +59,7 @@ impl Default for ListItemT {
 //#[derive(Debug)]
 #[derive(Clone, Debug)]
 pub struct XList {
-    ux_number_of_items: UBaseType,
+   pub ux_number_of_items: UBaseType,
     px_index: ListItemWeakLink,
     x_list_end: Arc<RwLock<ListItemT>>,
 }
