@@ -1,3 +1,6 @@
+//! Application specific definitions. <br>
+//! equal to FreeRTOSConfig.h
+
 use crate::portmacro::*;
 
 const CLINT_ADDR:UBaseType = 0x02000000;

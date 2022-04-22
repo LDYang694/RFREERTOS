@@ -1,3 +1,5 @@
+//! portable apis
+
 extern crate alloc;
 use alloc::sync::{Arc, Weak};
 use crate::config::*;
@@ -41,6 +43,7 @@ extern "C" {
 }
 //todo:safe  global var and pointer
 
+/// get current mtime
 fn get_mtime()->u64{
     let mut result:u64=0;
     let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
@@ -56,6 +59,7 @@ fn get_mtime()->u64{
     result
 }
 
+/// setup timer interrupt
 pub fn v_port_setup_timer_interrupt() {
     let mut ul_hart_id: UBaseType;
     let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
@@ -86,6 +90,7 @@ pub fn v_port_setup_timer_interrupt() {
     //todo
 }
 
+/// copy current tcb to pxCurrentTCB for c interface
 pub fn auto_set_currentTcb() {
     unsafe {
         match get_current_tcb(){
@@ -94,6 +99,8 @@ pub fn auto_set_currentTcb() {
         }
     }
 }
+
+/// start up scheduler
 pub fn x_port_start_scheduler() -> UBaseType {
     unsafe {
         xISRStackTop = (&X_ISRSTACK[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const u32;
@@ -112,6 +119,8 @@ pub fn x_port_start_scheduler() -> UBaseType {
     pdFALSE
 }
 
+/// set current tcb <br>
+/// use with auto_set_currentTcb()
 pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {
     unsafe {
         match tcb{
@@ -125,6 +134,7 @@ pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {
     }
 }
 
+/// get current tcb
 pub fn get_current_tcb()->Option<&'static mut tskTaskControlBlock>{
     unsafe{
         match pxCurrentTCB_{
@@ -138,6 +148,7 @@ pub fn get_current_tcb()->Option<&'static mut tskTaskControlBlock>{
     }
 }
 
+/// return if target tcb is current tcb
 pub fn is_current_tcb(tcb: ListItemOwnerWeakLink)->bool{
     unsafe{
         match pxCurrentTCB_{
@@ -153,7 +164,7 @@ pub fn is_current_tcb(tcb: ListItemOwnerWeakLink)->bool{
 
 
 
-
+/// set target task's priority
 pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
 {
     vTaskEnterCritical();
@@ -180,6 +191,7 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
     vTaskExitCritical();
 }
 
+/// get priority of target task
 pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
 {
     unsafe{
@@ -193,6 +205,7 @@ pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
     
 }
 
+/// switch context
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext() {
     //todo

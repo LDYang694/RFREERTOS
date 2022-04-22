@@ -33,6 +33,8 @@
 //  * name below to enable the use of older kernel aware debuggers. */
 // typedef xQUEUE Queue_t;
 
+//! queue impletation and api
+
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::tasks::*;
@@ -84,9 +86,14 @@ pub struct QueueDefinition {
     uxItemSize: UBaseType,
 }
 //TODO: xqueue default
+
+/// create queue <br>
+/// interface for user
 pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> QueueHandle_t {
     xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
 }
+
+/// create queue
 pub fn xQueueGenericCreate(
     uxQueueLength: UBaseType,
     uxItemSize: UBaseType,
@@ -130,6 +137,8 @@ pub fn xQueueGenericCreate(
     // }
     Arc::new(RwLock::new(Box::<QueueDefinition>::into_inner(pxNewQueue)))
 }
+
+/// initialise new queue
 pub fn prvInitialiseNewQueue(
     uxQueueLength: UBaseType,
     uxItemSize: UBaseType,
@@ -149,6 +158,7 @@ pub fn prvInitialiseNewQueue(
     xQueueGenericReset(&mut pxNewQueue_, 1);
 }
 
+/// reset target queue
 pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType {
     // taskENTER_CRITICAL!();
     vTaskEnterCritical();
@@ -181,6 +191,7 @@ extern "C"{
     ) -> *mut c_void;
 }
 
+/// send item to queue
 pub fn xQueueGenericSend(xQueue: &mut Queue_t,pvItemToQueue:usize,mut xTicksToWait:TickType,xCopyPosition:BaseType)->BaseType{
     let mut xYieldRequired:bool=false;
     let mut xEntryTimeSet:bool=false;
@@ -256,6 +267,7 @@ pub fn xQueueGenericSend(xQueue: &mut Queue_t,pvItemToQueue:usize,mut xTicksToWa
     pdFAIL as BaseType
 }
 
+/// copy data to queue
 pub fn prvCopyDataToQueue(xQueue: &mut Queue_t,pvItemToQueue:usize,xPosition:BaseType)->bool{
     let mut uxMessagesWaiting=xQueue.uxMessagesWaiting;
     if xQueue.uxItemSize==0{
@@ -309,6 +321,7 @@ pub fn prvCopyDataToQueue(xQueue: &mut Queue_t,pvItemToQueue:usize,xPosition:Bas
     false
 }
 
+/// return if queue is full
 pub fn prvIsQueueFull(xQueue: &mut Queue_t)->bool{
     let xReturn:bool;
     taskENTER_CRITICAL!();
@@ -323,6 +336,8 @@ pub fn prvIsQueueFull(xQueue: &mut Queue_t)->bool{
     taskEXIT_CRITICAL!();
     xReturn
 }
+
+/// delete queue
 pub fn vQueueDelete(xQueue: QueueHandle_t) {
     let pxQueue = &*xQueue.write();
     let alloc_size:usize=mem::size_of::<xQUEUE>()+(xQueue.read().uxLength*xQueue.read().uxItemSize) as usize;

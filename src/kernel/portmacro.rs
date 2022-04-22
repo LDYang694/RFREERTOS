@@ -1,3 +1,5 @@
+//! portable macros
+
 use crate::config::*;
 
 pub type StackType = u32;

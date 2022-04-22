@@ -2,6 +2,8 @@
 // #![feature(alloc_error_handler)]
 // #![no_main]
 
+//! lazy static globals and kernel macros
+
 extern crate alloc;
 
 

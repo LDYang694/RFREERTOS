@@ -1,3 +1,5 @@
+//! project defines
+
 use crate::kernel::portmacro::*;
 use crate::kernel::portable::*;
 
