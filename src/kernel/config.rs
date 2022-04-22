@@ -12,9 +12,9 @@ pub const USER_STACK_SIZE: usize = 0x10000;
 pub const PORT_ISR_STACK_FILL_BYTE: BaseType = 0xee;
 
 pub const PRIM_HART: usize = 0;
-pub const CLINT_MSIP: u32 = 0x0000;
-pub const CLINT_MTIMECMP: u32 = 0x4000;
-pub const CLINT_MTIME: u32 = 0xbff8;
+pub const CLINT_MSIP: usize = 0x0000;
+pub const CLINT_MTIMECMP: usize = 0x4000;
+pub const CLINT_MTIME: usize = 0xbff8;
 
 /* register definitions */
 pub const REG_RBR: usize = 0x00; /* Receiver buffer reg. */

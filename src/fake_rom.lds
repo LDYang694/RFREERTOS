@@ -112,7 +112,7 @@ SECTIONS
 	{
 		. = ALIGN(16);
 		/* TODO: replace 512K with __stack_size */
-		. += 512 * 1024 * 4; /* __stack_siz = 512K */
+		. += 2 * 1024 * 1024; /* __stack_siz = 512K */
 		_stack_top = .;
 	} >ram AT>ram
 }

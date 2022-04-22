@@ -70,7 +70,7 @@ macro_rules! pdTRUE {
 extern "C" {
     pub fn pxPortInitialiseStack(
         pxTopOfStack: *mut StackType_t,
-        pxCode: u32,
+        pxCode: usize,
         pvParameters: *mut c_void,
     ) -> *mut StackType_t;
 }
@@ -107,7 +107,7 @@ pub type TCB_t = tskTCB;
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
 #[cfg(feature = "configSUPPORT_STATIC_ALLOCATION")]
 pub fn xTaskCreateStatic(
-    pxTaskCode: u32,
+    pxTaskCode: usize,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -177,7 +177,7 @@ pub fn taskRECORD_READY_PRIORITY(uxPriority: UBaseType) {
     //TODO: set max uxTopReadyPriority
 }
 pub fn prvInitialiseNewTask(
-    pxTaskCode: u32,
+    pxTaskCode: usize,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -224,12 +224,12 @@ pub fn vTaskStartScheduler() {
     }
     if cfg!(feature = "configSUPPORT_STATIC_ALLOCATION") {
         let param: Param_link = 0;
-        let stack2ptr: StackType_t_link = &*IDLE_STACK as *const [u32; USER_STACK_SIZE]
-            as *const u32 as usize
+        let stack2ptr: StackType_t_link = &*IDLE_STACK as *const [usize; USER_STACK_SIZE]
+            as *const usize as usize
             + USER_STACK_SIZE * 4
             - 4;
         xTaskCreateStatic(
-            prvIdleTask as u32,
+            prvIdleTask as usize,
             "idle",
             USER_STACK_SIZE as u32,
             Some(param),
@@ -382,7 +382,7 @@ pub fn xPortSysTickHandler() {
 #[cfg(feature = "configSUPPORT_DYNAMIC_ALLOCATION")]
 
 pub fn xTaskCreate(
-    pxTaskCode: u32,
+    pxTaskCode: usize,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,

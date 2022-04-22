@@ -84,21 +84,21 @@ pub fn main_new_1() {
     let param2: Param_link = 0;
     let param3: Param_link = 0;
     let stack1ptr: StackType_t_link =
-        &*TASK1_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
-            - 4;
+        &*TASK1_STACK as *const [usize; USER_STACK_SIZE] as *const usize as usize + USER_STACK_SIZE * 8
+            - 8;
     let stack2ptr: StackType_t_link =
-        &*TASK2_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
-            - 4;
+        &*TASK2_STACK as *const [usize; USER_STACK_SIZE] as *const usize as usize + USER_STACK_SIZE * 8
+            - 8;
     let stack3ptr: StackType_t_link =
-        &*TASK3_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
-            - 4;
+        &*TASK3_STACK as *const [usize; USER_STACK_SIZE] as *const usize as usize + USER_STACK_SIZE * 8
+            - 8;
 
     print("task1handler");
     unsafe {
         print("xTaskCreate start");
         let x = print("xTaskCreate 1111");
         xTaskCreate(
-            task1 as u32,
+            task1 as usize,
             "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
@@ -106,7 +106,7 @@ pub fn main_new_1() {
             Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
         );
         xTaskCreate(
-            task2 as u32,
+            task2 as usize,
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
@@ -115,9 +115,9 @@ pub fn main_new_1() {
         );
     }
     //     // xTaskCreate(
-    //     //     task2 as u32,
+    //     //     task2 as usize,
     //     //     "task2",
-    //     //     USER_STACK_SIZE as u32,
+    //     //     USER_STACK_SIZE as usize,
     //     //     Some(param2),
     //     //     2,
     //     //     Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
@@ -125,9 +125,9 @@ pub fn main_new_1() {
     // }
     // unsafe {
     //     let handler = xTaskCreateStatic(
-    //         task1 as u32,
+    //         task1 as usize,
     //         "task1",
-    //         USER_STACK_SIZE as u32,
+    //         USER_STACK_SIZE as usize,
     //         Some(param1),
     //         Some(stack1ptr),
     //         Some(TCB1_p.clone()),
@@ -143,9 +143,9 @@ pub fn main_new_1() {
     // // unsafe{
     // //     task2handler=
     // xTaskCreateStatic(
-    //     task2 as u32,
+    //     task2 as usize,
     //     "task2",
-    //     USER_STACK_SIZE as u32,
+    //     USER_STACK_SIZE as usize,
     //     Some(param2),
     //     Some(stack2ptr),
     //     Some(TCB2_p.clone()),
@@ -158,9 +158,9 @@ pub fn main_new_1() {
 
     // print("task3handler");
     // x_task_create_static(
-    //     task3 as u32,
+    //     task3 as usize,
     //     "task3",
-    //     USER_STACK_SIZE as u32,
+    //     USER_STACK_SIZE as usize,
     //     Some(param3),
     //     Some(stack3ptr),
     //     Some(TCB3_p.clone()),

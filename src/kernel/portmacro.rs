@@ -1,11 +1,11 @@
 use crate::config::*;
 
-pub type StackType = u32;
-pub type BaseType = i32;
-pub type UBaseType = u32;
-pub type TickType = u32;
+pub type StackType = usize;
+pub type BaseType = isize;
+pub type UBaseType = usize;
+pub type TickType = usize;
 
-pub const PORT_MAX_DELAY: TickType = 0xffffffff;
+pub const PORT_MAX_DELAY: TickType = 0xffffffffffffffff;
 pub const PORT_TICK_TYPE_IS_ATOMIC: BaseType = 1;
 pub const PORT_STACK_GROWTH: BaseType = -1;
 pub const PORT_TICK_PERIOD_MS: TickType = 1000 / CONFIG_TICK_RATE_HZ;
