@@ -16,7 +16,7 @@ pub fn init_heap() {
 }
 
 #[global_allocator]
-static DYNAMIC_ALLOCATOR: LockedHeap<64> = LockedHeap::<64>::empty();
+static DYNAMIC_ALLOCATOR: LockedHeap<32> = LockedHeap::<32>::empty();
 
 #[alloc_error_handler]
 fn alloc_error_handler(_: core::alloc::Layout) -> ! {

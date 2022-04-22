@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(alloc_error_handler)]
+#![feature(core_intrinsics)]
 #![allow(non_snake_case)]
 mod kernel;
 extern crate alloc;
@@ -9,6 +10,7 @@ use core::{borrow::Borrow, ffi::c_void};
 use kernel::{config::*, kernel::*, linked_list::*, riscv_virt::*, tasks::*, *};
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
+use alloc::string::String;
 
 #[no_mangle]
 pub extern "C" fn main() -> ! {
@@ -92,18 +94,26 @@ pub fn main_new_1() {
     let stack3ptr: StackType_t_link =
         &*TASK3_STACK as *const [usize; USER_STACK_SIZE] as *const usize as usize + USER_STACK_SIZE * 8
             - 8;
-
+    let mut out = String::new();
+    out.insert(0, 'p');
+    print(&out);
     print("task1handler");
     unsafe {
         print("xTaskCreate start");
         let x = print("xTaskCreate 1111");
+        match &*task1handler {
+            Some(x)=>{print("some");}
+            None=>{print("none");}
+        }
+        print("test!");
+        let temp=Arc::clone(&(task1handler.as_ref().unwrap()));
         xTaskCreate(
             task1 as usize,
             "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
             2,
-            Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
+            Some(temp),
         );
         xTaskCreate(
             task2 as usize,
