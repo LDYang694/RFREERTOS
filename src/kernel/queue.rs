@@ -1,46 +1,11 @@
-// typedef struct QueueDefinition /* The old naming convention is used to prevent breaking kernel aware debuggers. */
-// {
-//     int8_t * pcHead;           /*< Points to the beginning of the queue storage area. */
-//     int8_t * pcWriteTo;        /*< Points to the free next place in the storage area. */
-//     union
-//     {
-//         QueuePointers_t xQueue;     /*< Data required exclusively when this structure is used as a queue. */
-//         SemaphoreData_t xSemaphore; /*< Data required exclusively when this structure is used as a semaphore. */
-//     } u;
-
-//     List_t xTasksWaitingToSend;             /*< List of tasks that are blocked waiting to post onto this queue.  Stored in priority order. */
-//     List_t xTasksWaitingToReceive;          /*< List of tasks that are blocked waiting to read from this queue.  Stored in priority order. */
-//     volatile UBaseType_t uxMessagesWaiting; /*< The number of items currently in the queue. */
-//     UBaseType_t uxLength;                   /*< The length of the queue defined as the number of items it will hold, not the number of bytes. */
-//     UBaseType_t uxItemSize;                 /*< The size of each items that the queue will hold. */
-//     volatile int8_t cRxLock;                /*< Stores the number of items received from the queue (removed from the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
-//     volatile int8_t cTxLock;                /*< Stores the number of items transmitted to the queue (added to the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
-//     #if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
-//         uint8_t ucStaticallyAllocated; /*< Set to pdTRUE if the memory used by the queue was statically allocated to ensure no attempt is made to free the memory. */
-//     #endif
-
-//     #if ( configUSE_QUEUE_SETS == 1 )
-//         struct QueueDefinition * pxQueueSetContainer;
-//     #endif
-
-//     #if ( configUSE_TRACE_FACILITY == 1 )
-//         UBaseType_t uxQueueNumber;
-//         uint8_t ucQueueType;
-//     #endif
-// } xQUEUE;
-
-// /* The old xQUEUE name is maintained above then typedefed to the new Queue_t
-//  * name below to enable the use of older kernel aware debuggers. */
-// typedef xQUEUE Queue_t;
-
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::tasks::*;
-use crate::{taskYIELD_IF_USING_PREEMPTION,portYIELD_WITHIN_API};
+use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
 
-pub const queueSEND_TO_BACK:BaseType=1;
-pub const queueOVERWRITE:BaseType=2;
-pub const pdPass:BaseType=0;
+pub const queueSEND_TO_BACK: BaseType = 1;
+pub const queueOVERWRITE: BaseType = 2;
+pub const pdPass: BaseType = 0;
 
 #[macro_export]
 macro_rules! queueYIELD_IF_USING_PREEMPTION {
@@ -53,6 +18,7 @@ use super::{
     linked_list::ListRealLink,
     portmacro::{BaseType, UBaseType},
 };
+use crate::kernel::portmacro::*;
 use crate::{
     kernel::{
         linked_list::*,
@@ -60,13 +26,12 @@ use crate::{
     },
     taskENTER_CRITICAL, taskEXIT_CRITICAL,
 };
-use core::ffi::c_void;
-use libc::*;
-use core::arch::asm;
-use crate::kernel::portmacro::*;
 use alloc::boxed::Box;
 use alloc::sync::{Arc, Weak};
+use core::arch::asm;
+use core::ffi::c_void;
 use core::{alloc::Layout, mem};
+use libc::*;
 use spin::RwLock;
 pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
@@ -173,57 +138,51 @@ pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType
     1
 }
 
-extern "C"{
-    fn memcpy(
-        dest: *mut c_void, 
-        src: *const c_void, 
-        n: usize
-    ) -> *mut c_void;
+extern "C" {
+    fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void;
 }
 
-pub fn xQueueGenericSend(xQueue: &mut Queue_t,pvItemToQueue:usize,mut xTicksToWait:TickType,xCopyPosition:BaseType)->BaseType{
-    let mut xYieldRequired:bool=false;
-    let mut xEntryTimeSet:bool=false;
-    let mut xTimeout:TimeOut=Default::default();
-    loop{
+pub fn xQueueGenericSend(
+    xQueue: &mut Queue_t,
+    pvItemToQueue: usize,
+    mut xTicksToWait: TickType,
+    xCopyPosition: BaseType,
+) -> BaseType {
+    let mut xYieldRequired: bool = false;
+    let mut xEntryTimeSet: bool = false;
+    let mut xTimeout: TimeOut = Default::default();
+    loop {
         taskENTER_CRITICAL!();
         {
-            if xQueue.uxMessagesWaiting<xQueue.uxLength || xCopyPosition == queueOVERWRITE{
-                if cfg!(feature="configUSE_QUEUE_SETS"){
-                    let uxPreviousMessagesWaiting=xQueue.uxMessagesWaiting;
-                    xYieldRequired=prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
+            if xQueue.uxMessagesWaiting < xQueue.uxLength || xCopyPosition == queueOVERWRITE {
+                if cfg!(feature = "configUSE_QUEUE_SETS") {
+                    let uxPreviousMessagesWaiting = xQueue.uxMessagesWaiting;
+                    xYieldRequired = prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
                     //todo
-                }
-                else{
-                    xYieldRequired=prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
-                    if list_is_empty(&xQueue.xTasksWaitingToReceive)==false{
-                        if xTaskRemoveFromEventList(&xQueue.xTasksWaitingToReceive)==true{
+                } else {
+                    xYieldRequired = prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
+                    if list_is_empty(&xQueue.xTasksWaitingToReceive) == false {
+                        if xTaskRemoveFromEventList(&xQueue.xTasksWaitingToReceive) == true {
                             queueYIELD_IF_USING_PREEMPTION!();
-                        }
-                        else{
+                        } else {
                             mtCOVERAGE_TEST_MARKER!();
                         }
-                    }
-                    else if xYieldRequired==true{
+                    } else if xYieldRequired == true {
                         queueYIELD_IF_USING_PREEMPTION!();
-                    }
-                    else{
+                    } else {
                         mtCOVERAGE_TEST_MARKER!();
                     }
                 }
                 taskEXIT_CRITICAL!();
                 return pdPASS as BaseType;
-            }
-            else{
-                if xTicksToWait==0{
+            } else {
+                if xTicksToWait == 0 {
                     taskEXIT_CRITICAL!();
                     return errQUEUE_FULL;
-                }
-                else if xEntryTimeSet==false{
+                } else if xEntryTimeSet == false {
                     vTaskInternalSetTimeOutState(&mut xTimeout);
-                    xEntryTimeSet=true;
-                }
-                else{
+                    xEntryTimeSet = true;
+                } else {
                     mtCOVERAGE_TEST_MARKER!();
                 }
             }
@@ -232,92 +191,100 @@ pub fn xQueueGenericSend(xQueue: &mut Queue_t,pvItemToQueue:usize,mut xTicksToWa
 
         vTaskSuspendAll();
         //todo:prvLockQueue
-        if xTaskCheckForTimeOut(&mut xTimeout,&mut xTicksToWait)==pdFALSE{
-            if prvIsQueueFull(xQueue)==true{
+        if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
+            if prvIsQueueFull(xQueue) == true {
                 //todo:vTaskPlaceOnEventList
                 //todo:prvUnlockQueue
-                if vTaskResumeAll()==false{
+                if vTaskResumeAll() == false {
                     portYIELD_WITHIN_API!();
                 }
-            }
-            else{
+            } else {
                 //todo:prvUnlockQueue
                 vTaskResumeAll();
             }
-        }
-        else{
+        } else {
             //todo:prvUnlockQueue
             vTaskResumeAll();
             return errQUEUE_FULL;
         }
-
-        
     }
     pdFAIL as BaseType
 }
 
-pub fn prvCopyDataToQueue(xQueue: &mut Queue_t,pvItemToQueue:usize,xPosition:BaseType)->bool{
-    let mut uxMessagesWaiting=xQueue.uxMessagesWaiting;
-    if xQueue.uxItemSize==0{
-        if cfg!(feature = "configUSE_MUTEXES"){
+pub fn prvCopyDataToQueue(xQueue: &mut Queue_t, pvItemToQueue: usize, xPosition: BaseType) -> bool {
+    let mut uxMessagesWaiting = xQueue.uxMessagesWaiting;
+    if xQueue.uxItemSize == 0 {
+        if cfg!(feature = "configUSE_MUTEXES") {
             //todo
-        }
-        else{
+        } else {
             mtCOVERAGE_TEST_MARKER!();
         }
-    }
-    else if xPosition==queueSEND_TO_BACK {
-        unsafe{
-            memcpy(xQueue.pcReadFrom as *mut c_void,pvItemToQueue as *const c_void,xQueue.uxItemSize as usize);
+    } else if xPosition == queueSEND_TO_BACK {
+        unsafe {
+            memcpy(
+                xQueue.pcReadFrom as *mut c_void,
+                pvItemToQueue as *const c_void,
+                xQueue.uxItemSize as usize,
+            );
         }
-        xQueue.pcWriteTo+=xQueue.uxItemSize as usize;
-        if xQueue.pcWriteTo>=xQueue.pcTail{
-            xQueue.pcWriteTo=xQueue.pcTail;
-        }
-        else{
+        xQueue.pcWriteTo += xQueue.uxItemSize as usize;
+        if xQueue.pcWriteTo >= xQueue.pcTail {
+            xQueue.pcWriteTo = xQueue.pcTail;
+        } else {
             mtCOVERAGE_TEST_MARKER!();
         }
-    }
-    else{
-        unsafe{
-            memcpy(xQueue.pcReadFrom as *mut c_void,pvItemToQueue as *const c_void,xQueue.uxItemSize as usize);
+    } else {
+        unsafe {
+            memcpy(
+                xQueue.pcReadFrom as *mut c_void,
+                pvItemToQueue as *const c_void,
+                xQueue.uxItemSize as usize,
+            );
         }
-        xQueue.pcWriteTo-=xQueue.uxItemSize as usize;
-        if xQueue.pcWriteTo<xQueue.pcHead{
-            xQueue.pcWriteTo=xQueue.pcTail-xQueue.uxItemSize as usize;
-        }
-        else{
+        xQueue.pcWriteTo -= xQueue.uxItemSize as usize;
+        if xQueue.pcWriteTo < xQueue.pcHead {
+            xQueue.pcWriteTo = xQueue.pcTail - xQueue.uxItemSize as usize;
+        } else {
             mtCOVERAGE_TEST_MARKER!();
         }
 
-        if xPosition==queueOVERWRITE {
-            if uxMessagesWaiting>0{
-                uxMessagesWaiting-=1;
-            }
-            else{
+        if xPosition == queueOVERWRITE {
+            if uxMessagesWaiting > 0 {
+                uxMessagesWaiting -= 1;
+            } else {
                 mtCOVERAGE_TEST_MARKER!();
             }
-        }
-        else{
+        } else {
             mtCOVERAGE_TEST_MARKER!();
         }
     }
-    
 
-    xQueue.uxMessagesWaiting=uxMessagesWaiting+1;
+    xQueue.uxMessagesWaiting = uxMessagesWaiting + 1;
 
     false
 }
 
-pub fn prvIsQueueFull(xQueue: &mut Queue_t)->bool{
-    let xReturn:bool;
+pub fn prvIsQueueFull(xQueue: &mut Queue_t) -> bool {
+    let xReturn: bool;
     taskENTER_CRITICAL!();
     {
-        if xQueue.uxMessagesWaiting==xQueue.uxLength{
-            xReturn=true;
+        if xQueue.uxMessagesWaiting == xQueue.uxLength {
+            xReturn = true;
+        } else {
+            xReturn = false;
         }
-        else{
-            xReturn=false;
+    }
+    taskEXIT_CRITICAL!();
+    xReturn
+}
+pub fn prvIsQueueEmpty(xQueue: &mut Queue_t) -> bool {
+    let xReturn: bool;
+    taskENTER_CRITICAL!();
+    {
+        if xQueue.uxMessagesWaiting == 0 {
+            xReturn = true;
+        } else {
+            xReturn = false;
         }
     }
     taskEXIT_CRITICAL!();
@@ -325,11 +292,209 @@ pub fn prvIsQueueFull(xQueue: &mut Queue_t)->bool{
 }
 pub fn vQueueDelete(xQueue: QueueHandle_t) {
     let pxQueue = &*xQueue.write();
-    let alloc_size:usize=mem::size_of::<xQUEUE>()+(xQueue.read().uxLength*xQueue.read().uxItemSize) as usize;
+    let alloc_size: usize =
+        mem::size_of::<xQUEUE>() + (xQueue.read().uxLength * xQueue.read().uxItemSize) as usize;
     let layout = Layout::from_size_align(alloc_size as usize, 4)
         .ok()
         .unwrap();
     unsafe {
-        alloc::alloc::dealloc(pxQueue as *const Queue_t as *mut u8 , layout);
+        alloc::alloc::dealloc(pxQueue as *const Queue_t as *mut u8, layout);
     }
 }
+//消息队列发送
+pub fn xQueueSend(xQueue: QueueHandle_t, pvItemToQueue: usize, xTicksToWait: TickType) -> BaseType {
+    xQueueGenericSend(
+        &mut *xQueue.write(),
+        pvItemToQueue,
+        xTicksToWait,
+        queueSEND_TO_BACK,
+    )
+}
+//消息队列读取
+pub fn prvCopyDataFromQueue(xQueue: &mut Queue_t, pvBuffer: usize) {
+    if xQueue.uxItemSize != 0 {
+        xQueue.pcReadFrom += xQueue.uxItemSize as usize;
+        if xQueue.pcReadFrom >= xQueue.pcTail {
+            xQueue.pcReadFrom = xQueue.pcHead;
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+        unsafe {
+            memcpy(
+                pvBuffer as *mut c_void,
+                xQueue.pcReadFrom as *const c_void,
+                xQueue.uxItemSize as usize,
+            );
+        }
+    }
+}
+pub fn xQueueReceive(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: TickType) -> BaseType {
+    // xQueueGenericReceive(xQueue, pvBuffer, xTicksToWait, pdFALSE as i32)
+    let mut xEntryTimeSet: BaseType = pdFALSE;
+    let mut xTimeOut: TimeOut = Default::default();
+    let mut pcOriginalReadPosition: usize = 0;
+    let xQueue = &mut *xQueue.write();
+    loop {
+        taskENTER_CRITICAL!();
+        {
+            let uxMessagesWaiting = xQueue.uxMessagesWaiting;
+            if uxMessagesWaiting > 0 {
+                //TODO:
+                pcOriginalReadPosition = xQueue.pcReadFrom;
+                prvCopyDataFromQueue(xQueue, pvBuffer);
+                xQueue.uxMessagesWaiting = uxMessagesWaiting - 1;
+
+                if list_is_empty(&xQueue.xTasksWaitingToSend) == false {
+                    if (xTaskRemoveFromEventList(&xQueue.xTasksWaitingToSend) != false) {
+                        queueYIELD_IF_USING_PREEMPTION!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                } else {
+                    //list empty
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+                taskEXIT_CRITICAL!();
+                return pdPASS;
+            } else {
+                if xTicksToWait == 0 {
+                    taskEXIT_CRITICAL!();
+                    return errQUEUE_EMPTY;
+                } else if xEntryTimeSet == pdFALSE {
+                    vTaskInternalSetTimeOutState(&mut xTimeOut);
+                    xEntryTimeSet = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            }
+        }
+        // {if xQueue.uxMessagesWaiting<xQueue.uxLength||xC}
+        taskEXIT_CRITICAL!();
+        vTaskSuspendAll();
+        //TODO:prvLockQueue
+        if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
+            if (prvIsQueueEmpty(xQueue) != false) {
+                //TOOD:vTaskPlaceOnEventList
+                // vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToSend ), xTicksToWait );
+
+                // /* Unlocking the queue means queue events can effect the
+                //  * event list. It is possible that interrupts occurring now
+                //  * remove this task from the event list again - but as the
+                //  * scheduler is suspended the task will go onto the pending
+                //  * ready list instead of the actual ready list. */
+                // prvUnlockQueue( pxQueue );
+                //TODO:prvUnlockQueue
+                // /* Resuming the scheduler will move tasks from the pending
+                //  * ready list into the ready list - so it is feasible that this
+                //  * task is already in the ready list before it yields - in which
+                //  * case the yield will not cause a context switch unless there
+                //  * is also a higher priority task in the pending ready list. */
+                if (vTaskResumeAll() == false) {
+                    portYIELD_WITHIN_API!();
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                //TODO: prvUnlockQueue( pxQueue );
+                vTaskResumeAll();
+            }
+        } else {
+            //TODO:prvUnlockQueue
+            vTaskResumeAll();
+            if prvIsQueueEmpty(xQueue) != false {
+                return errQUEUE_EMPTY;
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        }
+    }
+}
+pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: TickType) -> BaseType {
+    let mut xEntryTimeSet: BaseType = pdFALSE;
+    let mut xTimeOut: TimeOut = Default::default();
+    let mut pcOriginalReadPosition: usize = 0;
+    let xQueue = &mut *xQueue.write();
+    loop {
+        taskENTER_CRITICAL!();
+        {
+            let uxMessagesWaiting = xQueue.uxMessagesWaiting;
+            if uxMessagesWaiting > 0 {
+                //TODO:
+                pcOriginalReadPosition = xQueue.pcReadFrom;
+                prvCopyDataFromQueue(xQueue, pvBuffer);
+                //different from queuereceive
+                // xQueue.uxMessagesWaiting = uxMessagesWaiting - 1;
+                /* The data is not being removed, so reset the read pointer. */
+                xQueue.pcReadFrom = pcOriginalReadPosition;
+                if list_is_empty(&xQueue.xTasksWaitingToReceive) == false {
+                    if (xTaskRemoveFromEventList(&xQueue.xTasksWaitingToReceive) != false) {
+                        queueYIELD_IF_USING_PREEMPTION!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                } else {
+                    //list empty
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+                taskEXIT_CRITICAL!();
+                return pdPASS;
+            } else {
+                if xTicksToWait == 0 {
+                    taskEXIT_CRITICAL!();
+                    return errQUEUE_EMPTY;
+                } else if xEntryTimeSet == pdFALSE {
+                    vTaskInternalSetTimeOutState(&mut xTimeOut);
+                    xEntryTimeSet = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            }
+        }
+        // {if xQueue.uxMessagesWaiting<xQueue.uxLength||xC}
+        taskEXIT_CRITICAL!();
+        vTaskSuspendAll();
+        //TODO:prvLockQueue
+        if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
+            if (prvIsQueueEmpty(xQueue) != false) {
+                //TOOD:vTaskPlaceOnEventList
+                // vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToSend ), xTicksToWait );
+
+                // /* Unlocking the queue means queue events can effect the
+                //  * event list. It is possible that interrupts occurring now
+                //  * remove this task from the event list again - but as the
+                //  * scheduler is suspended the task will go onto the pending
+                //  * ready list instead of the actual ready list. */
+                // prvUnlockQueue( pxQueue );
+                //TODO:prvUnlockQueue
+                // /* Resuming the scheduler will move tasks from the pending
+                //  * ready list into the ready list - so it is feasible that this
+                //  * task is already in the ready list before it yields - in which
+                //  * case the yield will not cause a context switch unless there
+                //  * is also a higher priority task in the pending ready list. */
+                if (vTaskResumeAll() == false) {
+                    portYIELD_WITHIN_API!();
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                //TODO: prvUnlockQueue( pxQueue );
+                vTaskResumeAll();
+            }
+        } else {
+            //TODO:prvUnlockQueue
+            vTaskResumeAll();
+            if prvIsQueueEmpty(xQueue) != false {
+                return errQUEUE_EMPTY;
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        }
+    }
+}
+// pub fn xQueueGenericReceive(
+//     xQueue: QueueHandle_t,
+//     pvBuffer: usize,
+//     mut xTicksToWait: TickType,
+//     xJustPeeking: BaseType,
+// ) -> BaseType {
+// }

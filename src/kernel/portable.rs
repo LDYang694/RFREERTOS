@@ -94,7 +94,7 @@ pub fn auto_set_currentTcb() {
         }
     }
 }
-pub fn x_port_start_scheduler() -> UBaseType {
+pub fn x_port_start_scheduler() -> BaseType {
     unsafe {
         xISRStackTop = (&X_ISRSTACK[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const u32;
     }
