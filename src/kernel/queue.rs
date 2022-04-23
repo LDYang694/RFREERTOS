@@ -1,8 +1,8 @@
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::riscv_virt::print;
-use crate::kernel::tasks::*;
 use crate::kernel::riscv_virt::*;
+use crate::kernel::tasks::*;
 use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
 
 pub const queueSEND_TO_BACK: BaseType = 1;
@@ -29,7 +29,10 @@ use crate::{
     taskENTER_CRITICAL, taskEXIT_CRITICAL,
 };
 use alloc::boxed::Box;
+use alloc::collections::VecDeque;
+use alloc::format;
 use alloc::sync::{Arc, Weak};
+use alloc::vec::Vec;
 use core::arch::asm;
 use core::ffi::c_void;
 use core::{alloc::Layout, mem};
@@ -39,7 +42,9 @@ pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
 pub type xQUEUE = QueueDefinition;
 pub type Queue_t = xQUEUE;
+#[derive(Default)]
 pub struct QueueDefinition {
+    pcMesQueue: Vec<u8>, //message space
     pcHead: usize,
     pcTail: usize,
     pcWriteTo: usize,
@@ -49,6 +54,67 @@ pub struct QueueDefinition {
     uxMessagesWaiting: UBaseType,
     uxLength: UBaseType,
     uxItemSize: UBaseType,
+}
+impl QueueDefinition {
+    pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType)->Self{
+        QueueDefinition::xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
+    }
+    #[cfg(feature = "configSUPPORT_DYNAMIC_ALLOCATION")]
+    pub fn xQueueGenericCreate(
+        uxQueueLength: UBaseType,
+        uxItemSize: UBaseType,
+        ucQueueType: u8,
+    ) -> Self {
+        let mut queue: QueueDefinition = Default::default();
+        let mut xQueueSizeInBytes: isize;
+        if uxItemSize == 0 {
+            xQueueSizeInBytes = 0;
+        } else {
+            xQueueSizeInBytes = (uxQueueLength * uxItemSize) as isize;
+        }
+        queue.pcMesQueue = Vec::with_capacity(xQueueSizeInBytes as usize);
+        queue.prvInitialiseNewQueue(uxQueueLength, uxItemSize, ucQueueType);
+        queue
+    }
+    pub fn prvInitialiseNewQueue(
+        &mut self,
+        uxQueueLength: UBaseType,
+        uxItemSize: UBaseType,
+        ucQueueType: u8,
+    ) {
+        let pxNewQueue: usize = self as *mut QueueDefinition as usize;
+        let pucQueueStorage:usize=self.pcMesQueue.as_ptr() as usize;
+        // let pucQueueStorage:usize=self.pcMesQueue.
+        if (uxItemSize == 0) {
+            self.pcHead = pxNewQueue;
+        } else {
+            self.pcHead = pucQueueStorage;
+        }
+        self.uxLength = uxQueueLength;
+        self.uxItemSize = uxItemSize;
+        self.xQueueGenericReset(1);
+
+    }
+    pub fn xQueueGenericReset(&mut self, xNewQueue: BaseType) -> BaseType {
+        // vTaskEnterCritical();
+        {
+            self.pcTail = self.pcHead + (self.uxLength * self.uxItemSize) as usize;
+            self.uxMessagesWaiting = 0;
+            self.pcWriteTo = self.pcHead;
+            //TODO: union
+            self.pcReadFrom = self.pcHead + ((self.uxLength - 1) * self.uxItemSize) as usize;
+
+            //TODO:lock
+
+            if (xNewQueue == 0) {
+                //TODO:
+            } else {
+                //initial in Default::default()
+            }
+        }
+        // vTaskExitCritical();
+        1
+    }
 }
 //TODO: xqueue default
 pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> QueueHandle_t {
@@ -124,8 +190,13 @@ pub fn prvInitialiseNewQueue(
 
     print("prvInitialiseNewQueue 2222");
     xQueueGenericReset(pxNewQueue_, 1);
-    let x=pxNewQueue_.xTasksWaitingToReceive.read().ux_number_of_items;
+    let x = pxNewQueue_.xTasksWaitingToReceive.read().ux_number_of_items;
     print("prvInitialiseNewQueue 3333");
+    let s = format!(
+        "pchead:{:X},pcreadfrom:{:X}",
+        pxNewQueue_.pcHead, pxNewQueue_.pcReadFrom
+    );
+    print(&s)
 }
 
 pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType {
@@ -141,11 +212,9 @@ pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType
         if (xNewQueue == 0) {
             //TODO:
         } else {
-           
             let mut rec = Arc::new(RwLock::new(XList::default()));
-            let mut send=Arc::new(RwLock::new(XList::default()));
-            
-          
+            let mut send = Arc::new(RwLock::new(XList::default()));
+
             unsafe {
                 Arc::increment_strong_count(Arc::into_raw(rec.clone()));
                 Arc::increment_strong_count(Arc::into_raw(send.clone()));
@@ -159,13 +228,13 @@ pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType
                     &mut send as *mut Arc<RwLock<XList>> as *mut c_void,
                     4,
                 );
-            } 
+            }
             // *xQueue.xTasksWaitingToReceive.write() = XList::default();
-              // mem::take(&mut (xQueue.xTasksWaitingToReceive));
-              // xQueue.xTasksWaitingToSend = Arc::new(RwLock::new(XList::default()));
-              // xQueue.xTasksWaitingToReceive = Arc::new(RwLock::new(XList::default()));
-              mem::forget(&rec);
-              mem::forget(&send);
+            // mem::take(&mut (xQueue.xTasksWaitingToReceive));
+            // xQueue.xTasksWaitingToSend = Arc::new(RwLock::new(XList::default()));
+            // xQueue.xTasksWaitingToReceive = Arc::new(RwLock::new(XList::default()));
+            mem::forget(&rec);
+            mem::forget(&send);
         }
     }
     //TODO: tmp remove
@@ -265,15 +334,28 @@ pub fn prvCopyDataToQueue(xQueue: &mut Queue_t, pvItemToQueue: usize, xPosition:
         }
     } else if xPosition == queueSEND_TO_BACK {
         unsafe {
+            let x = *(pvItemToQueue as *mut i32);
+            let s_ = format!(
+                "Send  xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                xQueue.pcWriteTo, pvItemToQueue, x, xQueue.uxItemSize
+            );
+
+            vSendString(&s_);
             memcpy(
-                xQueue.pcReadFrom as *mut c_void,
+                xQueue.pcWriteTo as *mut c_void,
                 pvItemToQueue as *const c_void,
                 xQueue.uxItemSize as usize,
             );
+            let xx = *(xQueue.pcWriteTo as *mut i32);
+            let ss_ = format!(
+                "Send over xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                xQueue.pcWriteTo, pvItemToQueue, xx, xQueue.uxItemSize
+            );
+            vSendString(&ss_);
         }
         xQueue.pcWriteTo += xQueue.uxItemSize as usize;
         if xQueue.pcWriteTo >= xQueue.pcTail {
-            xQueue.pcWriteTo = xQueue.pcTail;
+            xQueue.pcWriteTo = xQueue.pcHead;
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
@@ -285,9 +367,9 @@ pub fn prvCopyDataToQueue(xQueue: &mut Queue_t, pvItemToQueue: usize, xPosition:
                 xQueue.uxItemSize as usize,
             );
         }
-        xQueue.pcWriteTo -= xQueue.uxItemSize as usize;
-        if xQueue.pcWriteTo < xQueue.pcHead {
-            xQueue.pcWriteTo = xQueue.pcTail - xQueue.uxItemSize as usize;
+        xQueue.pcReadFrom -= xQueue.uxItemSize as usize;
+        if xQueue.pcReadFrom < xQueue.pcHead {
+            xQueue.pcReadFrom = xQueue.pcTail - xQueue.uxItemSize as usize;
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
@@ -346,7 +428,11 @@ pub fn vQueueDelete(xQueue: QueueHandle_t) {
     }
 }
 //消息队列发送
-pub fn xQueueSend(xQueue: Option<QueueHandle_t>, pvItemToQueue: usize, xTicksToWait: TickType) -> BaseType {
+pub fn xQueueSend(
+    xQueue: Option<QueueHandle_t>,
+    pvItemToQueue: usize,
+    xTicksToWait: TickType,
+) -> BaseType {
     xQueueGenericSend(
         &mut *xQueue.unwrap().write(),
         pvItemToQueue,
@@ -363,12 +449,25 @@ pub fn prvCopyDataFromQueue(xQueue: &mut Queue_t, pvBuffer: usize) {
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
+
         unsafe {
+            let xx = *(xQueue.pcReadFrom as *mut i32);
+            let s = format!(
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                xQueue.pcReadFrom, pvBuffer, xx, xQueue.uxItemSize
+            );
+            vSendString(&s);
             memcpy(
                 pvBuffer as *mut c_void,
                 xQueue.pcReadFrom as *const c_void,
                 xQueue.uxItemSize as usize,
             );
+            let x = *(pvBuffer as *mut i32);
+            let s_ = format!(
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                xQueue.pcReadFrom, pvBuffer, x, xQueue.uxItemSize
+            );
+            vSendString(&s_);
         }
     }
 }
@@ -381,7 +480,7 @@ pub fn xQueueReceive(
     let mut xEntryTimeSet: BaseType = pdFALSE;
     let mut xTimeOut: TimeOut = Default::default();
     let mut pcOriginalReadPosition: usize = 0;
-    let xq=xQueue.unwrap();
+    let xq = xQueue.unwrap();
     let xQueue = &mut (*xq.write());
     loop {
         taskENTER_CRITICAL!();

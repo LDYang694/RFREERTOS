@@ -5,9 +5,10 @@
 #![feature(box_into_inner)]
 mod kernel;
 extern crate alloc;
-use alloc::{format, fmt::format};
 use alloc::sync::Arc;
+use alloc::{fmt::format, format};
 use core::{borrow::Borrow, ffi::c_void, mem::size_of};
+use kernel::queue::QueueDefinition;
 use kernel::{
     config::*,
     kernel::*,
@@ -92,23 +93,21 @@ fn task_send(t: *mut c_void) {
     let mut f = 1;
     let mut begin: TickType = 0;
     let increment: TickType = 5;
-    unsafe{
-        if list_is_empty(&xQueue.clone().unwrap().read().xTasksWaitingToReceive){
+    unsafe {
+        if list_is_empty(&xQueue.clone().unwrap().read().xTasksWaitingToReceive) {
             vSendString("send empty");
-        }
-        else{
+        } else {
             vSendString("send not empty");
         }
     }
-    
-    vSendString("sending");
-    unsafe {
-        xQueueSend(xQueue.clone(), &ulValueToSend as *const _ as usize, 0);
-    }
-    vSendString("send complete");
+
     loop {
         // xTaskDelayUntil(&mut begin, increment);
-        
+        vSendString("sending");
+        unsafe {
+            xQueueSend(xQueue.clone(), &ulValueToSend as *const _ as usize, 0);
+        }
+        vSendString("send complete");
         //vSendString("send gogogogo!!!(in loop)");
     }
 }
@@ -119,28 +118,26 @@ fn task_rec(t: *mut c_void) {
     let pcMessage1 = "success";
     let pcMessage2 = "fail";
     let mut f = 1;
-    vTaskDelay(1000);
-    unsafe{
-        if list_is_empty(&xQueue.clone().unwrap().read().xTasksWaitingToReceive){
+    // vTaskDelay(1000);
+    unsafe {
+        if list_is_empty(&xQueue.clone().unwrap().read().xTasksWaitingToReceive) {
             vSendString("receive empty");
-        }
-        else{
+        } else {
             vSendString("receive not empty");
         }
     }
     vSendString("receiving");
-    unsafe {
-        xQueueReceive(xQueue.clone(), &ulValueToSend as *const _ as usize, 10);
-    }
-    if (ulExpectedValue == ulValueToSend) {
-        vSendString(pcMessage1);
-    } else {
-         let s_ = format!("fail read{:X}", ulValueToSend);
-        vSendString(&s_);
-    }
+
     loop {
-        
-        
+        unsafe {
+            xQueueReceive(xQueue.clone(), &ulValueToSend as *const _ as usize, 10);
+        }
+        if (ulExpectedValue == ulValueToSend) {
+            vSendString(pcMessage1);
+        } else {
+            let s_ = format!("fail read{:X}", ulValueToSend);
+            vSendString(&s_);
+        }
     }
 }
 lazy_static! {
@@ -166,12 +163,27 @@ pub fn main_new_1() {
     // let stack3ptr: StackType_t_link =
     //     &*TASK3_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
     //         - 4;
+    // unsafe {
+    //     xQueue = Some(xQueueCreate(1, size_of::<u32>() as u32));
+    // }
     unsafe {
-        xQueue = Some(xQueueCreate(1, size_of::<u32>() as u32));
+        xQueue = Some(Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
+            1,
+            size_of::<u32>() as u32,
+        ))));
     }
     //let s=format!("create1:{}",list_get_num_items(Arc::downgrade(&xQueue.clone().unwrap().read().xTasksWaitingToReceive)))
-    unsafe{
-        let s=format!("create1:{}",xQueue.clone().unwrap().read().xTasksWaitingToReceive.read().ux_number_of_items);
+    unsafe {
+        let s = format!(
+            "create1:{}",
+            xQueue
+                .clone()
+                .unwrap()
+                .read()
+                .xTasksWaitingToReceive
+                .read()
+                .ux_number_of_items
+        );
         print(&s);
     }
     print("task1handler");
@@ -248,8 +260,17 @@ pub fn main_new_1() {
     // );
     // print("task insert");
     // v_list_insert_end(&READY_TASK_LISTS[2], (TCB3_p.read().xStateListItem).clone());
-    unsafe{
-        let s=format!("create2:{}",xQueue.clone().unwrap().read().xTasksWaitingToReceive.read().ux_number_of_items);
+    unsafe {
+        let s = format!(
+            "create2:{}",
+            xQueue
+                .clone()
+                .unwrap()
+                .read()
+                .xTasksWaitingToReceive
+                .read()
+                .ux_number_of_items
+        );
         print(&s);
     }
     print("start scheduler!!!!!!!!!");
