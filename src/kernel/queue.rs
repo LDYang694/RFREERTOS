@@ -144,7 +144,11 @@ pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType
            
             let mut rec = Arc::new(RwLock::new(XList::default()));
             let mut send=Arc::new(RwLock::new(XList::default()));
+            
+          
             unsafe {
+                Arc::increment_strong_count(Arc::into_raw(rec.clone()));
+                Arc::increment_strong_count(Arc::into_raw(send.clone()));
                 memcpy(
                     &mut xQueue.xTasksWaitingToReceive as *mut Arc<RwLock<XList>> as *mut c_void,
                     &mut rec as *mut Arc<RwLock<XList>> as *mut c_void,
