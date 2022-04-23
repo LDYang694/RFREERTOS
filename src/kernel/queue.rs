@@ -2,6 +2,7 @@ extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::riscv_virt::print;
 use crate::kernel::tasks::*;
+use crate::kernel::riscv_virt::*;
 use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
 
 pub const queueSEND_TO_BACK: BaseType = 1;
@@ -43,8 +44,8 @@ pub struct QueueDefinition {
     pcTail: usize,
     pcWriteTo: usize,
     pcReadFrom: usize,
-    xTasksWaitingToSend: ListRealLink,
-    xTasksWaitingToReceive: ListRealLink,
+    pub xTasksWaitingToSend: ListRealLink,
+    pub xTasksWaitingToReceive: ListRealLink,
     uxMessagesWaiting: UBaseType,
     uxLength: UBaseType,
     uxItemSize: UBaseType,
@@ -182,6 +183,7 @@ pub fn xQueueGenericSend(
     let mut xEntryTimeSet: bool = false;
     let mut xTimeout: TimeOut = Default::default();
     loop {
+        vSendString("looping");
         taskENTER_CRITICAL!();
         {
             if xQueue.uxMessagesWaiting < xQueue.uxLength || xCopyPosition == queueOVERWRITE {
@@ -190,16 +192,23 @@ pub fn xQueueGenericSend(
                     xYieldRequired = prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
                     //todo
                 } else {
+                    vSendString("copy");
                     xYieldRequired = prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
+                    vSendString("copy finish");
                     if list_is_empty(&xQueue.xTasksWaitingToReceive) == false {
+                        vSendString("not empty!");
                         if xTaskRemoveFromEventList(&xQueue.xTasksWaitingToReceive) == true {
+                            vSendString("yield!");
                             queueYIELD_IF_USING_PREEMPTION!();
                         } else {
+                            vSendString("no yield!");
                             mtCOVERAGE_TEST_MARKER!();
                         }
                     } else if xYieldRequired == true {
+                        vSendString("yield!");
                         queueYIELD_IF_USING_PREEMPTION!();
                     } else {
+                        vSendString("no yield!");
                         mtCOVERAGE_TEST_MARKER!();
                     }
                 }
@@ -217,6 +226,7 @@ pub fn xQueueGenericSend(
                 }
             }
         }
+        vSendString("exiting critical");
         taskEXIT_CRITICAL!();
 
         vTaskSuspendAll();

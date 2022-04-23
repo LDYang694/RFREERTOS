@@ -733,6 +733,7 @@ pub fn vTaskResumeAll()->bool{
 } 
 
 pub fn xTaskRemoveFromEventList(pxEventList:&ListRealLink)->bool{
+    vSendString("in!");
     let pxUnblockedTCB=list_get_owner_of_head_entry(pxEventList).upgrade().unwrap();
     let xReturn:bool;
     let uxSchedulerSuspended_:UBaseType;
@@ -740,7 +741,9 @@ pub fn xTaskRemoveFromEventList(pxEventList:&ListRealLink)->bool{
         uxSchedulerSuspended_=uxSchedulerSuspended;
     }
     //todo:eventlist item
+    vSendString("ready");
     if uxSchedulerSuspended_==0{
+        vSendString("no suspend");
         ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem) );
         prvAddTaskToReadyList(pxUnblockedTCB.clone());
         if cfg!(feature="configUSE_TICKLESS_IDLE"){
@@ -748,6 +751,7 @@ pub fn xTaskRemoveFromEventList(pxEventList:&ListRealLink)->bool{
         }
     }
     else{
+        vSendString("suspend");
         v_list_insert_end(&PENDING_READY_LIST,pxUnblockedTCB.read().xStateListItem.clone());
     }
     if pxUnblockedTCB.read().uxPriority>get_current_tcb().unwrap().uxPriority{
