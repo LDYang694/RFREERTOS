@@ -14,13 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: EnvPrepare
-        run : |
-            rustup install nightly 
-            rustup default nightly 
-            rustup target add riscv32imac-unknown-none-elf
-            cargo install cargo-binutils
-	          rustup component add rust-src
-	          rustup component add llvm-tools-preview
+        run : rustup install nightly ;rustup default nightly ;rustup target add riscv32imac-unknown-none-elf;cargo install cargo-binutils;rustup component add rust-src;rustup component add llvm-tools-preview
       - name: Build
         run: cargo build
       - name: Build doc
