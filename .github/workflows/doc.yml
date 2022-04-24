@@ -16,7 +16,7 @@ jobs:
       - name: EnvPrepare
         run : sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu;rustup install nightly ;rustup default nightly ;rustup target add riscv32imac-unknown-none-elf;cargo install cargo-binutils;rustup component add rust-src;rustup component add llvm-tools-preview
       -name: Riscv
-       run: bash prep.sh
+        run : bash prep.sh
       - name: Build
         run: export;cargo build
       - name: Build doc
