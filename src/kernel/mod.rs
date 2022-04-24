@@ -6,6 +6,7 @@ pub mod allocator;
 pub mod config;
 pub mod ns16550;
 pub mod riscv_virt;
+#[macro_use]
 pub mod tasks;
 pub mod portable;
 pub mod linked_list;

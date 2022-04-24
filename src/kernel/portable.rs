@@ -18,7 +18,6 @@ use super::projdefs::pdFALSE;
 // use crate::pxCurrentTCB;
 extern "C" {
     fn xPortStartFirstTask();
-    fn testfunc(x: u32) -> u32;
 }
 
 #[no_mangle]
@@ -27,6 +26,15 @@ pub static mut uxTimerIncrementsForOneTick: UBaseType = 0;
 #[no_mangle]
 pub static mut pxCurrentTCB: UBaseType = 0;
 
+#[no_mangle]
+pub static mut pullNextTime: UBaseType = 0;
+
+#[no_mangle]
+pub static mut xISRStackTop: *const StackType= 0 as *const StackType;
+
+#[no_mangle]
+pub static mut pullMachineTimerCompareRegister:UBaseType = 0;
+
 pub static mut pxCurrentTCB_: Option<*const tskTaskControlBlock> = None;
 
 static mut X_ISRSTACK: [StackType; CONFIG_ISR_STACK_SIZE_WORDS] = [0; CONFIG_ISR_STACK_SIZE_WORDS];
@@ -34,11 +42,11 @@ static mut X_ISRSTACK: [StackType; CONFIG_ISR_STACK_SIZE_WORDS] = [0; CONFIG_ISR
 static mut ULL_NEXT_TIME: u64 = 0;
 pub const ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE: UBaseType = CONFIG_MTIMECMP_BASE_ADDRESS;
 
+/* 
 extern "C" {
-    pub static mut pullMachineTimerCompareRegister: u32;
-    pub static mut pullNextTime: u32;
-    pub static mut xISRStackTop: *const StackType;
-}
+    pub static mut : u32;
+    
+}*/
 //todo:safe  global var and pointer
 
 fn get_mtime()->u64{

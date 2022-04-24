@@ -56,6 +56,15 @@ macro_rules! taskEXIT_CRITICAL {
     };
 }
 
+#[macro_export]
+macro_rules! vTaskMissedYield {
+    () => {
+        unsafe{
+            xYieldPending=true;
+        }
+    };
+}
+
 extern "C" {
     pub fn pxPortInitialiseStack(
         pxTopOfStack: *mut StackType_t,

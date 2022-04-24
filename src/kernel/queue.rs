@@ -7,12 +7,31 @@ use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
 
 pub const queueSEND_TO_BACK: BaseType = 1;
 pub const queueOVERWRITE: BaseType = 2;
+pub const queueUNLOCKED:i8 = -1;
+pub const queueLOCKED_UNMODIFIED:i8 = 0;
+pub const queueINT8_MAX:i8 = 127;
 pub const pdPass: BaseType = 0;
 
 #[macro_export]
 macro_rules! queueYIELD_IF_USING_PREEMPTION {
     () => {
         taskYIELD_IF_USING_PREEMPTION!();
+    };
+}
+
+#[macro_export]
+macro_rules! prvLockQueue {
+    ($pxQueue: expr ) => {
+        taskENTER_CRITICAL!();
+        {
+            if $pxQueue.cRxLock==queueUNLOCKED{
+                $pxQueue.cRxLock=queueLOCKED_UNMODIFIED;
+            }
+            if $pxQueue.cTxLock==queueUNLOCKED{
+                $pxQueue.cTxLock=queueLOCKED_UNMODIFIED;
+            }
+        }
+        taskEXIT_CRITICAL!();
     };
 }
 
@@ -42,6 +61,9 @@ pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
 pub type xQUEUE = QueueDefinition;
 pub type Queue_t = xQUEUE;
+
+
+
 #[derive(Default)]
 pub struct QueueDefinition {
     pcMesQueue: Vec<u8>, //message space
@@ -49,6 +71,8 @@ pub struct QueueDefinition {
     pcTail: usize,
     pcWriteTo: usize,
     pcReadFrom: usize,
+    cRxLock:i8,
+    cTxLock:i8,
     pub xTasksWaitingToSend: ListRealLink,
     pub xTasksWaitingToReceive: ListRealLink,
     uxMessagesWaiting: UBaseType,
@@ -103,7 +127,8 @@ impl QueueDefinition {
             self.pcWriteTo = self.pcHead;
             //TODO: union
             self.pcReadFrom = self.pcHead + ((self.uxLength - 1) * self.uxItemSize) as usize;
-
+            self.cRxLock = queueUNLOCKED;
+            self.cTxLock - queueUNLOCKED;
             //TODO:lock
 
             if (xNewQueue == 0) {
@@ -304,19 +329,20 @@ pub fn xQueueGenericSend(
 
         vTaskSuspendAll();
         //todo:prvLockQueue
+        prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
             if prvIsQueueFull(xQueue) == true {
                 //todo:vTaskPlaceOnEventList
-                //todo:prvUnlockQueue
+                prvUnlockQueue(xQueue);
                 if vTaskResumeAll() == false {
                     portYIELD_WITHIN_API!();
                 }
             } else {
-                //todo:prvUnlockQueue
+                prvUnlockQueue(xQueue);
                 vTaskResumeAll();
             }
         } else {
-            //todo:prvUnlockQueue
+            prvUnlockQueue(xQueue);
             vTaskResumeAll();
             return errQUEUE_FULL;
         }
@@ -519,7 +545,7 @@ pub fn xQueueReceive(
         // {if xQueue.uxMessagesWaiting<xQueue.uxLength||xC}
         taskEXIT_CRITICAL!();
         vTaskSuspendAll();
-        //TODO:prvLockQueue
+        prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
             if (prvIsQueueEmpty(xQueue) != false) {
                 //TOOD:vTaskPlaceOnEventList
@@ -543,11 +569,11 @@ pub fn xQueueReceive(
                     mtCOVERAGE_TEST_MARKER!();
                 }
             } else {
-                //TODO: prvUnlockQueue( pxQueue );
+                prvUnlockQueue(xQueue);
                 vTaskResumeAll();
             }
         } else {
-            //TODO:prvUnlockQueue
+            prvUnlockQueue(xQueue);
             vTaskResumeAll();
             if prvIsQueueEmpty(xQueue) != false {
                 return errQUEUE_EMPTY;
@@ -601,7 +627,7 @@ pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tick
         // {if xQueue.uxMessagesWaiting<xQueue.uxLength||xC}
         taskEXIT_CRITICAL!();
         vTaskSuspendAll();
-        //TODO:prvLockQueue
+        prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
             if (prvIsQueueEmpty(xQueue) != false) {
                 //TOOD:vTaskPlaceOnEventList
@@ -626,10 +652,12 @@ pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tick
                 }
             } else {
                 //TODO: prvUnlockQueue( pxQueue );
+                prvUnlockQueue(xQueue);
                 vTaskResumeAll();
             }
         } else {
             //TODO:prvUnlockQueue
+            prvUnlockQueue(xQueue);
             vTaskResumeAll();
             if prvIsQueueEmpty(xQueue) != false {
                 return errQUEUE_EMPTY;
@@ -646,3 +674,57 @@ pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tick
 //     xJustPeeking: BaseType,
 // ) -> BaseType {
 // }
+
+pub fn prvUnlockQueue(xQueue: &mut QueueDefinition){
+    taskENTER_CRITICAL!();
+    {
+        let mut cTxLock:i8=xQueue.cTxLock;
+        while cTxLock>queueUNLOCKED{
+            if cfg!(feature="configUSE_QUEUE_SETS"){
+                //todo
+            }
+            else{
+                if list_is_empty(&xQueue.xTasksWaitingToReceive)==false{
+                    if xTaskRemoveFromEventList(&xQueue.xTasksWaitingToReceive) != false{
+                        vTaskMissedYield!();
+                    }
+                    else{
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                }
+                else{
+                    break;
+                }
+            }
+            cTxLock-=1;
+        }
+        xQueue.cTxLock=queueUNLOCKED;
+    }
+    taskEXIT_CRITICAL!();
+
+    taskENTER_CRITICAL!();
+    {
+        let mut cRxLock:i8=xQueue.cTxLock;
+        while cRxLock>queueUNLOCKED{
+            if cfg!(feature="configUSE_QUEUE_SETS"){
+                //todo
+            }
+            else{
+                if list_is_empty(&xQueue.xTasksWaitingToReceive)==false{
+                    if xTaskRemoveFromEventList(&xQueue.xTasksWaitingToReceive) != false{
+                        vTaskMissedYield!();
+                    }
+                    else{
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                }
+                else{
+                    break;
+                }
+            }
+            cRxLock-=1;
+        }
+        xQueue.cRxLock=queueUNLOCKED;
+    }
+    taskEXIT_CRITICAL!();
+}
