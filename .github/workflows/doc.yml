@@ -22,7 +22,7 @@ jobs:
       - name: Build doc
         run: cargo doc --no-deps --verbose
       - name: Generate index.html
-        run: echo '<meta http-equiv=refresh content=0;url=target/riscv32imac-unknown-none-elf/doc/r_freertos/index.html>' > ./doc/index.html
+        run: ls;mkdir doc;echo '<meta http-equiv=refresh content=0;url=target/riscv32imac-unknown-none-elf/doc/r_freertos/index.html>' > ./doc/index.html
       - name: Push to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
