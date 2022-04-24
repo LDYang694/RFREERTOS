@@ -59,6 +59,8 @@ use libc::*;
 use spin::RwLock;
 pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
+pub const queueQUEUE_TYPE_COUNTING_SEMAPHORE: u8 = 2;
+pub const queueQUEUE_TYPE_BINARY_SEMAPHORE: u8 = 3;
 pub type xQUEUE = QueueDefinition;
 pub type Queue_t = xQUEUE;
 
@@ -75,7 +77,7 @@ pub struct QueueDefinition {
     cTxLock:i8,
     pub xTasksWaitingToSend: ListRealLink,
     pub xTasksWaitingToReceive: ListRealLink,
-    uxMessagesWaiting: UBaseType,
+    pub uxMessagesWaiting: UBaseType,
     uxLength: UBaseType,
     uxItemSize: UBaseType,
 }
@@ -281,7 +283,6 @@ pub fn xQueueGenericSend(
     let mut xEntryTimeSet: bool = false;
     let mut xTimeout: TimeOut = Default::default();
     loop {
-        vSendString("looping");
         taskENTER_CRITICAL!();
         {
             if xQueue.uxMessagesWaiting < xQueue.uxLength || xCopyPosition == queueOVERWRITE {
@@ -290,23 +291,16 @@ pub fn xQueueGenericSend(
                     xYieldRequired = prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
                     //todo
                 } else {
-                    vSendString("copy");
                     xYieldRequired = prvCopyDataToQueue(xQueue, pvItemToQueue, xCopyPosition);
-                    vSendString("copy finish");
                     if list_is_empty(&xQueue.xTasksWaitingToReceive) == false {
-                        vSendString("not empty!");
                         if xTaskRemoveFromEventList(&xQueue.xTasksWaitingToReceive) == true {
-                            vSendString("yield!");
                             queueYIELD_IF_USING_PREEMPTION!();
                         } else {
-                            vSendString("no yield!");
                             mtCOVERAGE_TEST_MARKER!();
                         }
                     } else if xYieldRequired == true {
-                        vSendString("yield!");
                         queueYIELD_IF_USING_PREEMPTION!();
                     } else {
-                        vSendString("no yield!");
                         mtCOVERAGE_TEST_MARKER!();
                     }
                 }
@@ -324,7 +318,6 @@ pub fn xQueueGenericSend(
                 }
             }
         }
-        vSendString("exiting critical");
         taskEXIT_CRITICAL!();
 
         vTaskSuspendAll();
@@ -515,7 +508,10 @@ pub fn xQueueReceive(
             if uxMessagesWaiting > 0 {
                 //TODO:
                 pcOriginalReadPosition = xQueue.pcReadFrom;
-                prvCopyDataFromQueue(xQueue, pvBuffer);
+                if xQueue.uxItemSize>0{
+                    prvCopyDataFromQueue(xQueue, pvBuffer);
+                }
+                
                 xQueue.uxMessagesWaiting = uxMessagesWaiting - 1;
 
                 if list_is_empty(&xQueue.xTasksWaitingToSend) == false {

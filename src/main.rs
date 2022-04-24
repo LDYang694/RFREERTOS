@@ -15,10 +15,11 @@ use kernel::{
     linked_list::*,
     portable::*,
     portmacro::*,
-    queue::{xQueueCreate, xQueueReceive, xQueueSend, QueueHandle_t},
+    queue::*,
     riscv_virt::*,
     tasks::*,
-    *,
+    semphr::*,
+    *
 };
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
@@ -91,23 +92,17 @@ fn task_send(t: *mut c_void) {
     let pcMessage1 = "Transfer1";
     let pcMessage2 = "Transfer2";
     let mut f = 1;
-    let mut begin: TickType = 0;
-    let increment: TickType = 5;
-    unsafe {
-        if list_is_empty(&xQueue.clone().unwrap().read().xTasksWaitingToReceive) {
-            vSendString("send empty");
-        } else {
-            vSendString("send not empty");
-        }
-    }
+    let mut result:BaseType;
 
     loop {
         // xTaskDelayUntil(&mut begin, increment);
         vSendString("sending");
         unsafe {
-            xQueueSend(xQueue.clone(), &ulValueToSend as *const _ as usize, 0);
+            //xQueueSend(xQueue.clone(), &ulValueToSend as *const _ as usize, 0);
+            result=xSemaphoreGive!(xQueue.clone().unwrap());
         }
-        vSendString("send complete");
+        let s=format!("send complete result={}",result);
+        vSendString(&s);
         //vSendString("send gogogogo!!!(in loop)");
     }
 }
@@ -118,26 +113,18 @@ fn task_rec(t: *mut c_void) {
     let pcMessage1 = "success";
     let pcMessage2 = "fail";
     let mut f = 1;
+    let mut result:BaseType;
     // vTaskDelay(1000);
-    unsafe {
-        if list_is_empty(&xQueue.clone().unwrap().read().xTasksWaitingToReceive) {
-            vSendString("receive empty");
-        } else {
-            vSendString("receive not empty");
-        }
-    }
     vSendString("receiving");
 
     loop {
         unsafe {
-            xQueueReceive(xQueue.clone(), &ulValueToSend as *const _ as usize, 10);
+            //xQueueReceive(xQueue.clone(), &ulValueToSend as *const _ as usize, 10);
+            result=xSemaphoreTake!(xQueue.clone(),1000);
         }
-        if (ulExpectedValue == ulValueToSend) {
-            vSendString(pcMessage1);
-        } else {
-            let s_ = format!("fail read{:X}", ulValueToSend);
-            vSendString(&s_);
-        }
+        let s_ = format!("take result={}", result);
+        vSendString(&s_);
+        vTaskDelay(100);
     }
 }
 lazy_static! {
@@ -167,10 +154,11 @@ pub fn main_new_1() {
     //     xQueue = Some(xQueueCreate(1, size_of::<u32>() as u32));
     // }
     unsafe {
-        xQueue = Some(Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
+        /*xQueue = Some(Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
             1,
             size_of::<u32>() as u32,
-        ))));
+        ))));*/
+        xQueue=Some(xSemaphoreCreateBinary!());
     }
     //let s=format!("create1:{}",list_get_num_items(Arc::downgrade(&xQueue.clone().unwrap().read().xTasksWaitingToReceive)))
     unsafe {

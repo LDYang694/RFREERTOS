@@ -13,5 +13,8 @@ pub mod linked_list;
 #[macro_use]
 pub mod portmacro;
 pub mod FREERTOS;
+#[macro_use]
 pub mod queue;
 pub mod projdefs;
+#[macro_use]
+pub mod semphr;
