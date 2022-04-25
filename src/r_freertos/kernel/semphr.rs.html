@@ -58,16 +58,16 @@
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span>  <span class="ident">xSemaphoreCreateBinary</span>{
     () =&gt; {
-        <span class="ident">xQueueGenericCreate</span>(<span class="number">1</span>, <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>, <span class="ident">queueQUEUE_TYPE_BINARY_SEMAPHORE</span>);
+        <span class="ident">QueueDefinition::xQueueGenericCreate</span>(<span class="number">1</span>, <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>, <span class="ident">queueQUEUE_TYPE_BINARY_SEMAPHORE</span>);
     };
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xSemaphoreCreateCounting</span>(<span class="ident">uxMaxCount</span>:<span class="ident">UBaseType</span>, <span class="ident">uxInitialCount</span>:<span class="ident">UBaseType</span>)-&gt;<span class="ident">SemaphoreHandle_t</span>{
-    <span class="kw">let</span> <span class="ident">handle</span><span class="op">=</span>
-        <span class="ident">xQueueGenericCreate</span>(<span class="ident">uxMaxCount</span>, <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>, <span class="ident">queueQUEUE_TYPE_COUNTING_SEMAPHORE</span>);
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xSemaphoreCreateCounting</span>(<span class="ident">uxMaxCount</span>:<span class="ident">UBaseType</span>, <span class="ident">uxInitialCount</span>:<span class="ident">UBaseType</span>)-&gt;<span class="ident">QueueDefinition</span>{
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">handle</span><span class="op">=</span>
+    <span class="ident">QueueDefinition::xQueueGenericCreate</span>(<span class="ident">uxMaxCount</span>, <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>, <span class="ident">queueQUEUE_TYPE_COUNTING_SEMAPHORE</span>);
     
     <span class="comment">//todo:asserts</span>
-    <span class="ident">handle</span>.<span class="ident">write</span>().<span class="ident">uxMessagesWaiting</span><span class="op">=</span><span class="ident">uxInitialCount</span>;
+    <span class="ident">handle</span>.<span class="ident">uxMessagesWaiting</span><span class="op">=</span><span class="ident">uxInitialCount</span>;
 
     <span class="ident">handle</span>
 }

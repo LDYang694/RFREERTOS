@@ -1284,7 +1284,7 @@
     }
 }
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueReceive</span>(
-    <span class="ident">xQueue</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">QueueHandle_t</span><span class="op">&gt;</span>,
+    <span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>,
     <span class="ident">pvBuffer</span>: <span class="ident">usize</span>,
     <span class="kw-2">mut</span> <span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>,
 ) -&gt; <span class="ident">BaseType</span> {
@@ -1292,8 +1292,8 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xEntryTimeSet</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xTimeOut</span>: <span class="ident">TimeOut</span> <span class="op">=</span> <span class="ident">Default::default</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pcOriginalReadPosition</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
-    <span class="kw">let</span> <span class="ident">xq</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">unwrap</span>();
-    <span class="kw">let</span> <span class="ident">xQueue</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> (<span class="kw-2">*</span><span class="ident">xq</span>.<span class="ident">write</span>());
+    <span class="comment">//let xq = xQueue.unwrap();</span>
+    <span class="comment">//let xQueue = &amp;mut (*xq.write());</span>
     <span class="kw">loop</span> {
         <span class="macro">taskENTER_CRITICAL!</span>();
         {
