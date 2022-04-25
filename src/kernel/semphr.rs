@@ -9,16 +9,16 @@ pub static semGIVE_BLOCK_TIME:TickType = 0;
 #[macro_export]
 macro_rules!  xSemaphoreCreateBinary{
     () => {
-        xQueueGenericCreate(1, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_BINARY_SEMAPHORE);
+        QueueDefinition::xQueueGenericCreate(1, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_BINARY_SEMAPHORE);
     };
 }
 
-pub fn xSemaphoreCreateCounting(uxMaxCount:UBaseType, uxInitialCount:UBaseType)->SemaphoreHandle_t{
-    let handle=
-        xQueueGenericCreate(uxMaxCount, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_COUNTING_SEMAPHORE);
+pub fn xSemaphoreCreateCounting(uxMaxCount:UBaseType, uxInitialCount:UBaseType)->QueueDefinition{
+    let mut handle=
+    QueueDefinition::xQueueGenericCreate(uxMaxCount, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_COUNTING_SEMAPHORE);
     
     //todo:asserts
-    handle.write().uxMessagesWaiting=uxInitialCount;
+    handle.uxMessagesWaiting=uxInitialCount;
 
     handle
 }

@@ -7,6 +7,7 @@ mod kernel;
 extern crate alloc;
 use alloc::sync::Arc;
 use alloc::{fmt::format, format};
+use kernel::projdefs::pdPASS;
 use core::{borrow::Borrow, ffi::c_void, mem::size_of};
 use kernel::queue::QueueDefinition;
 use kernel::{
@@ -92,19 +93,33 @@ fn task_send(t: *mut c_void) {
     let pcMessage1 = "Transfer1";
     let pcMessage2 = "Transfer2";
     let mut f = 1;
-    let mut result:BaseType;
+    let mut result:BaseType=0;
+    let s1="sending";
+    let s2="send correct";
+    let s3="send incorrect";
+    let temp:&mut QueueDefinition;
+    unsafe {
 
-    loop {
-        // xTaskDelayUntil(&mut begin, increment);
-        vSendString("sending");
-        unsafe {
-            //xQueueSend(xQueue.clone(), &ulValueToSend as *const _ as usize, 0);
-            result=xSemaphoreGive!(xQueue.clone().unwrap());
-        }
-        let s=format!("send complete result={}",result);
-        vSendString(&s);
-        //vSendString("send gogogogo!!!(in loop)");
+        temp=xQueue.as_mut().unwrap();
     }
+    
+
+        loop {
+            // xTaskDelayUntil(&mut begin, increment);
+            vSendString(&s1);
+            unsafe {
+                xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
+                //result=xSemaphoreGive!(temp);
+            }
+            if result==pdPASS{
+                vSendString(&s2);
+            }
+            else {
+                vSendString(&s3);
+            }
+            vTaskDelay(100);
+            //vSendString("send gogogogo!!!(in loop)");
+        }
 }
 fn task_rec(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
@@ -113,18 +128,29 @@ fn task_rec(t: *mut c_void) {
     let pcMessage1 = "success";
     let pcMessage2 = "fail";
     let mut f = 1;
-    let mut result:BaseType;
+    let mut result:BaseType=0;
     // vTaskDelay(1000);
     vSendString("receiving");
+    let s="take correct";
+    let s_="take fail";
+    let temp:&mut QueueDefinition;
+    unsafe {
+
+        temp=xQueue.as_mut().unwrap();
+    }
 
     loop {
         unsafe {
-            //xQueueReceive(xQueue.clone(), &ulValueToSend as *const _ as usize, 10);
-            result=xSemaphoreTake!(xQueue.clone(),1000);
+            xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
+            //result=xSemaphoreTake!(temp,1000);
         }
-        let s_ = format!("take result={}", result);
-        vSendString(&s_);
-        vTaskDelay(100);
+        if ulValueToSend==100{
+            vSendString(&s);
+        }
+        else{
+            vSendString(&s_);
+        }
+        //vTaskDelay(100);
     }
 }
 lazy_static! {
@@ -133,7 +159,7 @@ lazy_static! {
     pub static ref task2handler: Option<TaskHandle_t> =
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
-static mut xQueue: Option<QueueHandle_t> = None;
+static mut xQueue: Option<QueueDefinition> = None;
 pub fn main_new_1() {
     // vSendString("111111");
     print("main new");
@@ -154,14 +180,14 @@ pub fn main_new_1() {
     //     xQueue = Some(xQueueCreate(1, size_of::<u32>() as u32));
     // }
     unsafe {
-        /*xQueue = Some(Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
-            1,
+        xQueue = Some(QueueDefinition::xQueueCreate(
+            2,
             size_of::<u32>() as u32,
-        ))));*/
-        xQueue=Some(xSemaphoreCreateBinary!());
+        ));
+        //xQueue=Some(xSemaphoreCreateBinary!());
     }
     //let s=format!("create1:{}",list_get_num_items(Arc::downgrade(&xQueue.clone().unwrap().read().xTasksWaitingToReceive)))
-    unsafe {
+    /*unsafe {
         let s = format!(
             "create1:{}",
             xQueue
@@ -173,7 +199,7 @@ pub fn main_new_1() {
                 .ux_number_of_items
         );
         print(&s);
-    }
+    }*/
     print("task1handler");
     unsafe {
         print("xTaskCreate start");
@@ -191,7 +217,7 @@ pub fn main_new_1() {
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            3,
+            2,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
     }
@@ -248,7 +274,7 @@ pub fn main_new_1() {
     // );
     // print("task insert");
     // v_list_insert_end(&READY_TASK_LISTS[2], (TCB3_p.read().xStateListItem).clone());
-    unsafe {
+    /*unsafe {
         let s = format!(
             "create2:{}",
             xQueue
@@ -260,7 +286,7 @@ pub fn main_new_1() {
                 .ux_number_of_items
         );
         print(&s);
-    }
+    }*/
     print("start scheduler!!!!!!!!!");
     vTaskStartScheduler();
     loop {

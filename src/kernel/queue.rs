@@ -491,7 +491,7 @@ pub fn prvCopyDataFromQueue(xQueue: &mut Queue_t, pvBuffer: usize) {
     }
 }
 pub fn xQueueReceive(
-    xQueue: Option<QueueHandle_t>,
+    xQueue: &mut QueueDefinition,
     pvBuffer: usize,
     mut xTicksToWait: TickType,
 ) -> BaseType {
@@ -499,8 +499,8 @@ pub fn xQueueReceive(
     let mut xEntryTimeSet: BaseType = pdFALSE;
     let mut xTimeOut: TimeOut = Default::default();
     let mut pcOriginalReadPosition: usize = 0;
-    let xq = xQueue.unwrap();
-    let xQueue = &mut (*xq.write());
+    //let xq = xQueue.unwrap();
+    //let xQueue = &mut (*xq.write());
     loop {
         taskENTER_CRITICAL!();
         {
