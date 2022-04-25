@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["errQUEUE_FULL",""],["pdFAIL",""],["pdFALSE",""],["pdPASS",""],["pdTRUE",""]]});
+initSidebarItems({"constant":[["errQUEUE_EMPTY",""],["errQUEUE_FULL",""],["pdFAIL",""],["pdFALSE",""],["pdPASS",""],["pdTRUE",""]]});

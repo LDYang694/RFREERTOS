@@ -228,6 +228,14 @@
 <span id="223">223</span>
 <span id="224">224</span>
 <span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
 </pre><pre class="rust"><code><span class="doccomment">//! portable apis</span>
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
@@ -250,7 +258,6 @@
 <span class="comment">// use crate::pxCurrentTCB;</span>
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
     <span class="kw">fn</span> <span class="ident">xPortStartFirstTask</span>();
-    <span class="kw">fn</span> <span class="ident">testfunc</span>(<span class="ident">x</span>: <span class="ident">u32</span>) -&gt; <span class="ident">u32</span>;
 }
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
@@ -259,6 +266,15 @@
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pxCurrentTCB</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
 
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pullNextTime</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
+
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xISRStackTop</span>: <span class="kw-2">*const</span> <span class="ident">StackType</span><span class="op">=</span> <span class="number">0</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">StackType</span>;
+
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pullMachineTimerCompareRegister</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
+
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pxCurrentTCB_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*const</span> <span class="ident">tskTaskControlBlock</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
 <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">X_ISRSTACK</span>: [<span class="ident">StackType</span>; <span class="ident">CONFIG_ISR_STACK_SIZE_WORDS</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="ident">CONFIG_ISR_STACK_SIZE_WORDS</span>];
@@ -266,11 +282,11 @@
 <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">ULL_NEXT_TIME</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="ident">CONFIG_MTIMECMP_BASE_ADDRESS</span>;
 
-<span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pullMachineTimerCompareRegister</span>: <span class="ident">u32</span>;
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pullNextTime</span>: <span class="ident">u32</span>;
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xISRStackTop</span>: <span class="kw-2">*const</span> <span class="ident">StackType</span>;
-}
+<span class="comment">/* 
+extern &quot;C&quot; {
+    pub static mut : u32;
+    
+}*/</span>
 <span class="comment">//todo:safe  global var and pointer</span>
 
 <span class="doccomment">/// get current mtime</span>
@@ -331,7 +347,7 @@
 }
 
 <span class="doccomment">/// start up scheduler</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">x_port_start_scheduler</span>() -&gt; <span class="ident">UBaseType</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">x_port_start_scheduler</span>() -&gt; <span class="ident">BaseType</span> {
     <span class="kw">unsafe</span> {
         <span class="ident">xISRStackTop</span> <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="ident">X_ISRSTACK</span>[<span class="ident">CONFIG_ISR_STACK_SIZE_WORDS</span> <span class="op">-</span> <span class="number">1</span>]) <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">u32</span>;
     }
@@ -454,5 +470,5 @@
     
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (18f314e70 2022-04-24)" ></div>
 </body></html>
