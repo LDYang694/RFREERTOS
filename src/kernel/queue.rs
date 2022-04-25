@@ -1,3 +1,9 @@
+
+
+
+
+
+//! queue impletation and api
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::riscv_virt::print;
@@ -11,6 +17,12 @@ pub const queueUNLOCKED:i8 = -1;
 pub const queueLOCKED_UNMODIFIED:i8 = 0;
 pub const queueINT8_MAX:i8 = 127;
 pub const pdPass: BaseType = 0;
+
+use crate::kernel::projdefs::*;
+use crate::kernel::tasks::*;
+
+
+
 
 #[macro_export]
 macro_rules! queueYIELD_IF_USING_PREEMPTION {
@@ -47,6 +59,7 @@ use crate::{
     },
     taskENTER_CRITICAL, taskEXIT_CRITICAL,
 };
+
 use alloc::boxed::Box;
 use alloc::collections::VecDeque;
 use alloc::format;
@@ -66,9 +79,13 @@ pub type Queue_t = xQUEUE;
 
 
 
+
+
+
 #[derive(Default)]
 pub struct QueueDefinition {
     pcMesQueue: Vec<u8>, //message space
+
     pcHead: usize,
     pcTail: usize,
     pcWriteTo: usize,
@@ -143,17 +160,23 @@ impl QueueDefinition {
         1
     }
 }
-//TODO: xqueue default
+
+
+
+
+/// create queue <br>
+/// interface for user
 pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> QueueHandle_t {
     xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
 }
+
+/// create queue
 pub fn xQueueGenericCreate(
     uxQueueLength: UBaseType,
     uxItemSize: UBaseType,
     ucQueueType: u8,
 ) -> QueueHandle_t {
     assert!(uxQueueLength > 0);
-    print("queue create 1111");
     let mut xQueueSizeInBytes: isize;
     if uxItemSize == 0 {
         xQueueSizeInBytes = 0;
@@ -194,6 +217,8 @@ pub fn xQueueGenericCreate(
     // }
     Arc::new(RwLock::new(Box::<QueueDefinition>::into_inner(pxNewQueue)))
 }
+
+/// initialise new queue
 pub fn prvInitialiseNewQueue(
     uxQueueLength: UBaseType,
     uxItemSize: UBaseType,
@@ -215,6 +240,7 @@ pub fn prvInitialiseNewQueue(
     pxNewQueue_.uxLength = uxQueueLength;
     pxNewQueue_.uxItemSize = uxItemSize;
 
+
     print("prvInitialiseNewQueue 2222");
     xQueueGenericReset(pxNewQueue_, 1);
     let x = pxNewQueue_.xTasksWaitingToReceive.read().ux_number_of_items;
@@ -226,9 +252,14 @@ pub fn prvInitialiseNewQueue(
     print(&s)
 }
 
+
+
+
+/// reset target queue
 pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType {
-    //TODO: tmp remove
-    // vTaskEnterCritical();
+    // taskENTER_CRITICAL!();
+    vTaskEnterCritical();
+
     {
         xQueue.pcTail = xQueue.pcHead + (xQueue.uxLength * xQueue.uxItemSize) as usize;
         xQueue.uxMessagesWaiting = 0;

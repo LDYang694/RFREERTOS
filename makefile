@@ -15,3 +15,6 @@ debug:
 
 remote:
 	riscv64-unknown-elf-gdb -q ./target/riscv32imac-unknown-none-elf/debug/r_freertos
+
+doc:
+	cargo doc --no-deps
