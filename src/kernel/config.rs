@@ -42,3 +42,5 @@ pub const LSR_BI: u8 = 	0x10; /* Break interrupt */
 pub const LSR_THRE: u8 = 0x20; /* Transmitter holding register empty */
 pub const LSR_TEMT: u8 = 0x40; /* Transmitter empty */
 pub const LSR_EIRF: u8 = 0x80; /* Error in RCVR FIFO */
+
+pub const configMAX_PRIORITIES:UBaseType = 16;

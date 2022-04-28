@@ -16,8 +16,10 @@ libc = "0.2"
 cc = "1.0"
 
 [features]
-default = ["configSUPPORT_STATIC_ALLOCATION","configSUPPORT_DYNAMIC_ALLOCATION","INCLUDE_vTaskSuspend","configUSE_PREEMPTION"]
+default = ["configSUPPORT_STATIC_ALLOCATION","configSUPPORT_DYNAMIC_ALLOCATION","INCLUDE_vTaskSuspend","configUSE_PREEMPTION",
+        "configUSE_MUTEXES"]
 configSUPPORT_STATIC_ALLOCATION = []
 configSUPPORT_DYNAMIC_ALLOCATION=[]
 INCLUDE_vTaskSuspend=[]
 configUSE_PREEMPTION=[]
+configUSE_MUTEXES=[]

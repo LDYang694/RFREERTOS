@@ -172,46 +172,7 @@ pub fn is_current_tcb(tcb: ListItemOwnerWeakLink)->bool{
 
 
 
-/// set target task's priority
-pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
-{
-    vTaskEnterCritical();
-    match pxTask{
-        Some(x)=>{
-            ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
-            v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
-            x.write().uxPriority=uxNewPriority;
-        }
-        None=>{
-            unsafe{
-                match get_current_tcb(){
-                    Some(x)=>{
-                        
-                        ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
-                        v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
-                        x.uxPriority=uxNewPriority;
-                    }
-                    None=>{}
-                }
-            }
-        }
-    }
-    vTaskExitCritical();
-}
 
-/// get priority of target task
-pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
-{
-    unsafe{
-        match get_current_tcb(){
-            Some(x)=>unsafe {
-                return (*x).uxPriority;
-            }
-            None=>{return 0;}
-        }
-    }
-    
-}
 
 /// switch context
 #[no_mangle]

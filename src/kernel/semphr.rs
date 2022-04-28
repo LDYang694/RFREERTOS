@@ -42,3 +42,16 @@ macro_rules! xSemaphoreTake {
         xQueueReceive($xSemaphore,0,$xBlockTime)
     };
 }
+
+pub fn  xQueueCreateMutex(ucQueueType:u8)->QueueHandle_t{
+    let queue=xQueueGenericCreate(1,0,ucQueueType);
+    prvInitialiseMutex(&mut queue.write());
+    queue
+}
+
+pub fn prvInitialiseMutex(pxNewQueue:&mut QueueDefinition){
+    pxNewQueue.xMutexHolder=None;
+    pxNewQueue.uxRecursiveCallCount=0;
+    xQueueGenericSend(pxNewQueue,0,0,queueSEND_TO_BACK);
+}
+

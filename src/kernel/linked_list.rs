@@ -324,6 +324,7 @@ pub fn v_list_insert(px_list: &ListRealLink, px_new_list_item: ListItemLink) {
 }
 
 /// remove target item from its container
+/// return number of items after remove
 pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
     let px_list = list_item_get_container(&px_item_to_remove);
     list_item_set_pre(
@@ -344,4 +345,13 @@ pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
     //TODO:pxItemToRemove->pvContainer = NULL;
     (*(px_list.upgrade().unwrap())).write().ux_number_of_items -= 1;
     list_get_num_items(&px_list)
+}
+
+pub fn list_is_contained_within(px_list: &ListRealLink, px_new_list_item: &ListItemLink)->bool{
+    let temp=Arc::downgrade(px_list);
+    temp.ptr_eq(&px_new_list_item.read().px_container)
+}
+
+pub fn list_get_value_of_head_entry(px_list: &ListRealLink)->UBaseType{
+    list_item_get_value(&list_get_head_entry(px_list))
 }

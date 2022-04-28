@@ -60,6 +60,7 @@ use crate::{
     taskENTER_CRITICAL, taskEXIT_CRITICAL,
 };
 
+use crate::configMAX_PRIORITIES;
 use alloc::boxed::Box;
 use alloc::collections::VecDeque;
 use alloc::format;
@@ -72,8 +73,10 @@ use libc::*;
 use spin::RwLock;
 pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
+pub const queueQUEUE_TYPE_MUTEX: u8 = 1;
 pub const queueQUEUE_TYPE_COUNTING_SEMAPHORE: u8 = 2;
 pub const queueQUEUE_TYPE_BINARY_SEMAPHORE: u8 = 3;
+pub const queueQUEUE_TYPE_RECURSIVE_MUTEX: u8 = 4;
 pub type xQUEUE = QueueDefinition;
 pub type Queue_t = xQUEUE;
 
@@ -97,6 +100,9 @@ pub struct QueueDefinition {
     pub uxMessagesWaiting: UBaseType,
     uxLength: UBaseType,
     uxItemSize: UBaseType,
+    pub xMutexHolder: Option<TaskHandle_t>,
+    pub uxRecursiveCallCount: UBaseType,
+    pub ucQueueType:u8,
 }
 impl QueueDefinition {
     pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType)->Self{
@@ -135,6 +141,7 @@ impl QueueDefinition {
         }
         self.uxLength = uxQueueLength;
         self.uxItemSize = uxItemSize;
+        self.ucQueueType=ucQueueType;
         self.xQueueGenericReset(1);
 
     }
@@ -530,6 +537,7 @@ pub fn xQueueReceive(
     let mut xEntryTimeSet: BaseType = pdFALSE;
     let mut xTimeOut: TimeOut = Default::default();
     let mut pcOriginalReadPosition: usize = 0;
+    let mut xInheritanceOccurred:BaseType = pdFALSE;
     //let xq = xQueue.unwrap();
     //let xQueue = &mut (*xq.write());
     loop {
@@ -544,6 +552,15 @@ pub fn xQueueReceive(
                 }
                 
                 xQueue.uxMessagesWaiting = uxMessagesWaiting - 1;
+
+                if cfg!(feature="configUSE_MUTEXES"){
+                    if xQueue.ucQueueType==queueQUEUE_TYPE_MUTEX || xQueue.ucQueueType==queueQUEUE_TYPE_RECURSIVE_MUTEX{
+                        xQueue.xMutexHolder=pvTaskIncrementMutexHeldCount();
+                    }
+                    else{
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                }
 
                 if list_is_empty(&xQueue.xTasksWaitingToSend) == false {
                     if (xTaskRemoveFromEventList(&xQueue.xTasksWaitingToSend) != false) {
@@ -583,13 +600,19 @@ pub fn xQueueReceive(
                 //  * remove this task from the event list again - but as the
                 //  * scheduler is suspended the task will go onto the pending
                 //  * ready list instead of the actual ready list. */
-                // prvUnlockQueue( pxQueue );
-                //TODO:prvUnlockQueue
-                // /* Resuming the scheduler will move tasks from the pending
-                //  * ready list into the ready list - so it is feasible that this
-                //  * task is already in the ready list before it yields - in which
-                //  * case the yield will not cause a context switch unless there
-                //  * is also a higher priority task in the pending ready list. */
+
+                if cfg!(feature="configUSE_MUTEXES"){
+                    if xQueue.ucQueueType==queueQUEUE_TYPE_MUTEX || xQueue.ucQueueType==queueQUEUE_TYPE_RECURSIVE_MUTEX{
+                        taskENTER_CRITICAL!();
+                        xInheritanceOccurred=xTaskPriorityInherit(xQueue.xMutexHolder.clone());
+                        taskEXIT_CRITICAL!();
+                    }
+                    else{
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                }
+
+                prvUnlockQueue( xQueue );
                 if (vTaskResumeAll() == false) {
                     portYIELD_WITHIN_API!();
                 } else {
@@ -602,7 +625,16 @@ pub fn xQueueReceive(
         } else {
             prvUnlockQueue(xQueue);
             vTaskResumeAll();
+
             if prvIsQueueEmpty(xQueue) != false {
+                if cfg!(feature="configUSE_MUTEXES"){
+                    if xInheritanceOccurred!=pdFALSE{
+                        taskENTER_CRITICAL!();
+                        let uxHighestWaitingPriority=prvGetDisinheritPriorityAfterTimeout(xQueue);
+                        vTaskPriorityDisinheritAfterTimeout(xQueue.xMutexHolder.clone(),uxHighestWaitingPriority);
+                        taskEXIT_CRITICAL!();
+                    }
+                }
                 return errQUEUE_EMPTY;
             } else {
                 mtCOVERAGE_TEST_MARKER!();
@@ -754,4 +786,15 @@ pub fn prvUnlockQueue(xQueue: &mut QueueDefinition){
         xQueue.cRxLock=queueUNLOCKED;
     }
     taskEXIT_CRITICAL!();
+}
+
+pub fn prvGetDisinheritPriorityAfterTimeout(xQueue: &mut QueueDefinition)->UBaseType{
+    let uxHighestPriorityOfWaitingTasks:UBaseType;
+    if list_current_list_length(&xQueue.xTasksWaitingToReceive)>0{
+        uxHighestPriorityOfWaitingTasks=configMAX_PRIORITIES-list_get_value_of_head_entry(&xQueue.xTasksWaitingToReceive);
+    }
+    else{
+        uxHighestPriorityOfWaitingTasks=tskIDLE_PRIORITY;
+    }
+    uxHighestPriorityOfWaitingTasks
 }

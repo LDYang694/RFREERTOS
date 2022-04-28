@@ -23,6 +23,7 @@ use kernel::{
     semphr::*,
     *
 };
+use core::arch::asm;
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
 
@@ -88,6 +89,15 @@ fn task3(t: *mut c_void) {
 pub fn main_new() {
     main_new_1();
 }
+
+pub fn testfunc1(){
+    mtCOVERAGE_TEST_MARKER!();
+}
+
+pub fn testfunc2(){
+    mtCOVERAGE_TEST_MARKER!();
+}
+
 fn task_send(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
     let ulValueToSend = 100;
@@ -104,21 +114,24 @@ fn task_send(t: *mut c_void) {
         temp=xQueue.as_mut().unwrap();
     }
     
-
+        let mut cnt=0;
         loop {
+            testfunc1();
+            if cnt>0{
+                //taskEXIT_CRITICAL!();
+            }
+            cnt+=1;
             // xTaskDelayUntil(&mut begin, increment);
             vSendString(&s1);
             unsafe {
-                xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
+                //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
                 //result=xSemaphoreGive!(temp);
             }
-            if result==pdPASS{
-                vSendString(&s2);
-            }
-            else {
-                vSendString(&s3);
-            }
-            vTaskDelay(100);
+            let s=format!("send:{}",ulValueToSend);
+            vSendString(&s);
+            vTaskDelay(1000);
+            
+            testfunc2();
             //vSendString("send gogogogo!!!(in loop)");
         }
 }
@@ -139,19 +152,28 @@ fn task_rec(t: *mut c_void) {
 
         temp=xQueue.as_mut().unwrap();
     }
-
+    let mut cnt=0;
     loop {
+        testfunc1();
+        if cnt>0{
+            //taskEXIT_CRITICAL!();
+        }
+        cnt+=1;
         unsafe {
-            xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
+            //xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
             //result=xSemaphoreTake!(temp,1000);
         }
-        if ulValueToSend==100{
+        let s=format!("recv:{}",ulValueToSend);
+        vSendString(&s);
+        /*if ulValueToSend==100{
             vSendString(&s);
         }
         else{
             vSendString(&s_);
-        }
+        }*/
         //vTaskDelay(100);
+        //taskENTER_CRITICAL!();
+        testfunc2();
     }
 }
 lazy_static! {
