@@ -350,6 +350,16 @@
 <span id="345">345</span>
 <span id="346">346</span>
 <span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
 </pre><pre class="rust"><code><span class="comment">// use std::cell::RefCell;</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">non_snake_case</span>)]</span>
 
@@ -676,6 +686,7 @@
 }
 
 <span class="doccomment">/// remove target item from its container</span>
+<span class="doccomment">/// return number of items after remove</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ux_list_remove</span>(<span class="ident">px_item_to_remove</span>: <span class="ident">ListItemWeakLink</span>) -&gt; <span class="ident">UBaseType</span> {
     <span class="kw">let</span> <span class="ident">px_list</span> <span class="op">=</span> <span class="ident">list_item_get_container</span>(<span class="kw-2">&amp;</span><span class="ident">px_item_to_remove</span>);
     <span class="ident">list_item_set_pre</span>(
@@ -697,6 +708,14 @@
     (<span class="kw-2">*</span>(<span class="ident">px_list</span>.<span class="ident">upgrade</span>().<span class="ident">unwrap</span>())).<span class="ident">write</span>().<span class="ident">ux_number_of_items</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
     <span class="ident">list_get_num_items</span>(<span class="kw-2">&amp;</span><span class="ident">px_list</span>)
 }
-</code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (18f314e70 2022-04-24)" ></div>
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">list_is_contained_within</span>(<span class="ident">px_list</span>: <span class="kw-2">&amp;</span><span class="ident">ListRealLink</span>, <span class="ident">px_new_list_item</span>: <span class="kw-2">&amp;</span><span class="ident">ListItemLink</span>)-&gt;<span class="ident">bool</span>{
+    <span class="kw">let</span> <span class="ident">temp</span><span class="op">=</span><span class="ident">Arc::downgrade</span>(<span class="ident">px_list</span>);
+    <span class="ident">temp</span>.<span class="ident">ptr_eq</span>(<span class="kw-2">&amp;</span><span class="ident">px_new_list_item</span>.<span class="ident">read</span>().<span class="ident">px_container</span>)
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">list_get_value_of_head_entry</span>(<span class="ident">px_list</span>: <span class="kw-2">&amp;</span><span class="ident">ListRealLink</span>)-&gt;<span class="ident">UBaseType</span>{
+    <span class="ident">list_item_get_value</span>(<span class="kw-2">&amp;</span><span class="ident">list_get_head_entry</span>(<span class="ident">px_list</span>))
+}</code></pre></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (69a5d2481 2022-04-27)" ></div>
 </body></html>

@@ -299,6 +299,28 @@
 <span id="294">294</span>
 <span id="295">295</span>
 <span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">no_std</span>]</span>
 <span class="attribute">#![<span class="ident">no_main</span>]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">alloc_error_handler</span>)]</span>
@@ -324,6 +346,7 @@
     <span class="ident">semphr</span>::<span class="kw-2">*</span>,
     <span class="op">*</span>
 };
+<span class="kw">use</span> <span class="ident">core::arch::asm</span>;
 <span class="kw">use</span> <span class="ident">lazy_static</span>::{<span class="ident">__Deref</span>, <span class="ident">lazy_static</span>};
 <span class="kw">use</span> <span class="ident">spin::RwLock</span>;
 
@@ -389,6 +412,15 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">main_new</span>() {
     <span class="ident">main_new_1</span>();
 }
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">testfunc1</span>(){
+    <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">testfunc2</span>(){
+    <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
+}
+
 <span class="kw">fn</span> <span class="ident">task_send</span>(<span class="ident">t</span>: <span class="kw-2">*mut</span> <span class="ident">c_void</span>) {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xNextWakeTime</span>: <span class="ident">TickType</span>;
     <span class="kw">let</span> <span class="ident">ulValueToSend</span> <span class="op">=</span> <span class="number">100</span>;
@@ -405,21 +437,24 @@
         <span class="ident">temp</span><span class="op">=</span><span class="ident">xQueue</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
     }
     
-
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cnt</span><span class="op">=</span><span class="number">0</span>;
         <span class="kw">loop</span> {
+            <span class="ident">testfunc1</span>();
+            <span class="kw">if</span> <span class="ident">cnt</span><span class="op">&gt;</span><span class="number">0</span>{
+                <span class="comment">//taskEXIT_CRITICAL!();</span>
+            }
+            <span class="ident">cnt</span><span class="op">+</span><span class="op">=</span><span class="number">1</span>;
             <span class="comment">// xTaskDelayUntil(&amp;mut begin, increment);</span>
             <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s1</span>);
             <span class="kw">unsafe</span> {
-                <span class="ident">xQueueGenericSend</span>(<span class="ident">temp</span>, <span class="kw-2">&amp;</span><span class="ident">ulValueToSend</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw">_</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="number">0</span>,<span class="ident">queueSEND_TO_BACK</span>);
+                <span class="comment">//xQueueGenericSend(temp, &amp;ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);</span>
                 <span class="comment">//result=xSemaphoreGive!(temp);</span>
             }
-            <span class="kw">if</span> <span class="ident">result</span><span class="op">==</span><span class="ident">pdPASS</span>{
-                <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s2</span>);
-            }
-            <span class="kw">else</span> {
-                <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s3</span>);
-            }
-            <span class="ident">vTaskDelay</span>(<span class="number">100</span>);
+            <span class="kw">let</span> <span class="ident">s</span><span class="op">=</span><span class="macro">format!</span>(<span class="string">&quot;send:{}&quot;</span>,<span class="ident">ulValueToSend</span>);
+            <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>);
+            <span class="ident">vTaskDelay</span>(<span class="number">1000</span>);
+            
+            <span class="ident">testfunc2</span>();
             <span class="comment">//vSendString(&quot;send gogogogo!!!(in loop)&quot;);</span>
         }
 }
@@ -440,19 +475,28 @@
 
         <span class="ident">temp</span><span class="op">=</span><span class="ident">xQueue</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
     }
-
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cnt</span><span class="op">=</span><span class="number">0</span>;
     <span class="kw">loop</span> {
+        <span class="ident">testfunc1</span>();
+        <span class="kw">if</span> <span class="ident">cnt</span><span class="op">&gt;</span><span class="number">0</span>{
+            <span class="comment">//taskEXIT_CRITICAL!();</span>
+        }
+        <span class="ident">cnt</span><span class="op">+</span><span class="op">=</span><span class="number">1</span>;
         <span class="kw">unsafe</span> {
-            <span class="ident">xQueueReceive</span>(<span class="ident">temp</span>, <span class="kw-2">&amp;</span><span class="ident">ulValueToSend</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw">_</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="number">10</span>);
+            <span class="comment">//xQueueReceive(temp, &amp;ulValueToSend as *const _ as usize, 10);</span>
             <span class="comment">//result=xSemaphoreTake!(temp,1000);</span>
         }
-        <span class="kw">if</span> <span class="ident">ulValueToSend</span><span class="op">==</span><span class="number">100</span>{
-            <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>);
+        <span class="kw">let</span> <span class="ident">s</span><span class="op">=</span><span class="macro">format!</span>(<span class="string">&quot;recv:{}&quot;</span>,<span class="ident">ulValueToSend</span>);
+        <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>);
+        <span class="comment">/*if ulValueToSend==100{
+            vSendString(&amp;s);
         }
-        <span class="kw">else</span>{
-            <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s_</span>);
-        }
+        else{
+            vSendString(&amp;s_);
+        }*/</span>
         <span class="comment">//vTaskDelay(100);</span>
+        <span class="comment">//taskENTER_CRITICAL!();</span>
+        <span class="ident">testfunc2</span>();
     }
 }
 <span class="macro">lazy_static!</span> {
@@ -596,5 +640,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (18f314e70 2022-04-24)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (69a5d2481 2022-04-27)" ></div>
 </body></html>
