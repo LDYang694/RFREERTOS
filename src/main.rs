@@ -124,12 +124,12 @@ fn task_send(t: *mut c_void) {
             // xTaskDelayUntil(&mut begin, increment);
             vSendString(&s1);
             unsafe {
-                //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
+                xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
                 //result=xSemaphoreGive!(temp);
             }
-            let s=format!("send:{}",ulValueToSend);
-            vSendString(&s);
-            vTaskDelay(1000);
+            //let s=format!("send:{}",ulValueToSend);
+            //vSendString(&s);
+            vTaskDelay(100);
             
             testfunc2();
             //vSendString("send gogogogo!!!(in loop)");
@@ -137,7 +137,7 @@ fn task_send(t: *mut c_void) {
 }
 fn task_rec(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
-    let ulValueToSend = 99;
+    let mut ulValueToSend = 99;
     let ulExpectedValue = 100;
     let pcMessage1 = "success";
     let pcMessage2 = "fail";
@@ -160,17 +160,18 @@ fn task_rec(t: *mut c_void) {
         }
         cnt+=1;
         unsafe {
-            //xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
+            xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
             //result=xSemaphoreTake!(temp,1000);
         }
-        let s=format!("recv:{}",ulValueToSend);
-        vSendString(&s);
-        /*if ulValueToSend==100{
+        //let s=format!("recv:{}",ulValueToSend);
+        //vSendString(&s);
+        if ulValueToSend==100{
             vSendString(&s);
         }
         else{
             vSendString(&s_);
-        }*/
+        }
+        ulValueToSend=99;
         //vTaskDelay(100);
         //taskENTER_CRITICAL!();
         testfunc2();

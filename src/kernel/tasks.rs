@@ -72,6 +72,8 @@ macro_rules! vTaskMissedYield {
     };
 }
 
+pub const taskEVENT_LIST_ITEM_VALUE_IN_USE:UBaseType=0x8000;
+
 /// initialise task stack
 extern "C" {
     pub fn pxPortInitialiseStack(
@@ -642,12 +644,7 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
-        /* 如果任务在等待事件，也从等待事件列表中移除 */
-        //  if ( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL ) {
-        //      ( void ) uxListRemove( &( pxTCB->xEventListItem ) ); (5)
-        //      } else {
-        //      mtCOVERAGE_TEST_MARKER();
-        //      }
+        ux_list_remove(Arc::downgrade(&pxTCB.xEventListItem));
         v_list_insert_end(&SUSPENDED_TASK_LIST, pxTCB.xStateListItem.clone());
     }
     taskEXIT_CRITICAL!();
@@ -800,8 +797,9 @@ pub fn vTaskResumeAll()->bool{
             if get_uxCurrentNumberOfTasks!()>0{
                 while !list_is_empty(&PENDING_READY_LIST){
                     let pxTCB=list_get_owner_of_next_entry(&PENDING_READY_LIST).upgrade().unwrap();
+                    ux_list_remove(Arc::downgrade(&pxTCB.read().xEventListItem) );
                     ux_list_remove(Arc::downgrade(&pxTCB.read().xStateListItem) );
-                    //todo remove eventlist item
+
                     if pxTCB.read().uxPriority>=get_current_tcb().unwrap().uxPriority{
                         xYieldPending=true;
                     }
@@ -844,7 +842,7 @@ pub fn xTaskRemoveFromEventList(pxEventList:&ListRealLink)->bool{
     unsafe{
         uxSchedulerSuspended_=uxSchedulerSuspended;
     }
-    //todo:eventlist item
+    ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xEventListItem) );
     vSendString("ready");
     if uxSchedulerSuspended_==0{
         vSendString("no suspend");
@@ -856,7 +854,7 @@ pub fn xTaskRemoveFromEventList(pxEventList:&ListRealLink)->bool{
     }
     else{
         vSendString("suspend");
-        v_list_insert_end(&PENDING_READY_LIST,pxUnblockedTCB.read().xStateListItem.clone());
+        v_list_insert_end(&PENDING_READY_LIST,pxUnblockedTCB.read().xEventListItem.clone());
     }
     if pxUnblockedTCB.read().uxPriority>get_current_tcb().unwrap().uxPriority{
         xReturn=true;
@@ -936,7 +934,11 @@ pub fn xTaskPriorityInherit(pxMutexHolder:Option<TaskHandle_t>)->BaseType{
 
             let pxMutexHolderTCB:&mut tskTaskControlBlock=&mut pxMutexHolder_.write();
             if pxMutexHolderTCB.uxPriority<get_current_tcb().unwrap().uxPriority{
-                //todo:event
+
+                if list_item_get_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem)) & taskEVENT_LIST_ITEM_VALUE_IN_USE ==0{
+                    list_item_set_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem), configMAX_PRIORITIES-pxMutexHolderTCB.uxPriority);
+                }
+
                 if list_is_contained_within(&READY_TASK_LISTS[pxMutexHolderTCB.uxPriority as usize], 
                         &pxMutexHolderTCB.xStateListItem)==true{
 
@@ -974,7 +976,8 @@ pub fn xTaskPriorityDisinherit(pxMutexHolder:Option<TaskHandle_t>)->BaseType{
                 if pxMutexHolderTCB.uxMutexesHeld==0{
                     ux_list_remove(Arc::downgrade(&pxMutexHolderTCB.xStateListItem) );
                     pxMutexHolderTCB.uxPriority=pxMutexHolderTCB.uxBasePriority;
-                    //todo:event
+                    list_item_set_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem), 
+                        configMAX_PRIORITIES-pxMutexHolderTCB.uxPriority);
                     prvAddTaskToReadyList(pxMutexHolder_.clone());
                     xReturn=pdTRUE;
                 }
@@ -1017,7 +1020,8 @@ pub fn vTaskPriorityDisinheritAfterTimeout(pxMutexHolder:Option<TaskHandle_t>,ux
                 if pxMutexHolderTCB.uxMutexesHeld==1{
                     uxPriorityUsedOnEntry=pxMutexHolderTCB.uxPriority;
                     pxMutexHolderTCB.uxPriority=uxPriorityToUse;
-                    //todo:event
+                    list_item_set_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem), 
+                            configMAX_PRIORITIES-uxPriorityToUse);
 
                     if list_is_contained_within(&READY_TASK_LISTS[uxPriorityUsedOnEntry as usize], 
                             &pxMutexHolderTCB.xStateListItem){
@@ -1032,4 +1036,9 @@ pub fn vTaskPriorityDisinheritAfterTimeout(pxMutexHolder:Option<TaskHandle_t>,ux
 
         }
     }
+}
+
+pub fn vTaskPlaceOnEventList(pxEventList:&ListRealLink, xTicksToWait:TickType){
+    v_list_insert(pxEventList, get_current_tcb().unwrap().xEventListItem.clone());
+    prvAddCurrentTaskToDelayedList(xTicksToWait, true);
 }

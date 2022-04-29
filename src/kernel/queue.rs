@@ -146,7 +146,7 @@ impl QueueDefinition {
 
     }
     pub fn xQueueGenericReset(&mut self, xNewQueue: BaseType) -> BaseType {
-        // vTaskEnterCritical();
+        vTaskEnterCritical();
         {
             self.pcTail = self.pcHead + (self.uxLength * self.uxItemSize) as usize;
             self.uxMessagesWaiting = 0;
@@ -163,7 +163,7 @@ impl QueueDefinition {
                 //initial in Default::default()
             }
         }
-        // vTaskExitCritical();
+        vTaskExitCritical();
         1
     }
 }
@@ -359,11 +359,11 @@ pub fn xQueueGenericSend(
         taskEXIT_CRITICAL!();
 
         vTaskSuspendAll();
-        //todo:prvLockQueue
+
         prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
             if prvIsQueueFull(xQueue) == true {
-                //todo:vTaskPlaceOnEventList
+                vTaskPlaceOnEventList(&xQueue.xTasksWaitingToSend, xTicksToWait);
                 prvUnlockQueue(xQueue);
                 if vTaskResumeAll() == false {
                     portYIELD_WITHIN_API!();
@@ -592,8 +592,7 @@ pub fn xQueueReceive(
         prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
             if (prvIsQueueEmpty(xQueue) != false) {
-                //TOOD:vTaskPlaceOnEventList
-                // vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToSend ), xTicksToWait );
+                vTaskPlaceOnEventList(&xQueue.xTasksWaitingToReceive, xTicksToWait);
 
                 // /* Unlocking the queue means queue events can effect the
                 //  * event list. It is possible that interrupts occurring now
@@ -689,33 +688,19 @@ pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tick
         prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
             if (prvIsQueueEmpty(xQueue) != false) {
-                //TOOD:vTaskPlaceOnEventList
-                // vTaskPlaceOnEventList( &( pxQueue->xTasksWaitingToSend ), xTicksToWait );
+                vTaskPlaceOnEventList(&xQueue.xTasksWaitingToReceive, xTicksToWait);
 
-                // /* Unlocking the queue means queue events can effect the
-                //  * event list. It is possible that interrupts occurring now
-                //  * remove this task from the event list again - but as the
-                //  * scheduler is suspended the task will go onto the pending
-                //  * ready list instead of the actual ready list. */
-                // prvUnlockQueue( pxQueue );
-                //TODO:prvUnlockQueue
-                // /* Resuming the scheduler will move tasks from the pending
-                //  * ready list into the ready list - so it is feasible that this
-                //  * task is already in the ready list before it yields - in which
-                //  * case the yield will not cause a context switch unless there
-                //  * is also a higher priority task in the pending ready list. */
+                prvUnlockQueue(xQueue);
                 if (vTaskResumeAll() == false) {
                     portYIELD_WITHIN_API!();
                 } else {
                     mtCOVERAGE_TEST_MARKER!();
                 }
             } else {
-                //TODO: prvUnlockQueue( pxQueue );
                 prvUnlockQueue(xQueue);
                 vTaskResumeAll();
             }
         } else {
-            //TODO:prvUnlockQueue
             prvUnlockQueue(xQueue);
             vTaskResumeAll();
             if prvIsQueueEmpty(xQueue) != false {
