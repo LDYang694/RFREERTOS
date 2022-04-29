@@ -59,14 +59,8 @@ pub enum SchedulerState {
     Running,
 }
 
-// fn debug (num: usize) {
-//     let tmp = intrinsics::ctlz(num as u64) as u32 as usize;
-// }
-
 #[no_mangle]
 pub extern "C" fn kernel_init() {
-    // let num: usize = 944;
-    // debug(num);
     print("enter kernel init.");
     init_heap();
 }

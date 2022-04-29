@@ -226,8 +226,8 @@ pub fn vTaskStartScheduler() {
         let param: Param_link = 0;
         let stack2ptr: StackType_t_link = &*IDLE_STACK as *const [usize; USER_STACK_SIZE]
             as *const usize as usize
-            + USER_STACK_SIZE * 4
-            - 4;
+            + USER_STACK_SIZE * 8
+            - 8;
         xTaskCreateStatic(
             prvIdleTask as usize,
             "idle",
@@ -399,14 +399,14 @@ pub fn xTaskCreate(
     use alloc::alloc::Layout;
 
     use alloc::vec::Vec;
-    let layout = Layout::from_size_align(ulStackDepth as usize * 4, 4)
+    let layout = Layout::from_size_align(ulStackDepth as usize * 8, 8)
         .ok()
         .unwrap();
     let stack_ptr: *mut u8;
     unsafe {
         stack_ptr = alloc::alloc::alloc(layout);
     }
-    pxStack = stack_ptr as usize + ulStackDepth as usize * 4 - 4;
+    pxStack = stack_ptr as usize + ulStackDepth as usize * 8 - 8;
     // let stack: Vec<usize> = Vec::with_capacity(ulStackDepth as usize);
 
     let pxNewTCB: TCB_t_link = Arc::new(RwLock::new(tskTaskControlBlock::default()));

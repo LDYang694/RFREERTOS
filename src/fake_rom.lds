@@ -1,4 +1,4 @@
-OUTPUT_ARCH( "riscv" )
+OUTPUT_ARCH(riscv)
 ENTRY( _start )
 
 MEMORY
@@ -51,7 +51,7 @@ SECTIONS
 		_erodata = .;
 	} >rom AT>rom
 
-	.data.align :
+	.data.align : ALIGN(8)
 	{
 		. = ALIGN(4);
 		_data = .;
