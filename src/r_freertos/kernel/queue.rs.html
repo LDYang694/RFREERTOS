@@ -788,21 +788,6 @@
 <span id="783">783</span>
 <span id="784">784</span>
 <span id="785">785</span>
-<span id="786">786</span>
-<span id="787">787</span>
-<span id="788">788</span>
-<span id="789">789</span>
-<span id="790">790</span>
-<span id="791">791</span>
-<span id="792">792</span>
-<span id="793">793</span>
-<span id="794">794</span>
-<span id="795">795</span>
-<span id="796">796</span>
-<span id="797">797</span>
-<span id="798">798</span>
-<span id="799">799</span>
-<span id="800">800</span>
 </pre><pre class="rust"><code>
 
 
@@ -951,7 +936,7 @@
 
     }
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueGenericReset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">xNewQueue</span>: <span class="ident">BaseType</span>) -&gt; <span class="ident">BaseType</span> {
-        <span class="comment">// vTaskEnterCritical();</span>
+        <span class="ident">vTaskEnterCritical</span>();
         {
             <span class="self">self</span>.<span class="ident">pcTail</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pcHead</span> <span class="op">+</span> (<span class="self">self</span>.<span class="ident">uxLength</span> <span class="op">*</span> <span class="self">self</span>.<span class="ident">uxItemSize</span>) <span class="kw">as</span> <span class="ident">usize</span>;
             <span class="self">self</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="number">0</span>;
@@ -968,7 +953,7 @@
                 <span class="comment">//initial in Default::default()</span>
             }
         }
-        <span class="comment">// vTaskExitCritical();</span>
+        <span class="ident">vTaskExitCritical</span>();
         <span class="number">1</span>
     }
 }
@@ -1164,11 +1149,11 @@
         <span class="macro">taskEXIT_CRITICAL!</span>();
 
         <span class="ident">vTaskSuspendAll</span>();
-        <span class="comment">//todo:prvLockQueue</span>
+
         <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>);
         <span class="kw">if</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xTimeout</span>, <span class="kw-2">&amp;mut</span> <span class="ident">xTicksToWait</span>) <span class="op">==</span> <span class="ident">pdFALSE</span> {
             <span class="kw">if</span> <span class="ident">prvIsQueueFull</span>(<span class="ident">xQueue</span>) <span class="op">==</span> <span class="bool-val">true</span> {
-                <span class="comment">//todo:vTaskPlaceOnEventList</span>
+                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToSend</span>, <span class="ident">xTicksToWait</span>);
                 <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="kw">if</span> <span class="ident">vTaskResumeAll</span>() <span class="op">==</span> <span class="bool-val">false</span> {
                     <span class="macro">portYIELD_WITHIN_API!</span>();
@@ -1397,8 +1382,7 @@
         <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>);
         <span class="kw">if</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xTimeOut</span>, <span class="kw-2">&amp;mut</span> <span class="ident">xTicksToWait</span>) <span class="op">==</span> <span class="ident">pdFALSE</span> {
             <span class="kw">if</span> (<span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
-                <span class="comment">//TOOD:vTaskPlaceOnEventList</span>
-                <span class="comment">// vTaskPlaceOnEventList( &amp;( pxQueue-&gt;xTasksWaitingToSend ), xTicksToWait );</span>
+                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>, <span class="ident">xTicksToWait</span>);
 
                 <span class="comment">// /* Unlocking the queue means queue events can effect the</span>
                 <span class="comment">//  * event list. It is possible that interrupts occurring now</span>
@@ -1494,33 +1478,19 @@
         <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>);
         <span class="kw">if</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xTimeOut</span>, <span class="kw-2">&amp;mut</span> <span class="ident">xTicksToWait</span>) <span class="op">==</span> <span class="ident">pdFALSE</span> {
             <span class="kw">if</span> (<span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
-                <span class="comment">//TOOD:vTaskPlaceOnEventList</span>
-                <span class="comment">// vTaskPlaceOnEventList( &amp;( pxQueue-&gt;xTasksWaitingToSend ), xTicksToWait );</span>
+                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>, <span class="ident">xTicksToWait</span>);
 
-                <span class="comment">// /* Unlocking the queue means queue events can effect the</span>
-                <span class="comment">//  * event list. It is possible that interrupts occurring now</span>
-                <span class="comment">//  * remove this task from the event list again - but as the</span>
-                <span class="comment">//  * scheduler is suspended the task will go onto the pending</span>
-                <span class="comment">//  * ready list instead of the actual ready list. */</span>
-                <span class="comment">// prvUnlockQueue( pxQueue );</span>
-                <span class="comment">//TODO:prvUnlockQueue</span>
-                <span class="comment">// /* Resuming the scheduler will move tasks from the pending</span>
-                <span class="comment">//  * ready list into the ready list - so it is feasible that this</span>
-                <span class="comment">//  * task is already in the ready list before it yields - in which</span>
-                <span class="comment">//  * case the yield will not cause a context switch unless there</span>
-                <span class="comment">//  * is also a higher priority task in the pending ready list. */</span>
+                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="kw">if</span> (<span class="ident">vTaskResumeAll</span>() <span class="op">==</span> <span class="bool-val">false</span>) {
                     <span class="macro">portYIELD_WITHIN_API!</span>();
                 } <span class="kw">else</span> {
                     <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                 }
             } <span class="kw">else</span> {
-                <span class="comment">//TODO: prvUnlockQueue( pxQueue );</span>
                 <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="ident">vTaskResumeAll</span>();
             }
         } <span class="kw">else</span> {
-            <span class="comment">//TODO:prvUnlockQueue</span>
             <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
             <span class="ident">vTaskResumeAll</span>();
             <span class="kw">if</span> <span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span> {
@@ -1603,5 +1573,5 @@
     }
     <span class="ident">uxHighestPriorityOfWaitingTasks</span>
 }</code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (69a5d2481 2022-04-27)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (e85edd9a8 2022-04-28)" ></div>
 </body></html>
