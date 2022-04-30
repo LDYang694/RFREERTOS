@@ -72,9 +72,9 @@ impl Default for ListT {
     fn default() -> Self {
         //得到一个list_end 然后设置其辅助排序值 并将其next和pre指向自身
         let x_list_end = Arc::new(RwLock::new(XListItem::default()));
-        (*x_list_end).write().x_item_value = PORT_MAX_DELAY;
-        (*x_list_end).write().px_next = Arc::downgrade(&x_list_end);
-        (*x_list_end).write().px_previous = Arc::downgrade(&x_list_end);
+        (x_list_end).write().x_item_value = PORT_MAX_DELAY;
+        (x_list_end).write().px_next = Arc::downgrade(&x_list_end);
+        (x_list_end).write().px_previous = Arc::downgrade(&x_list_end);
         ListT {
             ux_number_of_items: 0,
             px_index: Arc::downgrade(&x_list_end),
@@ -85,42 +85,42 @@ impl Default for ListT {
 
 /// set previous item
 pub fn list_item_set_pre(item: &ListItemWeakLink, pre: ListItemWeakLink) {
-    (*(item.upgrade().unwrap())).write().px_previous = pre;
+    ((item.upgrade().unwrap())).write().px_previous = pre;
 }
 
 /// set next item
 pub fn list_item_set_next(item: &ListItemWeakLink, next: ListItemWeakLink) {
-    (*(item.upgrade().unwrap())).write().px_next = next;
+    ((item.upgrade().unwrap())).write().px_next = next;
 }
 
 /// get previous item
 pub fn list_item_get_pre(item: &ListItemWeakLink) -> ListItemWeakLink {
-    let pre = Weak::clone(&(*(item.upgrade().unwrap())).read().px_previous);
+    let pre = Weak::clone(&((item.upgrade().unwrap())).read().px_previous);
     pre
 }
 
 /// get next item
 pub fn list_item_get_next(item: &ListItemWeakLink) -> ListItemWeakLink {
-    let next = Weak::clone(&(*(item.upgrade().unwrap())).read().px_next);
+    let next = Weak::clone(&((item.upgrade().unwrap())).read().px_next);
     next
 }
 
 /// set container of item
 pub fn list_item_set_container(item: &ListItemWeakLink, container: ListWeakLink) {
-    (*(item.upgrade().unwrap())).write().px_container = container;
+    ((item.upgrade().unwrap())).write().px_container = container;
 }
 
 /// get value of item <br>
 /// insert() place item in order of values
-pub fn list_item_get_value(item: &ListItemWeakLink) -> TickType {
-    let value = (*(item.upgrade().unwrap())).read().x_item_value;
+pub fn list_item_get_value(item: &ListItemLink) -> TickType {
+    let value = ((item)).read().x_item_value;
     value
 }
 
 /// set value of item <br>
 /// insert() place item in order of values
-pub fn list_item_set_value(item: &ListItemWeakLink, x_value: TickType) {
-    (*(item.upgrade().unwrap())).write().x_item_value = x_value;
+pub fn list_item_set_value(item: &ListItemLink, x_value: TickType) {
+    ((item)).write().x_item_value = x_value;
 }
 //TODO:/* 初始化节点的拥有者 */
 // 2 #define listSET_LIST_ITEM_OWNER( pxListItem, pxOwner )\
@@ -132,55 +132,55 @@ pub fn list_item_set_value(item: &ListItemWeakLink, x_value: TickType) {
 /// get head entry of list <br>
 /// head entry is the first valid item in the list, unless the list is empty
 pub fn list_get_head_entry(px_list: &ListRealLink) -> ListItemWeakLink {
-    let entry = Weak::clone(&((*(px_list)).read().x_list_end).read().px_next);
+    let entry = Weak::clone(&(((px_list)).read().x_list_end).read().px_next);
     entry
 }
 
 /// get end marker of list <br>
 /// end marker is not a valid item
 pub fn list_get_end_marker(px_list: &ListRealLink) -> ListItemWeakLink {
-    let entry = Arc::downgrade(&(*(px_list)).read().x_list_end);
+    let entry = Arc::downgrade(&((px_list)).read().x_list_end);
     entry
 }
 
 /// get container of item
 pub fn list_item_get_container(item: &ListItemWeakLink) -> ListWeakLink {
-    let container = Weak::clone(&(*(item.upgrade().unwrap())).read().px_container);
+    let container = Weak::clone(&((item.upgrade().unwrap())).read().px_container);
     container
 }
 
 /// set container of item
 pub fn list_item_set_owner(item: &ListItemLink, owner: ListItemOwnerWeakLink) {
-    (*(item)).write().pv_owner = Weak::clone(&owner);
+    ((item)).write().pv_owner = Weak::clone(&owner);
 }
 
 /// get owner of item <br>
 /// owner is a tskTaskControlBlock object
 pub fn list_item_get_owner(item: &ListItemWeakLink) -> ListItemOwnerWeakLink {
-    let owner = Weak::clone(&(*(item.upgrade().unwrap())).read().pv_owner);
+    let owner = Weak::clone(&((item.upgrade().unwrap())).read().pv_owner);
     owner
 }
 
 /// get num of item in list(Weak)
 pub fn list_get_num_items(px_list: &ListWeakLink) -> UBaseType {
-    let num = (*(px_list.upgrade().unwrap())).read().ux_number_of_items;
+    let num = ((px_list.upgrade().unwrap())).read().ux_number_of_items;
     num
 }
 
 /// get current index of list
 pub fn list_get_pxindex(px_list: &ListWeakLink) -> ListItemWeakLink {
-    let px_index = Weak::clone(&(*(px_list.upgrade().unwrap())).read().px_index);
+    let px_index = Weak::clone(&((px_list.upgrade().unwrap())).read().px_index);
     px_index
 }
 
 /// set current index of list
 pub fn list_set_pxindex(px_list: &ListWeakLink, item: ListItemWeakLink) {
-    (*(px_list.upgrade().unwrap())).write().px_index = item;
+    ((px_list.upgrade().unwrap())).write().px_index = item;
 }
 
 /// return if the list is empty
 pub fn list_is_empty(px_list: &ListRealLink) -> bool {
-    (*(px_list))
+    ((px_list))
         .read()
         .ux_number_of_items
         == 0
@@ -188,7 +188,7 @@ pub fn list_is_empty(px_list: &ListRealLink) -> bool {
 
 /// get num of item in list(Arc)
 pub fn list_current_list_length(px_list: &ListRealLink) -> UBaseType {
-    (*(px_list)).read().ux_number_of_items
+    ((px_list)).read().ux_number_of_items
 }
 
 /// get owner of next entry in list <br>
@@ -223,7 +223,7 @@ impl ListT {
     /// if target item has value==PORT_MAX_DELAY, insert to list end <br>
     /// if list is not already in order, insert position is not guaranteed
     pub fn insert(&mut self, px_new_list_item: ListItemWeakLink) {
-        let x_value_of_insertion = list_item_get_value(&px_new_list_item);
+        let x_value_of_insertion = list_item_get_value(&Weak::upgrade(&px_new_list_item).unwrap());
         //println!("{}", x_value_of_insertion);
         let px_iterator = if x_value_of_insertion == PORT_MAX_DELAY {
             list_item_get_pre(&(Arc::downgrade(&self.x_list_end)))
@@ -231,7 +231,7 @@ impl ListT {
             let mut iterator = Arc::downgrade(&self.x_list_end);
             loop {
                 iterator = list_item_get_next(&iterator);
-                let value = list_item_get_value(&iterator);
+                let value = list_item_get_value(&Weak::upgrade(&iterator).unwrap());
                 //println!(" insert find value {}", value);
                 if value > x_value_of_insertion {
                     break;
@@ -343,7 +343,7 @@ pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
         );
     }
     //TODO:pxItemToRemove->pvContainer = NULL;
-    (*(px_list.upgrade().unwrap())).write().ux_number_of_items -= 1;
+    ((px_list.upgrade().unwrap())).write().ux_number_of_items -= 1;
     list_get_num_items(&px_list)
 }
 
@@ -353,5 +353,5 @@ pub fn list_is_contained_within(px_list: &ListRealLink, px_new_list_item: &ListI
 }
 
 pub fn list_get_value_of_head_entry(px_list: &ListRealLink)->UBaseType{
-    list_item_get_value(&list_get_head_entry(px_list))
+    list_item_get_value(&Weak::upgrade(&list_get_head_entry(px_list)).unwrap())
 }

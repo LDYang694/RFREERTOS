@@ -137,7 +137,7 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
             ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
             v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
             x.write().uxPriority=uxNewPriority;
-            list_item_set_value(&Arc::downgrade(&x.write().xEventListItem), configMAX_PRIORITIES-uxNewPriority);
+            list_item_set_value(&x.write().xEventListItem, configMAX_PRIORITIES-uxNewPriority);
             
         }
         None=>{
@@ -148,7 +148,7 @@ pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType)
                         ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
                         v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
                         x.uxPriority=uxNewPriority;
-                        list_item_set_value(&Arc::downgrade(&x.xEventListItem), configMAX_PRIORITIES-uxNewPriority);
+                        list_item_set_value(&x.xEventListItem, configMAX_PRIORITIES-uxNewPriority);
                     }
                     None=>{}
                 }
@@ -276,7 +276,7 @@ pub fn prvInitialiseNewTask(
     print("prvInitialiseNewTask 2222");
     list_item_set_owner(&pxNewTCB.write().xStateListItem, Arc::downgrade(&pxNewTCB));
     list_item_set_owner(&pxNewTCB.write().xEventListItem, Arc::downgrade(&pxNewTCB));
-    list_item_set_value(&Arc::downgrade(&pxNewTCB.write().xEventListItem),configMAX_PRIORITIES-priority);
+    list_item_set_value(&pxNewTCB.write().xEventListItem,configMAX_PRIORITIES-priority);
     print("prvInitialiseNewTask 33333");
     //TODO: connect
     let s_ = format!("top of stack{:X}", pxTopOfStack);
@@ -408,7 +408,7 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait:TickType,xCanBlockIndefinitel
         xConstTickCount=xTickCount;
     }
     let list_item = &get_current_tcb().unwrap().xStateListItem;
-    list_item_set_value(&Arc::downgrade(&list_item), xTimeToWake);
+    list_item_set_value(&list_item, xTimeToWake);
     ux_list_remove(Arc::downgrade(&list_item));
     if xTimeToWake > xConstTickCount {
         v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
@@ -935,8 +935,8 @@ pub fn xTaskPriorityInherit(pxMutexHolder:Option<TaskHandle_t>)->BaseType{
             let pxMutexHolderTCB:&mut tskTaskControlBlock=&mut pxMutexHolder_.write();
             if pxMutexHolderTCB.uxPriority<get_current_tcb().unwrap().uxPriority{
 
-                if list_item_get_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem)) & taskEVENT_LIST_ITEM_VALUE_IN_USE ==0{
-                    list_item_set_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem), configMAX_PRIORITIES-pxMutexHolderTCB.uxPriority);
+                if list_item_get_value(&pxMutexHolderTCB.xEventListItem) & taskEVENT_LIST_ITEM_VALUE_IN_USE ==0{
+                    list_item_set_value(&pxMutexHolderTCB.xEventListItem, configMAX_PRIORITIES-pxMutexHolderTCB.uxPriority);
                 }
 
                 if list_is_contained_within(&READY_TASK_LISTS[pxMutexHolderTCB.uxPriority as usize], 
@@ -976,7 +976,7 @@ pub fn xTaskPriorityDisinherit(pxMutexHolder:Option<TaskHandle_t>)->BaseType{
                 if pxMutexHolderTCB.uxMutexesHeld==0{
                     ux_list_remove(Arc::downgrade(&pxMutexHolderTCB.xStateListItem) );
                     pxMutexHolderTCB.uxPriority=pxMutexHolderTCB.uxBasePriority;
-                    list_item_set_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem), 
+                    list_item_set_value(&pxMutexHolderTCB.xEventListItem, 
                         configMAX_PRIORITIES-pxMutexHolderTCB.uxPriority);
                     prvAddTaskToReadyList(pxMutexHolder_.clone());
                     xReturn=pdTRUE;
@@ -1020,7 +1020,7 @@ pub fn vTaskPriorityDisinheritAfterTimeout(pxMutexHolder:Option<TaskHandle_t>,ux
                 if pxMutexHolderTCB.uxMutexesHeld==1{
                     uxPriorityUsedOnEntry=pxMutexHolderTCB.uxPriority;
                     pxMutexHolderTCB.uxPriority=uxPriorityToUse;
-                    list_item_set_value(&Arc::downgrade(&pxMutexHolderTCB.xEventListItem), 
+                    list_item_set_value(&pxMutexHolderTCB.xEventListItem, 
                             configMAX_PRIORITIES-uxPriorityToUse);
 
                     if list_is_contained_within(&READY_TASK_LISTS[uxPriorityUsedOnEntry as usize], 
