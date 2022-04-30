@@ -2,6 +2,8 @@
 // #![feature(alloc_error_handler)]
 // #![no_main]
 
+//! lazy static globals and kernel macros
+
 extern crate alloc;
 
 
@@ -12,6 +14,7 @@ use crate::linked_list::*;
 use crate::portable::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
+use crate::projdefs::*;
 use alloc::sync::Arc;
 use core::arch::global_asm;
 use core::ffi::c_void;
@@ -28,6 +31,7 @@ lazy_static! {
     pub static ref DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref OVERFLOW_DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref SUSPENDED_TASK_LIST: ListRealLink = Default::default();
+    pub static ref PENDING_READY_LIST: ListRealLink = Default::default();
     //TODO:tmp use
     pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     //todo: overflow task list

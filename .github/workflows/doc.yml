@@ -1,0 +1,29 @@
+name: Rust
+
+on:
+  [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-doc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: EnvPrepare
+        run : sudo apt-get install git build-essential gdb-multiarch qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu;rustup install nightly ;rustup default nightly ;rustup target add riscv32imac-unknown-none-elf;cargo install cargo-binutils;rustup component add rust-src;rustup component add llvm-tools-preview
+      - name: Riscv
+        run : pwd;bash prep.sh
+      - name: Build
+        run: pwd;export PATH="$PWD/riscv64-unknown-elf-gcc/bin:$PATH";export;cargo build
+      - name: Build doc
+        run: cargo doc --no-deps --verbose
+      - name: Generate index.html
+        run: ls;mkdir doc;echo '<meta http-equiv=refresh content=0;url=r_freertos/index.html>' > target/riscv32imac-unknown-none-elf/doc/index.html
+      - name: Push to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/riscv32imac-unknown-none-elf/doc

@@ -1,3 +1,5 @@
+//! chip specific api
+
 use crate::ns16550::{v_out_ns16550, Device};
 use core::arch::asm;
 use crate::tasks::*;
