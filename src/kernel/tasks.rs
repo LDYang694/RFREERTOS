@@ -2,21 +2,21 @@
 
 extern crate alloc;
 
-use crate::kernel::projdefs::*;
+use crate::configMAX_PRIORITIES;
 use crate::kernel::kernel::*;
 use crate::kernel::linked_list::*;
 use crate::kernel::portable::*;
+use crate::kernel::projdefs::*;
 use crate::mtCOVERAGE_TEST_MARKER;
 use crate::portDISABLE_INTERRUPTS;
 use crate::portENABLE_INTERRUPTS;
 use crate::portYIELD;
 use crate::portmacro::*;
-use crate::configMAX_PRIORITIES;
 
-use core::cmp::max;
 use alloc::format;
 use alloc::string::ToString;
 use alloc::sync::{Arc, Weak};
+use core::cmp::max;
 use spin::RwLock;
 pub type StackType_t = usize;
 pub type StackType_t_link = usize;
@@ -41,15 +41,15 @@ use core::ptr::NonNull;
 use super::config::USER_STACK_SIZE;
 use super::kernel::IDLE_p;
 use super::kernel::IDLE_STACK;
-pub static tskIDLE_PRIORITY:UBaseType = 0;
+pub static tskIDLE_PRIORITY: UBaseType = 0;
 pub static mut XSCHEDULERRUNNING: BaseType = pdFALSE;
 pub static mut xTickCount: UBaseType = 0;
-pub static mut xNumOfOverflows:BaseType = 0;
+pub static mut xNumOfOverflows: BaseType = 0;
 pub static mut xNextTaskUnblockTime: UBaseType = PORT_MAX_DELAY;
 pub static mut uxCurrentNumberOfTasks: UBaseType = 0;
-pub static mut uxSchedulerSuspended:UBaseType = 0;
-pub static mut xPendedTicks:UBaseType = 0;
-pub static mut xYieldPending:bool = false;
+pub static mut uxSchedulerSuspended: UBaseType = 0;
+pub static mut xPendedTicks: UBaseType = 0;
+pub static mut xYieldPending: bool = false;
 #[macro_export]
 macro_rules! taskENTER_CRITICAL {
     () => {
@@ -66,13 +66,13 @@ macro_rules! taskEXIT_CRITICAL {
 #[macro_export]
 macro_rules! vTaskMissedYield {
     () => {
-        unsafe{
-            xYieldPending=true;
+        unsafe {
+            xYieldPending = true;
         }
     };
 }
 
-pub const taskEVENT_LIST_ITEM_VALUE_IN_USE:UBaseType=0x8000;
+pub const taskEVENT_LIST_ITEM_VALUE_IN_USE: UBaseType = 0x8000;
 
 /// initialise task stack
 extern "C" {
@@ -84,9 +84,9 @@ extern "C" {
 }
 
 #[derive(Default)]
-pub struct TimeOut{
-    pub xOverflowCount:BaseType,
-    pub xTimeOnEntering:TickType
+pub struct TimeOut {
+    pub xOverflowCount: BaseType,
+    pub xTimeOnEntering: TickType,
 }
 
 #[derive(Debug, Clone)]
@@ -98,8 +98,8 @@ pub struct tskTaskControlBlock {
     pub xEventListItem: ListItemLink,
     pub uxCriticalNesting: UBaseType_t,
     pub uxPriority: UBaseType,
-    pub uxMutexesHeld:UBaseType,
-    pub uxBasePriority:UBaseType
+    pub uxMutexesHeld: UBaseType,
+    pub uxBasePriority: UBaseType,
 }
 impl Default for tskTaskControlBlock {
     fn default() -> Self {
@@ -112,7 +112,7 @@ impl Default for tskTaskControlBlock {
             uxCriticalNesting: 0,
             uxPriority: 0,
             uxBasePriority: 0,
-            uxMutexesHeld:0
+            uxMutexesHeld: 0,
         }
     }
 }
@@ -129,49 +129,52 @@ pub type TCB_t = tskTCB;
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
 
 /// set target task's priority
-pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
-{
+pub fn vTaskPrioritySet(pxTask: Option<TaskHandle_t>, uxNewPriority: UBaseType) {
     vTaskEnterCritical();
-    match pxTask{
-        Some(x)=>{
+    match pxTask {
+        Some(x) => {
             ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
-            v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
-            x.write().uxPriority=uxNewPriority;
-            list_item_set_value(&x.write().xEventListItem, configMAX_PRIORITIES-uxNewPriority);
-            
+            v_list_insert_end(
+                &READY_TASK_LISTS[uxNewPriority as usize],
+                Arc::clone(&x.read().xStateListItem),
+            );
+            x.write().uxPriority = uxNewPriority;
+            list_item_set_value(
+                &x.write().xEventListItem,
+                configMAX_PRIORITIES - uxNewPriority,
+            );
         }
-        None=>{
-            unsafe{
-                match get_current_tcb(){
-                    Some(x)=>{
-                        
-                        ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
-                        v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
-                        x.uxPriority=uxNewPriority;
-                        list_item_set_value(&x.xEventListItem, configMAX_PRIORITIES-uxNewPriority);
-                    }
-                    None=>{}
+        None => unsafe {
+            match get_current_tcb() {
+                Some(x) => {
+                    ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
+                    v_list_insert_end(
+                        &READY_TASK_LISTS[uxNewPriority as usize],
+                        Arc::clone(&(*x).xStateListItem),
+                    );
+                    x.uxPriority = uxNewPriority;
+                    list_item_set_value(&x.xEventListItem, configMAX_PRIORITIES - uxNewPriority);
                 }
+                None => {}
             }
-        }
+        },
     }
     vTaskExitCritical();
 }
 
 /// get priority of target task
-pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
-{
-    unsafe{
-        match get_current_tcb(){
-            Some(x)=>unsafe {
+pub fn uxTaskPriorityGet(pxTask: Option<TaskHandle_t>) -> UBaseType {
+    unsafe {
+        match get_current_tcb() {
+            Some(x) => unsafe {
                 return (*x).uxPriority;
+            },
+            None => {
+                return 0;
             }
-            None=>{return 0;}
         }
     }
-    
 }
-
 
 /// create task (static)
 #[cfg(feature = "configSUPPORT_STATIC_ALLOCATION")]
@@ -268,7 +271,7 @@ pub fn prvInitialiseNewTask(
     print("prvInitialiseNewTask 1111");
     pxNewTCB.write().pcTaskName = pcName.to_string();
     pxNewTCB.write().uxPriority = priority;
-    if cfg!(feature="configUSE_MUTEXES"){
+    if cfg!(feature = "configUSE_MUTEXES") {
         pxNewTCB.write().uxBasePriority = priority;
         pxNewTCB.write().uxMutexesHeld = 0;
     }
@@ -276,7 +279,10 @@ pub fn prvInitialiseNewTask(
     print("prvInitialiseNewTask 2222");
     list_item_set_owner(&pxNewTCB.write().xStateListItem, Arc::downgrade(&pxNewTCB));
     list_item_set_owner(&pxNewTCB.write().xEventListItem, Arc::downgrade(&pxNewTCB));
-    list_item_set_value(&pxNewTCB.write().xEventListItem,configMAX_PRIORITIES-priority);
+    list_item_set_value(
+        &pxNewTCB.write().xEventListItem,
+        configMAX_PRIORITIES - priority,
+    );
     print("prvInitialiseNewTask 33333");
     //TODO: connect
     let s_ = format!("top of stack{:X}", pxTopOfStack);
@@ -338,10 +344,19 @@ pub fn vTaskEnterCritical() {
     portDISABLE_INTERRUPTS!();
     unsafe {
         if XSCHEDULERRUNNING != pdFALSE {
-            get_current_tcb().unwrap().uxCriticalNesting += 1;
-            if get_current_tcb().unwrap().uxCriticalNesting == 1 {
-                // TODO: portASSERT_IF_IN_ISR
+            match get_current_tcb() {
+                Some(x) => {
+                    x.uxCriticalNesting += 1;
+                    if x.uxCriticalNesting == 1 {
+                        // TODO: portASSERT_IF_IN_ISR
+                    }
+                }
+                None => (),
             }
+            // get_current_tcb().unwrap().uxCriticalNesting += 1;
+            // if get_current_tcb().unwrap().uxCriticalNesting == 1 {
+            //     // TODO: portASSERT_IF_IN_ISR
+            // }
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
@@ -351,15 +366,20 @@ pub fn vTaskEnterCritical() {
 pub fn vTaskExitCritical() {
     unsafe {
         if XSCHEDULERRUNNING != pdFALSE {
-            if get_current_tcb().unwrap().uxCriticalNesting > 0 {
-                get_current_tcb().unwrap().uxCriticalNesting -= 1;
-                if get_current_tcb().unwrap().uxCriticalNesting == 0 {
-                    portENABLE_INTERRUPTS!();
-                } else {
-                    mtCOVERAGE_TEST_MARKER!();
+            match get_current_tcb() {
+                Some(x) => {
+                    if x.uxCriticalNesting > 0 {
+                        x.uxCriticalNesting -= 1;
+                        if x.uxCriticalNesting == 0 {
+                            portENABLE_INTERRUPTS!();
+                        } else {
+                            mtCOVERAGE_TEST_MARKER!();
+                        }
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
                 }
-            } else {
-                mtCOVERAGE_TEST_MARKER!();
+                None => (),
             }
         } else {
             mtCOVERAGE_TEST_MARKER!();
@@ -398,88 +418,81 @@ pub fn taskYield() {
 }
 
 /// add current task to delayed list
-pub fn prvAddCurrentTaskToDelayedList(xTicksToWait:TickType,xCanBlockIndefinitely:bool) {
+pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinitely: bool) {
     //todo
     //vTaskEnterCritical();
-    let mut xTimeToWake:TickType;
-    let mut xConstTickCount:TickType;
-    unsafe{
-        xTimeToWake=xTicksToWait+xTickCount;
-        xConstTickCount=xTickCount;
+    let mut xTimeToWake: TickType;
+    let mut xConstTickCount: TickType;
+    unsafe {
+        xTimeToWake = xTicksToWait + xTickCount;
+        xConstTickCount = xTickCount;
     }
     let list_item = &get_current_tcb().unwrap().xStateListItem;
     list_item_set_value(&list_item, xTimeToWake);
     ux_list_remove(Arc::downgrade(&list_item));
     if xTimeToWake > xConstTickCount {
         v_list_insert(&DELAYED_TASK_LIST, list_item.clone());
-        unsafe{
+        unsafe {
             if xTimeToWake < xNextTaskUnblockTime {
                 xNextTaskUnblockTime = xTimeToWake;
             }
         }
-        
     } else {
         v_list_insert(&OVERFLOW_DELAYED_TASK_LIST, list_item.clone());
-    }   
+    }
     //vTaskExitCritical();
 }
 
 pub fn vTaskDelay(xTicksToDelay: TickType) {
     vTaskEnterCritical();
     //todo
-    prvAddCurrentTaskToDelayedList(xTicksToDelay,true);
-    
+    prvAddCurrentTaskToDelayedList(xTicksToDelay, true);
+
     vTaskExitCritical();
     taskYield();
 }
 
 /// delay task until pxPreviousWakeTime+pxPreviousWakeTime <br>
-pub fn xTaskDelayUntil(pxPreviousWakeTime:&mut TickType,xTimeIncrement:TickType){
-    let mut xShouldDelay:bool=false;
-    
+pub fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrement: TickType) {
+    let mut xShouldDelay: bool = false;
+
     vTaskSuspendAll();
     {
-        let mut xConstTickCount:TickType;
-        unsafe{
-            xConstTickCount=xTickCount;
+        let mut xConstTickCount: TickType;
+        unsafe {
+            xConstTickCount = xTickCount;
         }
-        
-        let xTimeToWake:TickType=*pxPreviousWakeTime+xTimeIncrement;
+
+        let xTimeToWake: TickType = *pxPreviousWakeTime + xTimeIncrement;
         //let s=format!("xConstTickCount:{} pxPreviousWakeTime:{} xTimeToWake:{}",xConstTickCount,*pxPreviousWakeTime,xTimeToWake);
         //vSendString(&s);
-        if xConstTickCount<*pxPreviousWakeTime{
-            if (xTimeToWake<*pxPreviousWakeTime) && (xTimeToWake>xConstTickCount){
-                xShouldDelay=true;
-            }
-            else{
+        if xConstTickCount < *pxPreviousWakeTime {
+            if (xTimeToWake < *pxPreviousWakeTime) && (xTimeToWake > xConstTickCount) {
+                xShouldDelay = true;
+            } else {
                 mtCOVERAGE_TEST_MARKER!();
             }
-        }
-        else{
-            if (xTimeToWake<*pxPreviousWakeTime) || (xTimeToWake>xConstTickCount){
-                xShouldDelay=true;
-            }
-            else{
+        } else {
+            if (xTimeToWake < *pxPreviousWakeTime) || (xTimeToWake > xConstTickCount) {
+                xShouldDelay = true;
+            } else {
                 mtCOVERAGE_TEST_MARKER!();
             }
         }
 
-        *pxPreviousWakeTime=xTimeToWake;
-        
-        if xShouldDelay==true{
-            
-            prvAddCurrentTaskToDelayedList(xTimeToWake-xConstTickCount,true);
-        }
-        else{
+        *pxPreviousWakeTime = xTimeToWake;
+
+        if xShouldDelay == true {
+            prvAddCurrentTaskToDelayedList(xTimeToWake - xConstTickCount, true);
+        } else {
             //vSendString("no delay!");
             mtCOVERAGE_TEST_MARKER!();
         }
     }
-    let xAlreadyYielded:bool=vTaskResumeAll();
-    if xAlreadyYielded==false{
+    let xAlreadyYielded: bool = vTaskResumeAll();
+    if xAlreadyYielded == false {
         portYIELD_WITHIN_API!();
-    }
-    else{
+    } else {
         mtCOVERAGE_TEST_MARKER!();
     }
 
@@ -493,10 +506,9 @@ fn taskSWITCH_DELAYED_LISTS() {
     let tmp = (*delayed).clone();
     *delayed = (*overflowed).clone();
     *overflowed = tmp;
-    unsafe{
-        xNumOfOverflows+=1;
+    unsafe {
+        xNumOfOverflows += 1;
     }
-    
 }
 
 /// tick increment, free delayed task
@@ -504,8 +516,7 @@ fn taskSWITCH_DELAYED_LISTS() {
 pub extern "C" fn xTaskIncrementTick() {
     //todo
     unsafe {
-        if uxSchedulerSuspended==0{
-
+        if uxSchedulerSuspended == 0 {
             xTickCount += 1;
             if xTickCount == 0 {
                 taskSWITCH_DELAYED_LISTS();
@@ -532,9 +543,8 @@ pub extern "C" fn xTaskIncrementTick() {
                     }
                 }
             }
-        }
-        else{
-            xPendedTicks+=1;
+        } else {
+            xPendedTicks += 1;
         }
     }
 }
@@ -631,7 +641,7 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
     /*
     默认传入有效handle or curtcb
      */
-    let xTaskToSuspend=xTaskToSuspend_.unwrap();
+    let xTaskToSuspend = xTaskToSuspend_.unwrap();
     use crate::kernel::kernel::SUSPENDED_TASK_LIST;
     taskENTER_CRITICAL!();
     {
@@ -651,7 +661,7 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
     if (get_scheduler_running!() != false) {
         taskENTER_CRITICAL!();
         {
-            prvResetNextTaskUnblockTime();//TODO:
+            prvResetNextTaskUnblockTime(); //TODO:
         }
         taskEXIT_CRITICAL!();
     } else {
@@ -704,7 +714,7 @@ pub static mut xSchedulerRunning: bool = false;
 pub fn vTaskResume(xTaskToResume_: Option<TaskHandle_t>) {
     //TODO: 检查要恢复的任务是否被挂起
     //TODO：assert is not None &&pxTCB != pxCurrentTCB
-    let xTaskToResume=xTaskToResume_.unwrap();
+    let xTaskToResume = xTaskToResume_.unwrap();
     let mut pxTCB = xTaskToResume.read();
     if is_current_tcb(Arc::downgrade(&xTaskToResume)) == false {
         taskENTER_CRITICAL!();
@@ -765,64 +775,62 @@ pub fn vTaskDelete(xTaskToDelete: Option<TaskHandle_t>) {
 
 /// reset NextTaskUnblockTime
 fn prvResetNextTaskUnblockTime() {
-    unsafe{
-        if list_is_empty(&DELAYED_TASK_LIST){
-            xNextTaskUnblockTime=PORT_MAX_DELAY;
-        }
-        else{
-            let head=list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
-            xNextTaskUnblockTime=head.read().x_item_value;
+    unsafe {
+        if list_is_empty(&DELAYED_TASK_LIST) {
+            xNextTaskUnblockTime = PORT_MAX_DELAY;
+        } else {
+            let head = list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
+            xNextTaskUnblockTime = head.read().x_item_value;
         }
     }
-    
 }
 
 /// suspend scheduler
-pub fn vTaskSuspendAll(){
-    unsafe{
-        uxSchedulerSuspended+=1;
+pub fn vTaskSuspendAll() {
+    unsafe {
+        uxSchedulerSuspended += 1;
     }
-    
 }
 
 /// resume scheduler
-pub fn vTaskResumeAll()->bool{
-    let mut xAlreadyYielded=false;
-    let mut moved=false;
-    unsafe{
-        uxSchedulerSuspended-=1;
+pub fn vTaskResumeAll() -> bool {
+    let mut xAlreadyYielded = false;
+    let mut moved = false;
+    unsafe {
+        uxSchedulerSuspended -= 1;
         taskENTER_CRITICAL!();
-        if uxSchedulerSuspended==0{
+        if uxSchedulerSuspended == 0 {
+            if get_uxCurrentNumberOfTasks!() > 0 {
+                while !list_is_empty(&PENDING_READY_LIST) {
+                    let pxTCB = list_get_owner_of_next_entry(&PENDING_READY_LIST)
+                        .upgrade()
+                        .unwrap();
+                    ux_list_remove(Arc::downgrade(&pxTCB.read().xEventListItem));
+                    ux_list_remove(Arc::downgrade(&pxTCB.read().xStateListItem));
 
-            if get_uxCurrentNumberOfTasks!()>0{
-                while !list_is_empty(&PENDING_READY_LIST){
-                    let pxTCB=list_get_owner_of_next_entry(&PENDING_READY_LIST).upgrade().unwrap();
-                    ux_list_remove(Arc::downgrade(&pxTCB.read().xEventListItem) );
-                    ux_list_remove(Arc::downgrade(&pxTCB.read().xStateListItem) );
-
-                    if pxTCB.read().uxPriority>=get_current_tcb().unwrap().uxPriority{
-                        xYieldPending=true;
+                    if pxTCB.read().uxPriority >= get_current_tcb().unwrap().uxPriority {
+                        xYieldPending = true;
                     }
                     prvAddNewTaskToReadyList(pxTCB);
 
-                    moved=true;
+                    moved = true;
                 }
-                if moved{
+                if moved {
                     prvResetNextTaskUnblockTime();
                 }
-                let mut xPendedTicks_=xPendedTicks;
-                if xPendedTicks_>0{
-                    while xPendedTicks_>0{
-                        xTaskIncrementTick();//todo return value
+                let mut xPendedTicks_ = xPendedTicks;
+                if xPendedTicks_ > 0 {
+                    while xPendedTicks_ > 0 {
+                        xTaskIncrementTick(); //todo return value
 
-                        xPendedTicks_-=1;
+                        xPendedTicks_ -= 1;
                     }
-                    xYieldPending=true;
-                    xPendedTicks=0;
+                    xYieldPending = true;
+                    xPendedTicks = 0;
                 }
                 if xYieldPending {
                     if cfg!(feature = "configUSE_PREEMPTION") {
-                        xAlreadyYielded=true;
+                        xAlreadyYielded = true;
                     }
                     portYIELD_WITHIN_API!();
                 }
@@ -831,214 +839,223 @@ pub fn vTaskResumeAll()->bool{
         taskEXIT_CRITICAL!();
     }
     xAlreadyYielded
-} 
+}
 
 /// remove first task from event list, and insert the task to ready list
-pub fn xTaskRemoveFromEventList(pxEventList:&ListRealLink)->bool{
+pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
     vSendString("in!");
-    let pxUnblockedTCB=list_get_owner_of_head_entry(pxEventList).upgrade().unwrap();
-    let xReturn:bool;
-    let uxSchedulerSuspended_:UBaseType;
-    unsafe{
-        uxSchedulerSuspended_=uxSchedulerSuspended;
+    let pxUnblockedTCB = list_get_owner_of_head_entry(pxEventList).upgrade().unwrap();
+    let xReturn: bool;
+    let uxSchedulerSuspended_: UBaseType;
+    unsafe {
+        uxSchedulerSuspended_ = uxSchedulerSuspended;
     }
-    ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xEventListItem) );
+    ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xEventListItem));
     vSendString("ready");
-    if uxSchedulerSuspended_==0{
+    if uxSchedulerSuspended_ == 0 {
         vSendString("no suspend");
-        ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem) );
+        ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem));
         prvAddTaskToReadyList(pxUnblockedTCB.clone());
-        if cfg!(feature="configUSE_TICKLESS_IDLE"){
+        if cfg!(feature = "configUSE_TICKLESS_IDLE") {
             prvResetNextTaskUnblockTime();
         }
-    }
-    else{
+    } else {
         vSendString("suspend");
-        v_list_insert_end(&PENDING_READY_LIST,pxUnblockedTCB.read().xEventListItem.clone());
+        v_list_insert_end(
+            &PENDING_READY_LIST,
+            pxUnblockedTCB.read().xEventListItem.clone(),
+        );
     }
-    if pxUnblockedTCB.read().uxPriority>get_current_tcb().unwrap().uxPriority{
-        xReturn=true;
-        unsafe{
-            xYieldPending=true;
+    if pxUnblockedTCB.read().uxPriority > get_current_tcb().unwrap().uxPriority {
+        xReturn = true;
+        unsafe {
+            xYieldPending = true;
         }
-    }
-    else{
-        xReturn=false;
+    } else {
+        xReturn = false;
     }
     xReturn
 }
 
 /// set pxTimeOut to current time (in kernal)
-pub fn vTaskInternalSetTimeOutState(pxTimeOut:&mut TimeOut){
-    unsafe{
-        pxTimeOut.xOverflowCount=xNumOfOverflows;
-        pxTimeOut.xTimeOnEntering=xTickCount;
+pub fn vTaskInternalSetTimeOutState(pxTimeOut: &mut TimeOut) {
+    unsafe {
+        pxTimeOut.xOverflowCount = xNumOfOverflows;
+        pxTimeOut.xTimeOnEntering = xTickCount;
     }
 }
 
 /// set pxTimeOut to current time (in task)
-pub fn vTaskSetTimeOutState(pxTimeOut:&mut TimeOut){
+pub fn vTaskSetTimeOutState(pxTimeOut: &mut TimeOut) {
     taskENTER_CRITICAL!();
-    unsafe{
-        pxTimeOut.xOverflowCount=xNumOfOverflows;
-        pxTimeOut.xTimeOnEntering=xTickCount;
+    unsafe {
+        pxTimeOut.xOverflowCount = xNumOfOverflows;
+        pxTimeOut.xTimeOnEntering = xTickCount;
     }
     taskEXIT_CRITICAL!();
 }
 
 /// return if timeout has been reached
-pub fn xTaskCheckForTimeOut(pxTimeOut:&mut TimeOut,pxTicksToWait:&mut TickType)->BaseType{
-    let xReturn:BaseType;
+pub fn xTaskCheckForTimeOut(pxTimeOut: &mut TimeOut, pxTicksToWait: &mut TickType) -> BaseType {
+    let xReturn: BaseType;
     taskENTER_CRITICAL!();
     {
-        let xConstTickCount:TickType;
-        unsafe{
-            xConstTickCount=xTickCount;
+        let xConstTickCount: TickType;
+        unsafe {
+            xConstTickCount = xTickCount;
         }
-        let xElapsedTime=xConstTickCount-pxTimeOut.xTimeOnEntering;
-        if cfg!(feature="INCLUDE_xTaskAbortDelay"){
+        let xElapsedTime = xConstTickCount - pxTimeOut.xTimeOnEntering;
+        if cfg!(feature = "INCLUDE_xTaskAbortDelay") {
             //todo
         }
 
-        if cfg!(feature="INCLUDE_vTaskSuspend"){
-            if *pxTicksToWait==PORT_MAX_DELAY{
+        if cfg!(feature = "INCLUDE_vTaskSuspend") {
+            if *pxTicksToWait == PORT_MAX_DELAY {
                 taskEXIT_CRITICAL!();
                 return pdFALSE;
             }
         }
-        let xNumOfOverflows_:BaseType;
-        unsafe{
-            xNumOfOverflows_=xNumOfOverflows;
+        let xNumOfOverflows_: BaseType;
+        unsafe {
+            xNumOfOverflows_ = xNumOfOverflows;
         }
-        if xNumOfOverflows_ != pxTimeOut.xOverflowCount && xConstTickCount>=pxTimeOut.xTimeOnEntering{
-            xReturn=pdTRUE;
-            *pxTicksToWait=0;
-        }
-        else if xElapsedTime<*pxTicksToWait{
-            *pxTicksToWait-=xElapsedTime;
-            xReturn=pdFALSE;
-        }
-        else{
-            xReturn=pdTRUE;
-            *pxTicksToWait=0;
+        if xNumOfOverflows_ != pxTimeOut.xOverflowCount
+            && xConstTickCount >= pxTimeOut.xTimeOnEntering
+        {
+            xReturn = pdTRUE;
+            *pxTicksToWait = 0;
+        } else if xElapsedTime < *pxTicksToWait {
+            *pxTicksToWait -= xElapsedTime;
+            xReturn = pdFALSE;
+        } else {
+            xReturn = pdTRUE;
+            *pxTicksToWait = 0;
         }
     }
     taskEXIT_CRITICAL!();
     xReturn
 }
 
-pub fn xTaskPriorityInherit(pxMutexHolder:Option<TaskHandle_t>)->BaseType{
-    let mut xReturn:BaseType=pdFALSE;
-    match pxMutexHolder{
-        Some(pxMutexHolder_)=>{
-
-            let pxMutexHolderTCB:&mut tskTaskControlBlock=&mut pxMutexHolder_.write();
-            if pxMutexHolderTCB.uxPriority<get_current_tcb().unwrap().uxPriority{
-
-                if list_item_get_value(&pxMutexHolderTCB.xEventListItem) & taskEVENT_LIST_ITEM_VALUE_IN_USE ==0{
-                    list_item_set_value(&pxMutexHolderTCB.xEventListItem, configMAX_PRIORITIES-pxMutexHolderTCB.uxPriority);
+pub fn xTaskPriorityInherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    match pxMutexHolder {
+        Some(pxMutexHolder_) => {
+            let pxMutexHolderTCB: &mut tskTaskControlBlock = &mut pxMutexHolder_.write();
+            if pxMutexHolderTCB.uxPriority < get_current_tcb().unwrap().uxPriority {
+                if list_item_get_value(&pxMutexHolderTCB.xEventListItem)
+                    & taskEVENT_LIST_ITEM_VALUE_IN_USE
+                    == 0
+                {
+                    list_item_set_value(
+                        &pxMutexHolderTCB.xEventListItem,
+                        configMAX_PRIORITIES - pxMutexHolderTCB.uxPriority,
+                    );
                 }
 
-                if list_is_contained_within(&READY_TASK_LISTS[pxMutexHolderTCB.uxPriority as usize], 
-                        &pxMutexHolderTCB.xStateListItem)==true{
-
-                    ux_list_remove(Arc::downgrade(&pxMutexHolderTCB.xStateListItem) );
-                    pxMutexHolderTCB.uxPriority=get_current_tcb().unwrap().uxPriority;
+                if list_is_contained_within(
+                    &READY_TASK_LISTS[pxMutexHolderTCB.uxPriority as usize],
+                    &pxMutexHolderTCB.xStateListItem,
+                ) == true
+                {
+                    ux_list_remove(Arc::downgrade(&pxMutexHolderTCB.xStateListItem));
+                    pxMutexHolderTCB.uxPriority = get_current_tcb().unwrap().uxPriority;
                     prvAddTaskToReadyList(pxMutexHolder_.clone());
-
+                } else {
+                    pxMutexHolderTCB.uxPriority = get_current_tcb().unwrap().uxPriority;
                 }
-                else{
-                    pxMutexHolderTCB.uxPriority=get_current_tcb().unwrap().uxPriority;
-                }
-                xReturn=pdTRUE;
+                xReturn = pdTRUE;
+            } else if pxMutexHolderTCB.uxPriority > get_current_tcb().unwrap().uxPriority {
+                xReturn = pdTRUE;
             }
-            else if pxMutexHolderTCB.uxPriority>get_current_tcb().unwrap().uxPriority{
-                xReturn=pdTRUE;
-            }
-
         }
-        None=>{
+        None => {
             mtCOVERAGE_TEST_MARKER!();
         }
     }
-    
+
     xReturn
-}   
+}
 
-pub fn xTaskPriorityDisinherit(pxMutexHolder:Option<TaskHandle_t>)->BaseType{
-    let mut xReturn:BaseType=pdFALSE;
-    match pxMutexHolder{
-        Some(pxMutexHolder_)=>{
-
-            let pxMutexHolderTCB:&mut tskTaskControlBlock=&mut pxMutexHolder_.write();
-            pxMutexHolderTCB.uxMutexesHeld-=1;
-            if pxMutexHolderTCB.uxBasePriority!=pxMutexHolderTCB.uxPriority{
-                if pxMutexHolderTCB.uxMutexesHeld==0{
-                    ux_list_remove(Arc::downgrade(&pxMutexHolderTCB.xStateListItem) );
-                    pxMutexHolderTCB.uxPriority=pxMutexHolderTCB.uxBasePriority;
-                    list_item_set_value(&pxMutexHolderTCB.xEventListItem, 
-                        configMAX_PRIORITIES-pxMutexHolderTCB.uxPriority);
+pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    match pxMutexHolder {
+        Some(pxMutexHolder_) => {
+            let pxMutexHolderTCB: &mut tskTaskControlBlock = &mut pxMutexHolder_.write();
+            pxMutexHolderTCB.uxMutexesHeld -= 1;
+            if pxMutexHolderTCB.uxBasePriority != pxMutexHolderTCB.uxPriority {
+                if pxMutexHolderTCB.uxMutexesHeld == 0 {
+                    ux_list_remove(Arc::downgrade(&pxMutexHolderTCB.xStateListItem));
+                    pxMutexHolderTCB.uxPriority = pxMutexHolderTCB.uxBasePriority;
+                    list_item_set_value(
+                        &pxMutexHolderTCB.xEventListItem,
+                        configMAX_PRIORITIES - pxMutexHolderTCB.uxPriority,
+                    );
                     prvAddTaskToReadyList(pxMutexHolder_.clone());
-                    xReturn=pdTRUE;
-                }
-                else{
+                    xReturn = pdTRUE;
+                } else {
                     mtCOVERAGE_TEST_MARKER!();
                 }
-            }
-            else{
+            } else {
                 mtCOVERAGE_TEST_MARKER!();
             }
         }
-        None=>{
+        None => {
             mtCOVERAGE_TEST_MARKER!();
         }
     }
     xReturn
 }
 
-pub fn pvTaskIncrementMutexHeldCount()->Option<TaskHandle_t>{
+pub fn pvTaskIncrementMutexHeldCount() -> Option<TaskHandle_t> {
     match &*CURRENT_TCB.write() {
-        Some(x)=>{
-            get_current_tcb().unwrap().uxMutexesHeld+=1;
+        Some(x) => {
+            get_current_tcb().unwrap().uxMutexesHeld += 1;
             Some(x.clone())
         }
-        None=>{
-            None
-        }
+        None => None,
     }
 }
 
-pub fn vTaskPriorityDisinheritAfterTimeout(pxMutexHolder:Option<TaskHandle_t>,uxHighestPriorityWaitingTask:UBaseType){
-    let uxPriorityToUse:UBaseType;
-    let uxPriorityUsedOnEntry:UBaseType;
-    match pxMutexHolder{
-        Some(pxMutexHolder_)=>{
+pub fn vTaskPriorityDisinheritAfterTimeout(
+    pxMutexHolder: Option<TaskHandle_t>,
+    uxHighestPriorityWaitingTask: UBaseType,
+) {
+    let uxPriorityToUse: UBaseType;
+    let uxPriorityUsedOnEntry: UBaseType;
+    match pxMutexHolder {
+        Some(pxMutexHolder_) => {
+            let pxMutexHolderTCB: &mut tskTaskControlBlock = &mut pxMutexHolder_.write();
+            uxPriorityToUse = max(
+                pxMutexHolderTCB.uxBasePriority,
+                uxHighestPriorityWaitingTask,
+            );
+            if pxMutexHolderTCB.uxPriority != uxPriorityToUse {
+                if pxMutexHolderTCB.uxMutexesHeld == 1 {
+                    uxPriorityUsedOnEntry = pxMutexHolderTCB.uxPriority;
+                    pxMutexHolderTCB.uxPriority = uxPriorityToUse;
+                    list_item_set_value(
+                        &pxMutexHolderTCB.xEventListItem,
+                        configMAX_PRIORITIES - uxPriorityToUse,
+                    );
 
-            let pxMutexHolderTCB:&mut tskTaskControlBlock=&mut pxMutexHolder_.write();
-            uxPriorityToUse=max(pxMutexHolderTCB.uxBasePriority,uxHighestPriorityWaitingTask);
-            if pxMutexHolderTCB.uxPriority!=uxPriorityToUse{
-                if pxMutexHolderTCB.uxMutexesHeld==1{
-                    uxPriorityUsedOnEntry=pxMutexHolderTCB.uxPriority;
-                    pxMutexHolderTCB.uxPriority=uxPriorityToUse;
-                    list_item_set_value(&pxMutexHolderTCB.xEventListItem, 
-                            configMAX_PRIORITIES-uxPriorityToUse);
-
-                    if list_is_contained_within(&READY_TASK_LISTS[uxPriorityUsedOnEntry as usize], 
-                            &pxMutexHolderTCB.xStateListItem){
-                        
+                    if list_is_contained_within(
+                        &READY_TASK_LISTS[uxPriorityUsedOnEntry as usize],
+                        &pxMutexHolderTCB.xStateListItem,
+                    ) {
                         ux_list_remove(Arc::downgrade(&pxMutexHolderTCB.xStateListItem));
                         prvAddTaskToReadyList(pxMutexHolder_.clone());
                     }
                 }
             }
         }
-        None=>{
-
-        }
+        None => {}
     }
 }
 
-pub fn vTaskPlaceOnEventList(pxEventList:&ListRealLink, xTicksToWait:TickType){
-    v_list_insert(pxEventList, get_current_tcb().unwrap().xEventListItem.clone());
+pub fn vTaskPlaceOnEventList(pxEventList: &ListRealLink, xTicksToWait: TickType) {
+    v_list_insert(
+        pxEventList,
+        get_current_tcb().unwrap().xEventListItem.clone(),
+    );
     prvAddCurrentTaskToDelayedList(xTicksToWait, true);
 }
