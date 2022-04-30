@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["alloc_error_handler",""],["init_heap",""]],"static":[["DYNAMIC_ALLOCATOR",""]]});
+initSidebarItems({"fn":[["alloc_error_handler",""],["init_heap",""]],"static":[["DYNAMIC_ALLOCATOR",""]],"struct":[["SimpleAllocator",""]]});

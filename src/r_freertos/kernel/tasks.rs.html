@@ -1047,25 +1047,42 @@
 <span id="1042">1042</span>
 <span id="1043">1043</span>
 <span id="1044">1044</span>
+<span id="1045">1045</span>
+<span id="1046">1046</span>
+<span id="1047">1047</span>
+<span id="1048">1048</span>
+<span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
+<span id="1061">1061</span>
 </pre><pre class="rust"><code><span class="doccomment">//! task control api</span>
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::projdefs</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::configMAX_PRIORITIES</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::kernel</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::linked_list</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::portable</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::projdefs</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::mtCOVERAGE_TEST_MARKER</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portDISABLE_INTERRUPTS</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portENABLE_INTERRUPTS</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portYIELD</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portmacro</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::configMAX_PRIORITIES</span>;
 
-<span class="kw">use</span> <span class="ident">core::cmp::max</span>;
 <span class="kw">use</span> <span class="ident">alloc::format</span>;
 <span class="kw">use</span> <span class="ident">alloc::string::ToString</span>;
 <span class="kw">use</span> <span class="ident">alloc::sync</span>::{<span class="ident">Arc</span>, <span class="ident">Weak</span>};
+<span class="kw">use</span> <span class="ident">core::cmp::max</span>;
 <span class="kw">use</span> <span class="ident">spin::RwLock</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">StackType_t</span> <span class="op">=</span> <span class="ident">usize</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">StackType_t_link</span> <span class="op">=</span> <span class="ident">usize</span>;
@@ -1090,15 +1107,15 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::config::USER_STACK_SIZE</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::kernel::IDLE_p</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::kernel::IDLE_STACK</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">tskIDLE_PRIORITY</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">tskIDLE_PRIORITY</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">XSCHEDULERRUNNING</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xTickCount</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xNumOfOverflows</span>:<span class="ident">BaseType</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xNumOfOverflows</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xNextTaskUnblockTime</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="ident">PORT_MAX_DELAY</span>;
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">uxCurrentNumberOfTasks</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">uxSchedulerSuspended</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xPendedTicks</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xYieldPending</span>:<span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">uxSchedulerSuspended</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xPendedTicks</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xYieldPending</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">taskENTER_CRITICAL</span> {
     () =&gt; {
@@ -1115,13 +1132,13 @@
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">vTaskMissedYield</span> {
     () =&gt; {
-        <span class="kw">unsafe</span>{
-            <span class="ident">xYieldPending</span><span class="op">=</span><span class="bool-val">true</span>;
+        <span class="kw">unsafe</span> {
+            <span class="ident">xYieldPending</span> <span class="op">=</span> <span class="bool-val">true</span>;
         }
     };
 }
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">taskEVENT_LIST_ITEM_VALUE_IN_USE</span>:<span class="ident">UBaseType</span><span class="op">=</span><span class="number">0x8000</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">taskEVENT_LIST_ITEM_VALUE_IN_USE</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0x8000</span>;
 
 <span class="doccomment">/// initialise task stack</span>
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
@@ -1133,9 +1150,9 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TimeOut</span>{
-    <span class="kw">pub</span> <span class="ident">xOverflowCount</span>:<span class="ident">BaseType</span>,
-    <span class="kw">pub</span> <span class="ident">xTimeOnEntering</span>:<span class="ident">TickType</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TimeOut</span> {
+    <span class="kw">pub</span> <span class="ident">xOverflowCount</span>: <span class="ident">BaseType</span>,
+    <span class="kw">pub</span> <span class="ident">xTimeOnEntering</span>: <span class="ident">TickType</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
@@ -1147,8 +1164,8 @@
     <span class="kw">pub</span> <span class="ident">xEventListItem</span>: <span class="ident">ListItemLink</span>,
     <span class="kw">pub</span> <span class="ident">uxCriticalNesting</span>: <span class="ident">UBaseType_t</span>,
     <span class="kw">pub</span> <span class="ident">uxPriority</span>: <span class="ident">UBaseType</span>,
-    <span class="kw">pub</span> <span class="ident">uxMutexesHeld</span>:<span class="ident">UBaseType</span>,
-    <span class="kw">pub</span> <span class="ident">uxBasePriority</span>:<span class="ident">UBaseType</span>
+    <span class="kw">pub</span> <span class="ident">uxMutexesHeld</span>: <span class="ident">UBaseType</span>,
+    <span class="kw">pub</span> <span class="ident">uxBasePriority</span>: <span class="ident">UBaseType</span>,
 }
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">tskTaskControlBlock</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
@@ -1161,7 +1178,7 @@
             <span class="ident">uxCriticalNesting</span>: <span class="number">0</span>,
             <span class="ident">uxPriority</span>: <span class="number">0</span>,
             <span class="ident">uxBasePriority</span>: <span class="number">0</span>,
-            <span class="ident">uxMutexesHeld</span>:<span class="number">0</span>
+            <span class="ident">uxMutexesHeld</span>: <span class="number">0</span>,
         }
     }
 }
@@ -1178,49 +1195,52 @@
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TaskHandle_t</span> <span class="op">=</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">tskTaskControlBlock</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// set target task&#39;s priority</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskPrioritySet</span>(<span class="ident">pxTask</span>:<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>,<span class="ident">uxNewPriority</span>:<span class="ident">UBaseType</span>) 
-{
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskPrioritySet</span>(<span class="ident">pxTask</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>, <span class="ident">uxNewPriority</span>: <span class="ident">UBaseType</span>) {
     <span class="ident">vTaskEnterCritical</span>();
-    <span class="kw">match</span> <span class="ident">pxTask</span>{
-        <span class="prelude-val">Some</span>(<span class="ident">x</span>)=&gt;{
+    <span class="kw">match</span> <span class="ident">pxTask</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
             <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>));
-            <span class="ident">v_list_insert_end</span>(<span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">uxNewPriority</span> <span class="kw">as</span> <span class="ident">usize</span>],<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>));
-            <span class="ident">x</span>.<span class="ident">write</span>().<span class="ident">uxPriority</span><span class="op">=</span><span class="ident">uxNewPriority</span>;
-            <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="ident">write</span>().<span class="ident">xEventListItem</span>, <span class="ident">configMAX_PRIORITIES</span><span class="op">-</span><span class="ident">uxNewPriority</span>);
-            
+            <span class="ident">v_list_insert_end</span>(
+                <span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">uxNewPriority</span> <span class="kw">as</span> <span class="ident">usize</span>],
+                <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>),
+            );
+            <span class="ident">x</span>.<span class="ident">write</span>().<span class="ident">uxPriority</span> <span class="op">=</span> <span class="ident">uxNewPriority</span>;
+            <span class="ident">list_item_set_value</span>(
+                <span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="ident">write</span>().<span class="ident">xEventListItem</span>,
+                <span class="ident">configMAX_PRIORITIES</span> <span class="op">-</span> <span class="ident">uxNewPriority</span>,
+            );
         }
-        <span class="prelude-val">None</span>=&gt;{
-            <span class="kw">unsafe</span>{
-                <span class="kw">match</span> <span class="ident">get_current_tcb</span>(){
-                    <span class="prelude-val">Some</span>(<span class="ident">x</span>)=&gt;{
-                        
-                        <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="ident">x</span>).<span class="ident">xStateListItem</span>));
-                        <span class="ident">v_list_insert_end</span>(<span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">uxNewPriority</span> <span class="kw">as</span> <span class="ident">usize</span>],<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="ident">x</span>).<span class="ident">xStateListItem</span>));
-                        <span class="ident">x</span>.<span class="ident">uxPriority</span><span class="op">=</span><span class="ident">uxNewPriority</span>;
-                        <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="ident">xEventListItem</span>, <span class="ident">configMAX_PRIORITIES</span><span class="op">-</span><span class="ident">uxNewPriority</span>);
-                    }
-                    <span class="prelude-val">None</span>=&gt;{}
+        <span class="prelude-val">None</span> =&gt; <span class="kw">unsafe</span> {
+            <span class="kw">match</span> <span class="ident">get_current_tcb</span>() {
+                <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
+                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="ident">x</span>).<span class="ident">xStateListItem</span>));
+                    <span class="ident">v_list_insert_end</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">uxNewPriority</span> <span class="kw">as</span> <span class="ident">usize</span>],
+                        <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="ident">x</span>).<span class="ident">xStateListItem</span>),
+                    );
+                    <span class="ident">x</span>.<span class="ident">uxPriority</span> <span class="op">=</span> <span class="ident">uxNewPriority</span>;
+                    <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="ident">xEventListItem</span>, <span class="ident">configMAX_PRIORITIES</span> <span class="op">-</span> <span class="ident">uxNewPriority</span>);
                 }
+                <span class="prelude-val">None</span> =&gt; {}
             }
-        }
+        },
     }
     <span class="ident">vTaskExitCritical</span>();
 }
 
 <span class="doccomment">/// get priority of target task</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">uxTaskPriorityGet</span>(<span class="ident">pxTask</span>:<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>)-&gt;<span class="ident">UBaseType</span>
-{
-    <span class="kw">unsafe</span>{
-        <span class="kw">match</span> <span class="ident">get_current_tcb</span>(){
-            <span class="prelude-val">Some</span>(<span class="ident">x</span>)=&gt;<span class="kw">unsafe</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">uxTaskPriorityGet</span>(<span class="ident">pxTask</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>) -&gt; <span class="ident">UBaseType</span> {
+    <span class="kw">unsafe</span> {
+        <span class="kw">match</span> <span class="ident">get_current_tcb</span>() {
+            <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="kw">unsafe</span> {
                 <span class="kw">return</span> (<span class="kw-2">*</span><span class="ident">x</span>).<span class="ident">uxPriority</span>;
+            },
+            <span class="prelude-val">None</span> =&gt; {
+                <span class="kw">return</span> <span class="number">0</span>;
             }
-            <span class="prelude-val">None</span>=&gt;{<span class="kw">return</span> <span class="number">0</span>;}
         }
     }
-    
 }
-
 
 <span class="doccomment">/// create task (static)</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configSUPPORT_STATIC_ALLOCATION&quot;</span>)]</span>
@@ -1317,7 +1337,7 @@
     <span class="ident">print</span>(<span class="string">&quot;prvInitialiseNewTask 1111&quot;</span>);
     <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">pcTaskName</span> <span class="op">=</span> <span class="ident">pcName</span>.<span class="ident">to_string</span>();
     <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">uxPriority</span> <span class="op">=</span> <span class="ident">priority</span>;
-    <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_MUTEXES&quot;</span>){
+    <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_MUTEXES&quot;</span>) {
         <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">uxBasePriority</span> <span class="op">=</span> <span class="ident">priority</span>;
         <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">uxMutexesHeld</span> <span class="op">=</span> <span class="number">0</span>;
     }
@@ -1325,7 +1345,10 @@
     <span class="ident">print</span>(<span class="string">&quot;prvInitialiseNewTask 2222&quot;</span>);
     <span class="ident">list_item_set_owner</span>(<span class="kw-2">&amp;</span><span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">xStateListItem</span>, <span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxNewTCB</span>));
     <span class="ident">list_item_set_owner</span>(<span class="kw-2">&amp;</span><span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">xEventListItem</span>, <span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxNewTCB</span>));
-    <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">xEventListItem</span>,<span class="ident">configMAX_PRIORITIES</span><span class="op">-</span><span class="ident">priority</span>);
+    <span class="ident">list_item_set_value</span>(
+        <span class="kw-2">&amp;</span><span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">xEventListItem</span>,
+        <span class="ident">configMAX_PRIORITIES</span> <span class="op">-</span> <span class="ident">priority</span>,
+    );
     <span class="ident">print</span>(<span class="string">&quot;prvInitialiseNewTask 33333&quot;</span>);
     <span class="comment">//TODO: connect</span>
     <span class="kw">let</span> <span class="ident">s_</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;top of stack{:X}&quot;</span>, <span class="ident">pxTopOfStack</span>);
@@ -1387,10 +1410,19 @@
     <span class="macro">portDISABLE_INTERRUPTS!</span>();
     <span class="kw">unsafe</span> {
         <span class="kw">if</span> <span class="ident">XSCHEDULERRUNNING</span> <span class="op">!</span><span class="op">=</span> <span class="ident">pdFALSE</span> {
-            <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxCriticalNesting</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="kw">if</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxCriticalNesting</span> <span class="op">==</span> <span class="number">1</span> {
-                <span class="comment">// TODO: portASSERT_IF_IN_ISR</span>
+            <span class="kw">match</span> <span class="ident">get_current_tcb</span>() {
+                <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
+                    <span class="ident">x</span>.<span class="ident">uxCriticalNesting</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                    <span class="kw">if</span> <span class="ident">x</span>.<span class="ident">uxCriticalNesting</span> <span class="op">==</span> <span class="number">1</span> {
+                        <span class="comment">// TODO: portASSERT_IF_IN_ISR</span>
+                    }
+                }
+                <span class="prelude-val">None</span> =&gt; (),
             }
+            <span class="comment">// get_current_tcb().unwrap().uxCriticalNesting += 1;</span>
+            <span class="comment">// if get_current_tcb().unwrap().uxCriticalNesting == 1 {</span>
+            <span class="comment">//     // TODO: portASSERT_IF_IN_ISR</span>
+            <span class="comment">// }</span>
         } <span class="kw">else</span> {
             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
         }
@@ -1400,15 +1432,20 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskExitCritical</span>() {
     <span class="kw">unsafe</span> {
         <span class="kw">if</span> <span class="ident">XSCHEDULERRUNNING</span> <span class="op">!</span><span class="op">=</span> <span class="ident">pdFALSE</span> {
-            <span class="kw">if</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxCriticalNesting</span> <span class="op">&gt;</span> <span class="number">0</span> {
-                <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxCriticalNesting</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
-                <span class="kw">if</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxCriticalNesting</span> <span class="op">==</span> <span class="number">0</span> {
-                    <span class="macro">portENABLE_INTERRUPTS!</span>();
-                } <span class="kw">else</span> {
-                    <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
+            <span class="kw">match</span> <span class="ident">get_current_tcb</span>() {
+                <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
+                    <span class="kw">if</span> <span class="ident">x</span>.<span class="ident">uxCriticalNesting</span> <span class="op">&gt;</span> <span class="number">0</span> {
+                        <span class="ident">x</span>.<span class="ident">uxCriticalNesting</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
+                        <span class="kw">if</span> <span class="ident">x</span>.<span class="ident">uxCriticalNesting</span> <span class="op">==</span> <span class="number">0</span> {
+                            <span class="macro">portENABLE_INTERRUPTS!</span>();
+                        } <span class="kw">else</span> {
+                            <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
+                        }
+                    } <span class="kw">else</span> {
+                        <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
+                    }
                 }
-            } <span class="kw">else</span> {
-                <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
+                <span class="prelude-val">None</span> =&gt; (),
             }
         } <span class="kw">else</span> {
             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
@@ -1447,88 +1484,81 @@
 }
 
 <span class="doccomment">/// add current task to delayed list</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTicksToWait</span>:<span class="ident">TickType</span>,<span class="ident">xCanBlockIndefinitely</span>:<span class="ident">bool</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>, <span class="ident">xCanBlockIndefinitely</span>: <span class="ident">bool</span>) {
     <span class="comment">//todo</span>
     <span class="comment">//vTaskEnterCritical();</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xTimeToWake</span>:<span class="ident">TickType</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xConstTickCount</span>:<span class="ident">TickType</span>;
-    <span class="kw">unsafe</span>{
-        <span class="ident">xTimeToWake</span><span class="op">=</span><span class="ident">xTicksToWait</span><span class="op">+</span><span class="ident">xTickCount</span>;
-        <span class="ident">xConstTickCount</span><span class="op">=</span><span class="ident">xTickCount</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xTimeToWake</span>: <span class="ident">TickType</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xConstTickCount</span>: <span class="ident">TickType</span>;
+    <span class="kw">unsafe</span> {
+        <span class="ident">xTimeToWake</span> <span class="op">=</span> <span class="ident">xTicksToWait</span> <span class="op">+</span> <span class="ident">xTickCount</span>;
+        <span class="ident">xConstTickCount</span> <span class="op">=</span> <span class="ident">xTickCount</span>;
     }
     <span class="kw">let</span> <span class="ident">list_item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">xStateListItem</span>;
     <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">list_item</span>, <span class="ident">xTimeToWake</span>);
     <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">list_item</span>));
     <span class="kw">if</span> <span class="ident">xTimeToWake</span> <span class="op">&gt;</span> <span class="ident">xConstTickCount</span> {
         <span class="ident">v_list_insert</span>(<span class="kw-2">&amp;</span><span class="ident">DELAYED_TASK_LIST</span>, <span class="ident">list_item</span>.<span class="ident">clone</span>());
-        <span class="kw">unsafe</span>{
+        <span class="kw">unsafe</span> {
             <span class="kw">if</span> <span class="ident">xTimeToWake</span> <span class="op">&lt;</span> <span class="ident">xNextTaskUnblockTime</span> {
                 <span class="ident">xNextTaskUnblockTime</span> <span class="op">=</span> <span class="ident">xTimeToWake</span>;
             }
         }
-        
     } <span class="kw">else</span> {
         <span class="ident">v_list_insert</span>(<span class="kw-2">&amp;</span><span class="ident">OVERFLOW_DELAYED_TASK_LIST</span>, <span class="ident">list_item</span>.<span class="ident">clone</span>());
-    }   
+    }
     <span class="comment">//vTaskExitCritical();</span>
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskDelay</span>(<span class="ident">xTicksToDelay</span>: <span class="ident">TickType</span>) {
     <span class="ident">vTaskEnterCritical</span>();
     <span class="comment">//todo</span>
-    <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTicksToDelay</span>,<span class="bool-val">true</span>);
-    
+    <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTicksToDelay</span>, <span class="bool-val">true</span>);
+
     <span class="ident">vTaskExitCritical</span>();
     <span class="ident">taskYield</span>();
 }
 
 <span class="doccomment">/// delay task until pxPreviousWakeTime+pxPreviousWakeTime &lt;br&gt;</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskDelayUntil</span>(<span class="ident">pxPreviousWakeTime</span>:<span class="kw-2">&amp;mut</span> <span class="ident">TickType</span>,<span class="ident">xTimeIncrement</span>:<span class="ident">TickType</span>){
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xShouldDelay</span>:<span class="ident">bool</span><span class="op">=</span><span class="bool-val">false</span>;
-    
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskDelayUntil</span>(<span class="ident">pxPreviousWakeTime</span>: <span class="kw-2">&amp;mut</span> <span class="ident">TickType</span>, <span class="ident">xTimeIncrement</span>: <span class="ident">TickType</span>) {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xShouldDelay</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
+
     <span class="ident">vTaskSuspendAll</span>();
     {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xConstTickCount</span>:<span class="ident">TickType</span>;
-        <span class="kw">unsafe</span>{
-            <span class="ident">xConstTickCount</span><span class="op">=</span><span class="ident">xTickCount</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xConstTickCount</span>: <span class="ident">TickType</span>;
+        <span class="kw">unsafe</span> {
+            <span class="ident">xConstTickCount</span> <span class="op">=</span> <span class="ident">xTickCount</span>;
         }
-        
-        <span class="kw">let</span> <span class="ident">xTimeToWake</span>:<span class="ident">TickType</span><span class="op">=</span><span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span><span class="op">+</span><span class="ident">xTimeIncrement</span>;
+
+        <span class="kw">let</span> <span class="ident">xTimeToWake</span>: <span class="ident">TickType</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span> <span class="op">+</span> <span class="ident">xTimeIncrement</span>;
         <span class="comment">//let s=format!(&quot;xConstTickCount:{} pxPreviousWakeTime:{} xTimeToWake:{}&quot;,xConstTickCount,*pxPreviousWakeTime,xTimeToWake);</span>
         <span class="comment">//vSendString(&amp;s);</span>
-        <span class="kw">if</span> <span class="ident">xConstTickCount</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span>{
-            <span class="kw">if</span> (<span class="ident">xTimeToWake</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span>) <span class="op">&amp;&amp;</span> (<span class="ident">xTimeToWake</span><span class="op">&gt;</span><span class="ident">xConstTickCount</span>){
-                <span class="ident">xShouldDelay</span><span class="op">=</span><span class="bool-val">true</span>;
-            }
-            <span class="kw">else</span>{
+        <span class="kw">if</span> <span class="ident">xConstTickCount</span> <span class="op">&lt;</span> <span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span> {
+            <span class="kw">if</span> (<span class="ident">xTimeToWake</span> <span class="op">&lt;</span> <span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span>) <span class="op">&amp;&amp;</span> (<span class="ident">xTimeToWake</span> <span class="op">&gt;</span> <span class="ident">xConstTickCount</span>) {
+                <span class="ident">xShouldDelay</span> <span class="op">=</span> <span class="bool-val">true</span>;
+            } <span class="kw">else</span> {
                 <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
             }
-        }
-        <span class="kw">else</span>{
-            <span class="kw">if</span> (<span class="ident">xTimeToWake</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">xTimeToWake</span><span class="op">&gt;</span><span class="ident">xConstTickCount</span>){
-                <span class="ident">xShouldDelay</span><span class="op">=</span><span class="bool-val">true</span>;
-            }
-            <span class="kw">else</span>{
+        } <span class="kw">else</span> {
+            <span class="kw">if</span> (<span class="ident">xTimeToWake</span> <span class="op">&lt;</span> <span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">xTimeToWake</span> <span class="op">&gt;</span> <span class="ident">xConstTickCount</span>) {
+                <span class="ident">xShouldDelay</span> <span class="op">=</span> <span class="bool-val">true</span>;
+            } <span class="kw">else</span> {
                 <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
             }
         }
 
-        <span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span><span class="op">=</span><span class="ident">xTimeToWake</span>;
-        
-        <span class="kw">if</span> <span class="ident">xShouldDelay</span><span class="op">==</span><span class="bool-val">true</span>{
-            
-            <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTimeToWake</span><span class="op">-</span><span class="ident">xConstTickCount</span>,<span class="bool-val">true</span>);
-        }
-        <span class="kw">else</span>{
+        <span class="kw-2">*</span><span class="ident">pxPreviousWakeTime</span> <span class="op">=</span> <span class="ident">xTimeToWake</span>;
+
+        <span class="kw">if</span> <span class="ident">xShouldDelay</span> <span class="op">==</span> <span class="bool-val">true</span> {
+            <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTimeToWake</span> <span class="op">-</span> <span class="ident">xConstTickCount</span>, <span class="bool-val">true</span>);
+        } <span class="kw">else</span> {
             <span class="comment">//vSendString(&quot;no delay!&quot;);</span>
             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
         }
     }
-    <span class="kw">let</span> <span class="ident">xAlreadyYielded</span>:<span class="ident">bool</span><span class="op">=</span><span class="ident">vTaskResumeAll</span>();
-    <span class="kw">if</span> <span class="ident">xAlreadyYielded</span><span class="op">==</span><span class="bool-val">false</span>{
+    <span class="kw">let</span> <span class="ident">xAlreadyYielded</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="ident">vTaskResumeAll</span>();
+    <span class="kw">if</span> <span class="ident">xAlreadyYielded</span> <span class="op">==</span> <span class="bool-val">false</span> {
         <span class="macro">portYIELD_WITHIN_API!</span>();
-    }
-    <span class="kw">else</span>{
+    } <span class="kw">else</span> {
         <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
     }
 
@@ -1542,10 +1572,9 @@
     <span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> (<span class="kw-2">*</span><span class="ident">delayed</span>).<span class="ident">clone</span>();
     <span class="kw-2">*</span><span class="ident">delayed</span> <span class="op">=</span> (<span class="kw-2">*</span><span class="ident">overflowed</span>).<span class="ident">clone</span>();
     <span class="kw-2">*</span><span class="ident">overflowed</span> <span class="op">=</span> <span class="ident">tmp</span>;
-    <span class="kw">unsafe</span>{
-        <span class="ident">xNumOfOverflows</span><span class="op">+</span><span class="op">=</span><span class="number">1</span>;
+    <span class="kw">unsafe</span> {
+        <span class="ident">xNumOfOverflows</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
     }
-    
 }
 
 <span class="doccomment">/// tick increment, free delayed task</span>
@@ -1553,8 +1582,7 @@
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">xTaskIncrementTick</span>() {
     <span class="comment">//todo</span>
     <span class="kw">unsafe</span> {
-        <span class="kw">if</span> <span class="ident">uxSchedulerSuspended</span><span class="op">==</span><span class="number">0</span>{
-
+        <span class="kw">if</span> <span class="ident">uxSchedulerSuspended</span> <span class="op">==</span> <span class="number">0</span> {
             <span class="ident">xTickCount</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
             <span class="kw">if</span> <span class="ident">xTickCount</span> <span class="op">==</span> <span class="number">0</span> {
                 <span class="ident">taskSWITCH_DELAYED_LISTS</span>();
@@ -1581,9 +1609,8 @@
                     }
                 }
             }
-        }
-        <span class="kw">else</span>{
-            <span class="ident">xPendedTicks</span><span class="op">+</span><span class="op">=</span><span class="number">1</span>;
+        } <span class="kw">else</span> {
+            <span class="ident">xPendedTicks</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
         }
     }
 }
@@ -1680,7 +1707,7 @@
     <span class="comment">/*
     默认传入有效handle or curtcb
      */</span>
-    <span class="kw">let</span> <span class="ident">xTaskToSuspend</span><span class="op">=</span><span class="ident">xTaskToSuspend_</span>.<span class="ident">unwrap</span>();
+    <span class="kw">let</span> <span class="ident">xTaskToSuspend</span> <span class="op">=</span> <span class="ident">xTaskToSuspend_</span>.<span class="ident">unwrap</span>();
     <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::kernel::SUSPENDED_TASK_LIST</span>;
     <span class="macro">taskENTER_CRITICAL!</span>();
     {
@@ -1700,7 +1727,7 @@
     <span class="kw">if</span> (<span class="macro">get_scheduler_running!</span>() <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
         <span class="macro">taskENTER_CRITICAL!</span>();
         {
-            <span class="ident">prvResetNextTaskUnblockTime</span>();<span class="comment">//TODO:</span>
+            <span class="ident">prvResetNextTaskUnblockTime</span>(); <span class="comment">//TODO:</span>
         }
         <span class="macro">taskEXIT_CRITICAL!</span>();
     } <span class="kw">else</span> {
@@ -1753,7 +1780,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskResume</span>(<span class="ident">xTaskToResume_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>) {
     <span class="comment">//TODO: 检查要恢复的任务是否被挂起</span>
     <span class="comment">//TODO：assert is not None &amp;&amp;pxTCB != pxCurrentTCB</span>
-    <span class="kw">let</span> <span class="ident">xTaskToResume</span><span class="op">=</span><span class="ident">xTaskToResume_</span>.<span class="ident">unwrap</span>();
+    <span class="kw">let</span> <span class="ident">xTaskToResume</span> <span class="op">=</span> <span class="ident">xTaskToResume_</span>.<span class="ident">unwrap</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pxTCB</span> <span class="op">=</span> <span class="ident">xTaskToResume</span>.<span class="ident">read</span>();
     <span class="kw">if</span> <span class="ident">is_current_tcb</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">xTaskToResume</span>)) <span class="op">==</span> <span class="bool-val">false</span> {
         <span class="macro">taskENTER_CRITICAL!</span>();
@@ -1814,64 +1841,62 @@
 
 <span class="doccomment">/// reset NextTaskUnblockTime</span>
 <span class="kw">fn</span> <span class="ident">prvResetNextTaskUnblockTime</span>() {
-    <span class="kw">unsafe</span>{
-        <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">DELAYED_TASK_LIST</span>){
-            <span class="ident">xNextTaskUnblockTime</span><span class="op">=</span><span class="ident">PORT_MAX_DELAY</span>;
-        }
-        <span class="kw">else</span>{
-            <span class="kw">let</span> <span class="ident">head</span><span class="op">=</span><span class="ident">list_get_head_entry</span>(<span class="kw-2">&amp;</span><span class="ident">DELAYED_TASK_LIST</span>).<span class="ident">upgrade</span>().<span class="ident">unwrap</span>();
-            <span class="ident">xNextTaskUnblockTime</span><span class="op">=</span><span class="ident">head</span>.<span class="ident">read</span>().<span class="ident">x_item_value</span>;
+    <span class="kw">unsafe</span> {
+        <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">DELAYED_TASK_LIST</span>) {
+            <span class="ident">xNextTaskUnblockTime</span> <span class="op">=</span> <span class="ident">PORT_MAX_DELAY</span>;
+        } <span class="kw">else</span> {
+            <span class="kw">let</span> <span class="ident">head</span> <span class="op">=</span> <span class="ident">list_get_head_entry</span>(<span class="kw-2">&amp;</span><span class="ident">DELAYED_TASK_LIST</span>).<span class="ident">upgrade</span>().<span class="ident">unwrap</span>();
+            <span class="ident">xNextTaskUnblockTime</span> <span class="op">=</span> <span class="ident">head</span>.<span class="ident">read</span>().<span class="ident">x_item_value</span>;
         }
     }
-    
 }
 
 <span class="doccomment">/// suspend scheduler</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskSuspendAll</span>(){
-    <span class="kw">unsafe</span>{
-        <span class="ident">uxSchedulerSuspended</span><span class="op">+</span><span class="op">=</span><span class="number">1</span>;
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskSuspendAll</span>() {
+    <span class="kw">unsafe</span> {
+        <span class="ident">uxSchedulerSuspended</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
     }
-    
 }
 
 <span class="doccomment">/// resume scheduler</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskResumeAll</span>()-&gt;<span class="ident">bool</span>{
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xAlreadyYielded</span><span class="op">=</span><span class="bool-val">false</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">moved</span><span class="op">=</span><span class="bool-val">false</span>;
-    <span class="kw">unsafe</span>{
-        <span class="ident">uxSchedulerSuspended</span><span class="op">-</span><span class="op">=</span><span class="number">1</span>;
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskResumeAll</span>() -&gt; <span class="ident">bool</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xAlreadyYielded</span> <span class="op">=</span> <span class="bool-val">false</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">moved</span> <span class="op">=</span> <span class="bool-val">false</span>;
+    <span class="kw">unsafe</span> {
+        <span class="ident">uxSchedulerSuspended</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
         <span class="macro">taskENTER_CRITICAL!</span>();
-        <span class="kw">if</span> <span class="ident">uxSchedulerSuspended</span><span class="op">==</span><span class="number">0</span>{
+        <span class="kw">if</span> <span class="ident">uxSchedulerSuspended</span> <span class="op">==</span> <span class="number">0</span> {
+            <span class="kw">if</span> <span class="macro">get_uxCurrentNumberOfTasks!</span>() <span class="op">&gt;</span> <span class="number">0</span> {
+                <span class="kw">while</span> <span class="op">!</span><span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">PENDING_READY_LIST</span>) {
+                    <span class="kw">let</span> <span class="ident">pxTCB</span> <span class="op">=</span> <span class="ident">list_get_owner_of_next_entry</span>(<span class="kw-2">&amp;</span><span class="ident">PENDING_READY_LIST</span>)
+                        .<span class="ident">upgrade</span>()
+                        .<span class="ident">unwrap</span>();
+                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxTCB</span>.<span class="ident">read</span>().<span class="ident">xEventListItem</span>));
+                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxTCB</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>));
 
-            <span class="kw">if</span> <span class="macro">get_uxCurrentNumberOfTasks!</span>()<span class="op">&gt;</span><span class="number">0</span>{
-                <span class="kw">while</span> <span class="op">!</span><span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">PENDING_READY_LIST</span>){
-                    <span class="kw">let</span> <span class="ident">pxTCB</span><span class="op">=</span><span class="ident">list_get_owner_of_next_entry</span>(<span class="kw-2">&amp;</span><span class="ident">PENDING_READY_LIST</span>).<span class="ident">upgrade</span>().<span class="ident">unwrap</span>();
-                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxTCB</span>.<span class="ident">read</span>().<span class="ident">xEventListItem</span>) );
-                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxTCB</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>) );
-
-                    <span class="kw">if</span> <span class="ident">pxTCB</span>.<span class="ident">read</span>().<span class="ident">uxPriority</span><span class="op">&gt;</span><span class="op">=</span><span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>{
-                        <span class="ident">xYieldPending</span><span class="op">=</span><span class="bool-val">true</span>;
+                    <span class="kw">if</span> <span class="ident">pxTCB</span>.<span class="ident">read</span>().<span class="ident">uxPriority</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span> {
+                        <span class="ident">xYieldPending</span> <span class="op">=</span> <span class="bool-val">true</span>;
                     }
                     <span class="ident">prvAddNewTaskToReadyList</span>(<span class="ident">pxTCB</span>);
 
-                    <span class="ident">moved</span><span class="op">=</span><span class="bool-val">true</span>;
+                    <span class="ident">moved</span> <span class="op">=</span> <span class="bool-val">true</span>;
                 }
-                <span class="kw">if</span> <span class="ident">moved</span>{
+                <span class="kw">if</span> <span class="ident">moved</span> {
                     <span class="ident">prvResetNextTaskUnblockTime</span>();
                 }
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xPendedTicks_</span><span class="op">=</span><span class="ident">xPendedTicks</span>;
-                <span class="kw">if</span> <span class="ident">xPendedTicks_</span><span class="op">&gt;</span><span class="number">0</span>{
-                    <span class="kw">while</span> <span class="ident">xPendedTicks_</span><span class="op">&gt;</span><span class="number">0</span>{
-                        <span class="ident">xTaskIncrementTick</span>();<span class="comment">//todo return value</span>
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xPendedTicks_</span> <span class="op">=</span> <span class="ident">xPendedTicks</span>;
+                <span class="kw">if</span> <span class="ident">xPendedTicks_</span> <span class="op">&gt;</span> <span class="number">0</span> {
+                    <span class="kw">while</span> <span class="ident">xPendedTicks_</span> <span class="op">&gt;</span> <span class="number">0</span> {
+                        <span class="ident">xTaskIncrementTick</span>(); <span class="comment">//todo return value</span>
 
-                        <span class="ident">xPendedTicks_</span><span class="op">-</span><span class="op">=</span><span class="number">1</span>;
+                        <span class="ident">xPendedTicks_</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
                     }
-                    <span class="ident">xYieldPending</span><span class="op">=</span><span class="bool-val">true</span>;
-                    <span class="ident">xPendedTicks</span><span class="op">=</span><span class="number">0</span>;
+                    <span class="ident">xYieldPending</span> <span class="op">=</span> <span class="bool-val">true</span>;
+                    <span class="ident">xPendedTicks</span> <span class="op">=</span> <span class="number">0</span>;
                 }
                 <span class="kw">if</span> <span class="ident">xYieldPending</span> {
                     <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_PREEMPTION&quot;</span>) {
-                        <span class="ident">xAlreadyYielded</span><span class="op">=</span><span class="bool-val">true</span>;
+                        <span class="ident">xAlreadyYielded</span> <span class="op">=</span> <span class="bool-val">true</span>;
                     }
                     <span class="macro">portYIELD_WITHIN_API!</span>();
                 }
@@ -1880,216 +1905,226 @@
         <span class="macro">taskEXIT_CRITICAL!</span>();
     }
     <span class="ident">xAlreadyYielded</span>
-} 
+}
 
 <span class="doccomment">/// remove first task from event list, and insert the task to ready list</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="ident">pxEventList</span>:<span class="kw-2">&amp;</span><span class="ident">ListRealLink</span>)-&gt;<span class="ident">bool</span>{
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="ident">pxEventList</span>: <span class="kw-2">&amp;</span><span class="ident">ListRealLink</span>) -&gt; <span class="ident">bool</span> {
     <span class="ident">vSendString</span>(<span class="string">&quot;in!&quot;</span>);
-    <span class="kw">let</span> <span class="ident">pxUnblockedTCB</span><span class="op">=</span><span class="ident">list_get_owner_of_head_entry</span>(<span class="ident">pxEventList</span>).<span class="ident">upgrade</span>().<span class="ident">unwrap</span>();
-    <span class="kw">let</span> <span class="ident">xReturn</span>:<span class="ident">bool</span>;
-    <span class="kw">let</span> <span class="ident">uxSchedulerSuspended_</span>:<span class="ident">UBaseType</span>;
-    <span class="kw">unsafe</span>{
-        <span class="ident">uxSchedulerSuspended_</span><span class="op">=</span><span class="ident">uxSchedulerSuspended</span>;
+    <span class="kw">let</span> <span class="ident">pxUnblockedTCB</span> <span class="op">=</span> <span class="ident">list_get_owner_of_head_entry</span>(<span class="ident">pxEventList</span>).<span class="ident">upgrade</span>().<span class="ident">unwrap</span>();
+    <span class="kw">let</span> <span class="ident">xReturn</span>: <span class="ident">bool</span>;
+    <span class="kw">let</span> <span class="ident">uxSchedulerSuspended_</span>: <span class="ident">UBaseType</span>;
+    <span class="kw">unsafe</span> {
+        <span class="ident">uxSchedulerSuspended_</span> <span class="op">=</span> <span class="ident">uxSchedulerSuspended</span>;
     }
-    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">xEventListItem</span>) );
+    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">xEventListItem</span>));
     <span class="ident">vSendString</span>(<span class="string">&quot;ready&quot;</span>);
-    <span class="kw">if</span> <span class="ident">uxSchedulerSuspended_</span><span class="op">==</span><span class="number">0</span>{
+    <span class="kw">if</span> <span class="ident">uxSchedulerSuspended_</span> <span class="op">==</span> <span class="number">0</span> {
         <span class="ident">vSendString</span>(<span class="string">&quot;no suspend&quot;</span>);
-        <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>) );
+        <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>));
         <span class="ident">prvAddTaskToReadyList</span>(<span class="ident">pxUnblockedTCB</span>.<span class="ident">clone</span>());
-        <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_TICKLESS_IDLE&quot;</span>){
+        <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_TICKLESS_IDLE&quot;</span>) {
             <span class="ident">prvResetNextTaskUnblockTime</span>();
         }
-    }
-    <span class="kw">else</span>{
+    } <span class="kw">else</span> {
         <span class="ident">vSendString</span>(<span class="string">&quot;suspend&quot;</span>);
-        <span class="ident">v_list_insert_end</span>(<span class="kw-2">&amp;</span><span class="ident">PENDING_READY_LIST</span>,<span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">xEventListItem</span>.<span class="ident">clone</span>());
+        <span class="ident">v_list_insert_end</span>(
+            <span class="kw-2">&amp;</span><span class="ident">PENDING_READY_LIST</span>,
+            <span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">xEventListItem</span>.<span class="ident">clone</span>(),
+        );
     }
-    <span class="kw">if</span> <span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">uxPriority</span><span class="op">&gt;</span><span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>{
-        <span class="ident">xReturn</span><span class="op">=</span><span class="bool-val">true</span>;
-        <span class="kw">unsafe</span>{
-            <span class="ident">xYieldPending</span><span class="op">=</span><span class="bool-val">true</span>;
+    <span class="kw">if</span> <span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">uxPriority</span> <span class="op">&gt;</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span> {
+        <span class="ident">xReturn</span> <span class="op">=</span> <span class="bool-val">true</span>;
+        <span class="kw">unsafe</span> {
+            <span class="ident">xYieldPending</span> <span class="op">=</span> <span class="bool-val">true</span>;
         }
-    }
-    <span class="kw">else</span>{
-        <span class="ident">xReturn</span><span class="op">=</span><span class="bool-val">false</span>;
+    } <span class="kw">else</span> {
+        <span class="ident">xReturn</span> <span class="op">=</span> <span class="bool-val">false</span>;
     }
     <span class="ident">xReturn</span>
 }
 
 <span class="doccomment">/// set pxTimeOut to current time (in kernal)</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskInternalSetTimeOutState</span>(<span class="ident">pxTimeOut</span>:<span class="kw-2">&amp;mut</span> <span class="ident">TimeOut</span>){
-    <span class="kw">unsafe</span>{
-        <span class="ident">pxTimeOut</span>.<span class="ident">xOverflowCount</span><span class="op">=</span><span class="ident">xNumOfOverflows</span>;
-        <span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span><span class="op">=</span><span class="ident">xTickCount</span>;
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskInternalSetTimeOutState</span>(<span class="ident">pxTimeOut</span>: <span class="kw-2">&amp;mut</span> <span class="ident">TimeOut</span>) {
+    <span class="kw">unsafe</span> {
+        <span class="ident">pxTimeOut</span>.<span class="ident">xOverflowCount</span> <span class="op">=</span> <span class="ident">xNumOfOverflows</span>;
+        <span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span> <span class="op">=</span> <span class="ident">xTickCount</span>;
     }
 }
 
 <span class="doccomment">/// set pxTimeOut to current time (in task)</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskSetTimeOutState</span>(<span class="ident">pxTimeOut</span>:<span class="kw-2">&amp;mut</span> <span class="ident">TimeOut</span>){
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskSetTimeOutState</span>(<span class="ident">pxTimeOut</span>: <span class="kw-2">&amp;mut</span> <span class="ident">TimeOut</span>) {
     <span class="macro">taskENTER_CRITICAL!</span>();
-    <span class="kw">unsafe</span>{
-        <span class="ident">pxTimeOut</span>.<span class="ident">xOverflowCount</span><span class="op">=</span><span class="ident">xNumOfOverflows</span>;
-        <span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span><span class="op">=</span><span class="ident">xTickCount</span>;
+    <span class="kw">unsafe</span> {
+        <span class="ident">pxTimeOut</span>.<span class="ident">xOverflowCount</span> <span class="op">=</span> <span class="ident">xNumOfOverflows</span>;
+        <span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span> <span class="op">=</span> <span class="ident">xTickCount</span>;
     }
     <span class="macro">taskEXIT_CRITICAL!</span>();
 }
 
 <span class="doccomment">/// return if timeout has been reached</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="ident">pxTimeOut</span>:<span class="kw-2">&amp;mut</span> <span class="ident">TimeOut</span>,<span class="ident">pxTicksToWait</span>:<span class="kw-2">&amp;mut</span> <span class="ident">TickType</span>)-&gt;<span class="ident">BaseType</span>{
-    <span class="kw">let</span> <span class="ident">xReturn</span>:<span class="ident">BaseType</span>;
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="ident">pxTimeOut</span>: <span class="kw-2">&amp;mut</span> <span class="ident">TimeOut</span>, <span class="ident">pxTicksToWait</span>: <span class="kw-2">&amp;mut</span> <span class="ident">TickType</span>) -&gt; <span class="ident">BaseType</span> {
+    <span class="kw">let</span> <span class="ident">xReturn</span>: <span class="ident">BaseType</span>;
     <span class="macro">taskENTER_CRITICAL!</span>();
     {
-        <span class="kw">let</span> <span class="ident">xConstTickCount</span>:<span class="ident">TickType</span>;
-        <span class="kw">unsafe</span>{
-            <span class="ident">xConstTickCount</span><span class="op">=</span><span class="ident">xTickCount</span>;
+        <span class="kw">let</span> <span class="ident">xConstTickCount</span>: <span class="ident">TickType</span>;
+        <span class="kw">unsafe</span> {
+            <span class="ident">xConstTickCount</span> <span class="op">=</span> <span class="ident">xTickCount</span>;
         }
-        <span class="kw">let</span> <span class="ident">xElapsedTime</span><span class="op">=</span><span class="ident">xConstTickCount</span><span class="op">-</span><span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span>;
-        <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;INCLUDE_xTaskAbortDelay&quot;</span>){
+        <span class="kw">let</span> <span class="ident">xElapsedTime</span> <span class="op">=</span> <span class="ident">xConstTickCount</span> <span class="op">-</span> <span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span>;
+        <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;INCLUDE_xTaskAbortDelay&quot;</span>) {
             <span class="comment">//todo</span>
         }
 
-        <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;INCLUDE_vTaskSuspend&quot;</span>){
-            <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">pxTicksToWait</span><span class="op">==</span><span class="ident">PORT_MAX_DELAY</span>{
+        <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;INCLUDE_vTaskSuspend&quot;</span>) {
+            <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">pxTicksToWait</span> <span class="op">==</span> <span class="ident">PORT_MAX_DELAY</span> {
                 <span class="macro">taskEXIT_CRITICAL!</span>();
                 <span class="kw">return</span> <span class="ident">pdFALSE</span>;
             }
         }
-        <span class="kw">let</span> <span class="ident">xNumOfOverflows_</span>:<span class="ident">BaseType</span>;
-        <span class="kw">unsafe</span>{
-            <span class="ident">xNumOfOverflows_</span><span class="op">=</span><span class="ident">xNumOfOverflows</span>;
+        <span class="kw">let</span> <span class="ident">xNumOfOverflows_</span>: <span class="ident">BaseType</span>;
+        <span class="kw">unsafe</span> {
+            <span class="ident">xNumOfOverflows_</span> <span class="op">=</span> <span class="ident">xNumOfOverflows</span>;
         }
-        <span class="kw">if</span> <span class="ident">xNumOfOverflows_</span> <span class="op">!</span><span class="op">=</span> <span class="ident">pxTimeOut</span>.<span class="ident">xOverflowCount</span> <span class="op">&amp;&amp;</span> <span class="ident">xConstTickCount</span><span class="op">&gt;</span><span class="op">=</span><span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span>{
-            <span class="ident">xReturn</span><span class="op">=</span><span class="ident">pdTRUE</span>;
-            <span class="kw-2">*</span><span class="ident">pxTicksToWait</span><span class="op">=</span><span class="number">0</span>;
-        }
-        <span class="kw">else</span> <span class="kw">if</span> <span class="ident">xElapsedTime</span><span class="op">&lt;</span><span class="kw-2">*</span><span class="ident">pxTicksToWait</span>{
-            <span class="kw-2">*</span><span class="ident">pxTicksToWait</span><span class="op">-</span><span class="op">=</span><span class="ident">xElapsedTime</span>;
-            <span class="ident">xReturn</span><span class="op">=</span><span class="ident">pdFALSE</span>;
-        }
-        <span class="kw">else</span>{
-            <span class="ident">xReturn</span><span class="op">=</span><span class="ident">pdTRUE</span>;
-            <span class="kw-2">*</span><span class="ident">pxTicksToWait</span><span class="op">=</span><span class="number">0</span>;
+        <span class="kw">if</span> <span class="ident">xNumOfOverflows_</span> <span class="op">!</span><span class="op">=</span> <span class="ident">pxTimeOut</span>.<span class="ident">xOverflowCount</span>
+            <span class="op">&amp;&amp;</span> <span class="ident">xConstTickCount</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">pxTimeOut</span>.<span class="ident">xTimeOnEntering</span>
+        {
+            <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
+            <span class="kw-2">*</span><span class="ident">pxTicksToWait</span> <span class="op">=</span> <span class="number">0</span>;
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">xElapsedTime</span> <span class="op">&lt;</span> <span class="kw-2">*</span><span class="ident">pxTicksToWait</span> {
+            <span class="kw-2">*</span><span class="ident">pxTicksToWait</span> <span class="op">-</span><span class="op">=</span> <span class="ident">xElapsedTime</span>;
+            <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
+        } <span class="kw">else</span> {
+            <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
+            <span class="kw-2">*</span><span class="ident">pxTicksToWait</span> <span class="op">=</span> <span class="number">0</span>;
         }
     }
     <span class="macro">taskEXIT_CRITICAL!</span>();
     <span class="ident">xReturn</span>
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskPriorityInherit</span>(<span class="ident">pxMutexHolder</span>:<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>)-&gt;<span class="ident">BaseType</span>{
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>:<span class="ident">BaseType</span><span class="op">=</span><span class="ident">pdFALSE</span>;
-    <span class="kw">match</span> <span class="ident">pxMutexHolder</span>{
-        <span class="prelude-val">Some</span>(<span class="ident">pxMutexHolder_</span>)=&gt;{
-
-            <span class="kw">let</span> <span class="ident">pxMutexHolderTCB</span>:<span class="kw-2">&amp;mut</span> <span class="ident">tskTaskControlBlock</span><span class="op">=</span><span class="kw-2">&amp;mut</span> <span class="ident">pxMutexHolder_</span>.<span class="ident">write</span>();
-            <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span><span class="op">&lt;</span><span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>{
-
-                <span class="kw">if</span> <span class="ident">list_item_get_value</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>) <span class="op">&amp;</span> <span class="ident">taskEVENT_LIST_ITEM_VALUE_IN_USE</span> <span class="op">==</span><span class="number">0</span>{
-                    <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>, <span class="ident">configMAX_PRIORITIES</span><span class="op">-</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span>);
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskPriorityInherit</span>(<span class="ident">pxMutexHolder</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>) -&gt; <span class="ident">BaseType</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
+    <span class="kw">match</span> <span class="ident">pxMutexHolder</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">pxMutexHolder_</span>) =&gt; {
+            <span class="kw">let</span> <span class="ident">pxMutexHolderTCB</span>: <span class="kw-2">&amp;mut</span> <span class="ident">tskTaskControlBlock</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">pxMutexHolder_</span>.<span class="ident">write</span>();
+            <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="op">&lt;</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span> {
+                <span class="kw">if</span> <span class="ident">list_item_get_value</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>)
+                    <span class="op">&amp;</span> <span class="ident">taskEVENT_LIST_ITEM_VALUE_IN_USE</span>
+                    <span class="op">==</span> <span class="number">0</span>
+                {
+                    <span class="ident">list_item_set_value</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>,
+                        <span class="ident">configMAX_PRIORITIES</span> <span class="op">-</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span>,
+                    );
                 }
 
-                <span class="kw">if</span> <span class="ident">list_is_contained_within</span>(<span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="kw">as</span> <span class="ident">usize</span>], 
-                        <span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>)<span class="op">==</span><span class="bool-val">true</span>{
-
-                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>) );
-                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span><span class="op">=</span><span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>;
+                <span class="kw">if</span> <span class="ident">list_is_contained_within</span>(
+                    <span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="kw">as</span> <span class="ident">usize</span>],
+                    <span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>,
+                ) <span class="op">==</span> <span class="bool-val">true</span>
+                {
+                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>));
+                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="op">=</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>;
                     <span class="ident">prvAddTaskToReadyList</span>(<span class="ident">pxMutexHolder_</span>.<span class="ident">clone</span>());
-
+                } <span class="kw">else</span> {
+                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="op">=</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>;
                 }
-                <span class="kw">else</span>{
-                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span><span class="op">=</span><span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>;
-                }
-                <span class="ident">xReturn</span><span class="op">=</span><span class="ident">pdTRUE</span>;
+                <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
+            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="op">&gt;</span> <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span> {
+                <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
             }
-            <span class="kw">else</span> <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span><span class="op">&gt;</span><span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxPriority</span>{
-                <span class="ident">xReturn</span><span class="op">=</span><span class="ident">pdTRUE</span>;
-            }
-
         }
-        <span class="prelude-val">None</span>=&gt;{
+        <span class="prelude-val">None</span> =&gt; {
             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
         }
     }
-    
+
     <span class="ident">xReturn</span>
-}   
+}
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskPriorityDisinherit</span>(<span class="ident">pxMutexHolder</span>:<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>)-&gt;<span class="ident">BaseType</span>{
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>:<span class="ident">BaseType</span><span class="op">=</span><span class="ident">pdFALSE</span>;
-    <span class="kw">match</span> <span class="ident">pxMutexHolder</span>{
-        <span class="prelude-val">Some</span>(<span class="ident">pxMutexHolder_</span>)=&gt;{
-
-            <span class="kw">let</span> <span class="ident">pxMutexHolderTCB</span>:<span class="kw-2">&amp;mut</span> <span class="ident">tskTaskControlBlock</span><span class="op">=</span><span class="kw-2">&amp;mut</span> <span class="ident">pxMutexHolder_</span>.<span class="ident">write</span>();
-            <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxMutexesHeld</span><span class="op">-</span><span class="op">=</span><span class="number">1</span>;
-            <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="macro">uxBasePriority!</span><span class="op">=</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span>{
-                <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxMutexesHeld</span><span class="op">==</span><span class="number">0</span>{
-                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>) );
-                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span><span class="op">=</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxBasePriority</span>;
-                    <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>, 
-                        <span class="ident">configMAX_PRIORITIES</span><span class="op">-</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span>);
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xTaskPriorityDisinherit</span>(<span class="ident">pxMutexHolder</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>) -&gt; <span class="ident">BaseType</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
+    <span class="kw">match</span> <span class="ident">pxMutexHolder</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">pxMutexHolder_</span>) =&gt; {
+            <span class="kw">let</span> <span class="ident">pxMutexHolderTCB</span>: <span class="kw-2">&amp;mut</span> <span class="ident">tskTaskControlBlock</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">pxMutexHolder_</span>.<span class="ident">write</span>();
+            <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxMutexesHeld</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxBasePriority</span> <span class="op">!</span><span class="op">=</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> {
+                <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxMutexesHeld</span> <span class="op">==</span> <span class="number">0</span> {
+                    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>));
+                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="op">=</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxBasePriority</span>;
+                    <span class="ident">list_item_set_value</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>,
+                        <span class="ident">configMAX_PRIORITIES</span> <span class="op">-</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span>,
+                    );
                     <span class="ident">prvAddTaskToReadyList</span>(<span class="ident">pxMutexHolder_</span>.<span class="ident">clone</span>());
-                    <span class="ident">xReturn</span><span class="op">=</span><span class="ident">pdTRUE</span>;
-                }
-                <span class="kw">else</span>{
+                    <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
+                } <span class="kw">else</span> {
                     <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                 }
-            }
-            <span class="kw">else</span>{
+            } <span class="kw">else</span> {
                 <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
             }
         }
-        <span class="prelude-val">None</span>=&gt;{
+        <span class="prelude-val">None</span> =&gt; {
             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
         }
     }
     <span class="ident">xReturn</span>
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pvTaskIncrementMutexHeldCount</span>()-&gt;<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>{
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pvTaskIncrementMutexHeldCount</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span> {
     <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">CURRENT_TCB</span>.<span class="ident">write</span>() {
-        <span class="prelude-val">Some</span>(<span class="ident">x</span>)=&gt;{
-            <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxMutexesHeld</span><span class="op">+</span><span class="op">=</span><span class="number">1</span>;
+        <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
+            <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">uxMutexesHeld</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
             <span class="prelude-val">Some</span>(<span class="ident">x</span>.<span class="ident">clone</span>())
         }
-        <span class="prelude-val">None</span>=&gt;{
-            <span class="prelude-val">None</span>
-        }
+        <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskPriorityDisinheritAfterTimeout</span>(<span class="ident">pxMutexHolder</span>:<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>,<span class="ident">uxHighestPriorityWaitingTask</span>:<span class="ident">UBaseType</span>){
-    <span class="kw">let</span> <span class="ident">uxPriorityToUse</span>:<span class="ident">UBaseType</span>;
-    <span class="kw">let</span> <span class="ident">uxPriorityUsedOnEntry</span>:<span class="ident">UBaseType</span>;
-    <span class="kw">match</span> <span class="ident">pxMutexHolder</span>{
-        <span class="prelude-val">Some</span>(<span class="ident">pxMutexHolder_</span>)=&gt;{
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskPriorityDisinheritAfterTimeout</span>(
+    <span class="ident">pxMutexHolder</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>,
+    <span class="ident">uxHighestPriorityWaitingTask</span>: <span class="ident">UBaseType</span>,
+) {
+    <span class="kw">let</span> <span class="ident">uxPriorityToUse</span>: <span class="ident">UBaseType</span>;
+    <span class="kw">let</span> <span class="ident">uxPriorityUsedOnEntry</span>: <span class="ident">UBaseType</span>;
+    <span class="kw">match</span> <span class="ident">pxMutexHolder</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">pxMutexHolder_</span>) =&gt; {
+            <span class="kw">let</span> <span class="ident">pxMutexHolderTCB</span>: <span class="kw-2">&amp;mut</span> <span class="ident">tskTaskControlBlock</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">pxMutexHolder_</span>.<span class="ident">write</span>();
+            <span class="ident">uxPriorityToUse</span> <span class="op">=</span> <span class="ident">max</span>(
+                <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxBasePriority</span>,
+                <span class="ident">uxHighestPriorityWaitingTask</span>,
+            );
+            <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="op">!</span><span class="op">=</span> <span class="ident">uxPriorityToUse</span> {
+                <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxMutexesHeld</span> <span class="op">==</span> <span class="number">1</span> {
+                    <span class="ident">uxPriorityUsedOnEntry</span> <span class="op">=</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span>;
+                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span> <span class="op">=</span> <span class="ident">uxPriorityToUse</span>;
+                    <span class="ident">list_item_set_value</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>,
+                        <span class="ident">configMAX_PRIORITIES</span> <span class="op">-</span> <span class="ident">uxPriorityToUse</span>,
+                    );
 
-            <span class="kw">let</span> <span class="ident">pxMutexHolderTCB</span>:<span class="kw-2">&amp;mut</span> <span class="ident">tskTaskControlBlock</span><span class="op">=</span><span class="kw-2">&amp;mut</span> <span class="ident">pxMutexHolder_</span>.<span class="ident">write</span>();
-            <span class="ident">uxPriorityToUse</span><span class="op">=</span><span class="ident">max</span>(<span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxBasePriority</span>,<span class="ident">uxHighestPriorityWaitingTask</span>);
-            <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="macro">uxPriority!</span><span class="op">=</span><span class="ident">uxPriorityToUse</span>{
-                <span class="kw">if</span> <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxMutexesHeld</span><span class="op">==</span><span class="number">1</span>{
-                    <span class="ident">uxPriorityUsedOnEntry</span><span class="op">=</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span>;
-                    <span class="ident">pxMutexHolderTCB</span>.<span class="ident">uxPriority</span><span class="op">=</span><span class="ident">uxPriorityToUse</span>;
-                    <span class="ident">list_item_set_value</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xEventListItem</span>, 
-                            <span class="ident">configMAX_PRIORITIES</span><span class="op">-</span><span class="ident">uxPriorityToUse</span>);
-
-                    <span class="kw">if</span> <span class="ident">list_is_contained_within</span>(<span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">uxPriorityUsedOnEntry</span> <span class="kw">as</span> <span class="ident">usize</span>], 
-                            <span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>){
-                        
+                    <span class="kw">if</span> <span class="ident">list_is_contained_within</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">READY_TASK_LISTS</span>[<span class="ident">uxPriorityUsedOnEntry</span> <span class="kw">as</span> <span class="ident">usize</span>],
+                        <span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>,
+                    ) {
                         <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxMutexHolderTCB</span>.<span class="ident">xStateListItem</span>));
                         <span class="ident">prvAddTaskToReadyList</span>(<span class="ident">pxMutexHolder_</span>.<span class="ident">clone</span>());
                     }
                 }
             }
         }
-        <span class="prelude-val">None</span>=&gt;{
-
-        }
+        <span class="prelude-val">None</span> =&gt; {}
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskPlaceOnEventList</span>(<span class="ident">pxEventList</span>:<span class="kw-2">&amp;</span><span class="ident">ListRealLink</span>, <span class="ident">xTicksToWait</span>:<span class="ident">TickType</span>){
-    <span class="ident">v_list_insert</span>(<span class="ident">pxEventList</span>, <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">xEventListItem</span>.<span class="ident">clone</span>());
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskPlaceOnEventList</span>(<span class="ident">pxEventList</span>: <span class="kw-2">&amp;</span><span class="ident">ListRealLink</span>, <span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>) {
+    <span class="ident">v_list_insert</span>(
+        <span class="ident">pxEventList</span>,
+        <span class="ident">get_current_tcb</span>().<span class="ident">unwrap</span>().<span class="ident">xEventListItem</span>.<span class="ident">clone</span>(),
+    );
     <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTicksToWait</span>, <span class="bool-val">true</span>);
-}</code></pre></div>
+}
+</code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
 </body></html>
