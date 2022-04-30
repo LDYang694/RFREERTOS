@@ -20,6 +20,7 @@ use core::panic::PanicInfo;
 use lazy_static::*;
 use spin::RwLock;
 use core::intrinsics;
+use crate::uart0::*;
 
 global_asm!(include_str!("start.S"));
 
@@ -62,6 +63,9 @@ pub enum SchedulerState {
 #[no_mangle]
 pub extern "C" fn kernel_init() {
     print("enter kernel init.");
+    // sys_clock_init();
+	sys_jtag_init();
+	sys_uart_init();
     init_heap();
 }
 
