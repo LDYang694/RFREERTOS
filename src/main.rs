@@ -6,27 +6,22 @@
 #[allow(dead_code)]
 mod kernel;
 extern crate alloc;
+use alloc::slice;
+use alloc::str;
 use alloc::sync::Arc;
 use alloc::{fmt::format, format};
-use kernel::projdefs::{pdPASS, pdTRUE};
+use core::arch::asm;
 use core::{borrow::Borrow, ffi::c_void, mem::size_of};
+use kernel::projdefs::{pdPASS, pdTRUE};
 use kernel::queue::QueueDefinition;
 use kernel::{
-    config::*,
-    kernel::*,
-    linked_list::*,
-    portable::*,
-    portmacro::*,
-    queue::*,
-    riscv_virt::*,
-    tasks::*,
-    semphr::*,
-    *
+    config::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*, riscv_virt::*,
+    semphr::*, tasks::*, *,
 };
-use core::arch::asm;
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
-
+mod test_task_param;
+use test_task_param::main_test_str;
 #[no_mangle]
 pub extern "C" fn main() -> ! {
     main_new();
@@ -45,35 +40,20 @@ fn task1(t: *mut c_void) {
     vSendString("11111 gogogogo!!!");
 
     loop {
-        // delay(10000);
-        /*unsafe{
-            vTaskPrioritySet(task1handler.clone(),1);
-        }*/
         vSendString("11111 gogogogo!!!(in loop)");
-        //vTaskSuspend(task1handler.clone());
-        //vTaskDelay(10);
-        /*unsafe{
-            vTaskPrioritySet(None,2);
-        }*/
-        // taskYield();
+        // vTaskDelay(100);
     }
 }
 fn task2(t: *mut c_void) {
-    let mut begin: TickType = 0;
-    let increment: TickType = 100;
+    let b: i32 = unsafe { *(t as *mut i32) };
+    
     vSendString("22222 gogogogo!!!");
-    //vTaskDelete(None);
+    // let s = format!("bbbb={}", b);
     loop {
-        /*unsafe{
-            vTaskPrioritySet(task2handler.clone(),1);
-        }*/
+        // vSendString(&s);
+        vTaskDelete(Some(Arc::clone(&(task2handler.as_ref().unwrap()))));
+ 
         vSendString("22222 gogogogo!!!(in loop)");
-        //vTaskResume(task1handler.clone());
-        xTaskDelayUntil(&mut begin, increment);
-        /*unsafe{
-            vTaskPrioritySet(None,2);
-        }*/
-        // taskYield();
     }
 }
 
@@ -87,60 +67,53 @@ fn task3(t: *mut c_void) {
     }
 }
 pub fn main_new() {
+    // main_test_str();
     main_new_1();
 }
-
-pub fn testfunc1(){
-    mtCOVERAGE_TEST_MARKER!();
+pub fn vApplicationIdleHook(){
+    vSendString("hook!!!!!");
 }
-
-pub fn testfunc2(){
-    mtCOVERAGE_TEST_MARKER!();
-}
-
 fn task_send(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
     let ulValueToSend = 100;
     let pcMessage1 = "Transfer1";
     let pcMessage2 = "Transfer2";
     let mut f = 1;
-    let mut result:BaseType=0;
-    let s1="sending";
-    let s2="send correct";
-    let s3="send incorrect";
-    let s4="send give";
-    let temp:&mut QueueDefinition;
+    let mut result: BaseType = 0;
+    let s1 = "sending";
+    let s2 = "send correct";
+    let s3 = "send incorrect";
+    let s4 = "send give";
+    let temp: &mut QueueDefinition;
     unsafe {
-
-        temp=xQueue.as_mut().unwrap();
+        temp = xQueue.as_mut().unwrap();
     }
-    
-        let mut cnt=0;
-        loop {
-            testfunc1();
 
-            // xTaskDelayUntil(&mut begin, increment);
-            vSendString(&s1);
-                //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
-            result=xSemaphoreTake!(temp,0);
-                
-            if result==pdTRUE{
-                vSendString(&s2);
-            }
-            else{
-                vSendString(&s3);
-                vTaskDelay(5000);
-                continue;
-            }
-            vSendString(&s4);
-            xSemaphoreGive!(temp);
-            //let s=format!("send:{}",ulValueToSend);
-            //vSendString(&s);
+    let mut cnt = 0;
+    loop {
+        testfunc1();
+
+        // xTaskDelayUntil(&mut begin, increment);
+        vSendString(&s1);
+        //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
+        result = xSemaphoreTake!(temp, 0);
+
+        if result == pdTRUE {
+            vSendString(&s2);
+        } else {
+            vSendString(&s3);
             vTaskDelay(5000);
-            
-            testfunc2();
-            //vSendString("send gogogogo!!!(in loop)");
+            continue;
         }
+        vSendString(&s4);
+        xSemaphoreGive!(temp);
+        //let s=format!("send:{}",ulValueToSend);
+        //vSendString(&s);
+        vTaskDelay(5000);
+
+        testfunc2();
+        //vSendString("send gogogogo!!!(in loop)");
+    }
 }
 fn task_rec(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
@@ -149,33 +122,31 @@ fn task_rec(t: *mut c_void) {
     let pcMessage1 = "success";
     let pcMessage2 = "fail";
     let mut f = 1;
-    let mut result:BaseType=0;
+    let mut result: BaseType = 0;
     // vTaskDelay(1000);
     vSendString("receiving");
-    let s="take success";
-    let s_="take fail";
-    let temp:&mut QueueDefinition;
+    let s = "take success";
+    let s_ = "take fail";
+    let temp: &mut QueueDefinition;
     unsafe {
-
-        temp=xQueue.as_mut().unwrap();
+        temp = xQueue.as_mut().unwrap();
     }
-    let mut cnt=0;
+    let mut cnt = 0;
     loop {
         testfunc1();
-            //xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
-            
-        result=xSemaphoreTake!(temp,0);
+        //xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
+
+        result = xSemaphoreTake!(temp, 0);
         //let s=format!("recv:{}",ulValueToSend);
         //vSendString(&s);
-        if result==pdTRUE{
+        if result == pdTRUE {
             vSendString(&s);
-        }
-        else{
+        } else {
             vSendString(&s_);
             continue;
         }
 
-        for i in 0..100000{
+        for i in 0..100000 {
             taskYield();
             //mtCOVERAGE_TEST_MARKER!()
         }
@@ -187,9 +158,9 @@ fn task_rec(t: *mut c_void) {
     }
 }
 
-fn task_temp(){
-    let s="temp gogogo";
-    loop{
+fn task_temp() {
+    let s = "temp gogogo";
+    loop {
         vSendString(&s);
         vTaskDelay(5000);
     }
@@ -207,8 +178,10 @@ pub fn main_new_1() {
     // vSendString("111111");
     print("main new");
     // vSendString("24234234234234");
-    let param1: Param_link = 0;
-    let param2: Param_link = 0;
+    let param_a: i32 = 100;
+    let param_b: i32 = 200;
+    let param1: Param_link = &param_a as *const i32 as usize;
+    let param2: Param_link = &param_b as *const i32 as usize;
     let param3: Param_link = 0;
     // let param3: Param_link = 0;
     // let stack1ptr: StackType_t_link =
@@ -228,7 +201,7 @@ pub fn main_new_1() {
             2,
             size_of::<u32>() as u32,
         ));*/
-        xQueue=Some(xQueueCreateMutex(queueQUEUE_TYPE_MUTEX));
+        xQueue = Some(xQueueCreateMutex(queueQUEUE_TYPE_MUTEX));
     }
     //let s=format!("create1:{}",list_get_num_items(Arc::downgrade(&xQueue.clone().unwrap().read().xTasksWaitingToReceive)))
     /*unsafe {
@@ -249,7 +222,7 @@ pub fn main_new_1() {
         print("xTaskCreate start");
         let x = print("xTaskCreate 1111");
         xTaskCreate(
-            task_send as u32,
+            task1 as u32,
             "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
@@ -257,20 +230,12 @@ pub fn main_new_1() {
             Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
         );
         xTaskCreate(
-            task_rec as u32,
+            task2 as u32,
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            1,
+            3,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
-        );
-        xTaskCreate(
-            task_temp as u32,
-            "task3",
-            USER_STACK_SIZE as u32,
-            Some(param3),
-            2,
-            Some(Arc::clone(&(task3handler.as_ref().unwrap()))),
         );
     }
     //     // xTaskCreate(
@@ -344,4 +309,11 @@ pub fn main_new_1() {
     loop {
         panic! {"error in loop!!!!!"};
     }
+}
+pub fn testfunc1() {
+    mtCOVERAGE_TEST_MARKER!();
+}
+
+pub fn testfunc2() {
+    mtCOVERAGE_TEST_MARKER!();
 }

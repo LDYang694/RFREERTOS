@@ -1,18 +1,32 @@
-STATE LIST
-函数参数
-ALLOC TASK STACK √
-idle
-XQEUEU
+功能list
+config t
 
-DELAY
+1.2任务参数 数字，字符串  y
+1.3任务状态 运行态和非运行态 y
+1.4创建任务 xTaskCreate() t 
+            静态 动态
+1.5任务优先级  全局最高优先级 t 
+1.6非运行态
+                vTaskSuspend() t
+                vTaskResume() t
+                vTaskResumeFromISR() t
+                vTaskDelay()  t
+                vTaskDelayUntil() t
+                xTaskGetTickCount() t
+            
+1.7 空闲任务与空闲任务钩子函数
+               执行低优先级，后台或需要不停处理的功能代码。 
+                测试处系统处理裕量(空闲任务只会在所有其它任务都不运行时才有机会执行，所
+                以测量出空闲任务占用的处理时间就可以清楚的知道系统有多少富余的处理时
+                间)。 
+                将处理器配置到低功耗模式——提供一种自动省电方法，使得在没有任何应用功能
+                需要处理的时候，系统自动进入省电模式。
 
-延迟中断处理
+1.8 改变任务优先级    
+    vTaskPrioritySet()
+    uxTaskPriorityGet()
 
-临界区保护
+1.9 删除任务
+    vTaskDelete()
 
-低功耗模式
-
-debug信息
-
-前后端分离
 

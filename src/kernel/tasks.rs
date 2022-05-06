@@ -1,6 +1,8 @@
 //! task control api
 
 extern crate alloc;
+#[cfg(feature = "configUSE_IDLE_HOOK")]
+use crate::vApplicationIdleHook;
 
 use crate::configMAX_PRIORITIES;
 use crate::kernel::kernel::*;
@@ -286,10 +288,16 @@ pub fn prvInitialiseNewTask(
     print("prvInitialiseNewTask 33333");
     //TODO: connect
     let s_ = format!("top of stack{:X}", pxTopOfStack);
+    let params = {
+        match pvParameters {
+            Some(x) => x,
+            None => 0,
+        }
+    };
     print(&s_);
     unsafe {
         pxNewTCB.write().pxTopOfStack =
-            pxPortInitialiseStack(pxTopOfStack as *mut _, pxTaskCode, 0 as *mut _) as usize;
+            pxPortInitialiseStack(pxTopOfStack as *mut _, pxTaskCode, params as *mut _) as usize;
         pxNewTCB.write().uxCriticalNesting = 0;
     }
     let s_ = format!("top of stack{:X}", pxNewTCB.read().pxTopOfStack);
@@ -304,6 +312,15 @@ pub fn prvInitialiseNewTask(
 pub fn prvIdleTask(t: *mut c_void) {
     vSendString("idle gogogogo");
     loop {
+        #[cfg(feature = "configUSE_IDLE_HOOK")]
+        {
+            /* Call the user defined function from within the idle task.  This
+             * allows the application designer to add background functionality
+             * without the overhead of a separate task.
+             * NOTE: vApplicationIdleHook() MUST NOT, UNDER ANY CIRCUMSTANCES,
+             * CALL A FUNCTION THAT MIGHT BLOCK. */
+            vApplicationIdleHook();
+        }/* configUSE_IDLE_HOOK */
         vSendString("idle gogogogo!!!(in loop)");
     }
 }
@@ -757,17 +774,24 @@ pub fn prvGetTCBFromHandle(
 
 /// delete target task
 pub fn vTaskDelete(xTaskToDelete: Option<TaskHandle_t>) {
-    taskENTER_CRITICAL!();
+    // taskENTER_CRITICAL!();
+    vTaskEnterCritical();
+    vSendString("dededededdede");
     let pxTCB = prvGetTCBFromHandle(xTaskToDelete.clone());
     ux_list_remove(Arc::downgrade(&pxTCB.unwrap().xStateListItem));
     //todo：事件相关处理
     //todo：任务和tcb内存释放
     //todo：钩子函数
-    taskEXIT_CRITICAL!();
+   
     let need_yield = match xTaskToDelete {
         Some(x) => is_current_tcb(Arc::downgrade(&x)),
         None => true,
     };
+    if need_yield==false{
+        vSendString("need yield");
+    }
+    // taskEXIT_CRITICAL!();
+    vTaskExitCritical();
     if need_yield {
         portYIELD!();
     }
