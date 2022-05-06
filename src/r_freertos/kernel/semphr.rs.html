@@ -94,7 +94,7 @@
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">xSemaphoreGive</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>:<span class="ident">expr</span>) =&gt; {
-        <span class="ident">xQueueGenericSend</span>(<span class="kw-2">&amp;mut</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>.<span class="ident">write</span>(),<span class="number">0</span>,<span class="ident">semGIVE_BLOCK_TIME</span>,<span class="ident">queueSEND_TO_BACK</span>);
+        <span class="ident">xQueueGenericSend</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>,<span class="number">0</span>,<span class="ident">semGIVE_BLOCK_TIME</span>,<span class="ident">queueSEND_TO_BACK</span>);
     };
 }
 
@@ -105,9 +105,9 @@
     };
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span>  <span class="ident">xQueueCreateMutex</span>(<span class="ident">ucQueueType</span>:<span class="ident">u8</span>)-&gt;<span class="ident">QueueHandle_t</span>{
-    <span class="kw">let</span> <span class="ident">queue</span><span class="op">=</span><span class="ident">xQueueGenericCreate</span>(<span class="number">1</span>,<span class="number">0</span>,<span class="ident">ucQueueType</span>);
-    <span class="ident">prvInitialiseMutex</span>(<span class="kw-2">&amp;mut</span> <span class="ident">queue</span>.<span class="ident">write</span>());
+<span class="kw">pub</span> <span class="kw">fn</span>  <span class="ident">xQueueCreateMutex</span>(<span class="ident">ucQueueType</span>:<span class="ident">u8</span>)-&gt;<span class="ident">QueueDefinition</span>{
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">queue</span><span class="op">=</span><span class="ident">QueueDefinition::xQueueGenericCreate</span>(<span class="number">1</span>,<span class="number">0</span>,<span class="ident">ucQueueType</span>);
+    <span class="ident">prvInitialiseMutex</span>(<span class="kw-2">&amp;mut</span> <span class="ident">queue</span>);
     <span class="ident">queue</span>
 }
 
@@ -118,5 +118,5 @@
 }
 
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (30f386087 2022-05-05)" ></div>
 </body></html>

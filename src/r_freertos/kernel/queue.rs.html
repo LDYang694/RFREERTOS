@@ -788,6 +788,14 @@
 <span id="783">783</span>
 <span id="784">784</span>
 <span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
 </pre><pre class="rust"><code>
 
 
@@ -1171,11 +1179,17 @@
     <span class="ident">pdFAIL</span> <span class="kw">as</span> <span class="ident">BaseType</span>
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvCopyDataToQueue</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>, <span class="ident">pvItemToQueue</span>: <span class="ident">usize</span>, <span class="ident">xPosition</span>: <span class="ident">BaseType</span>) -&gt; <span class="ident">bool</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvCopyDataToQueue</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>, <span class="ident">pvItemToQueue</span>: <span class="ident">usize</span>, <span class="ident">xPosition</span>: <span class="ident">BaseType</span>) -&gt;<span class="ident">bool</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>:<span class="ident">bool</span><span class="op">=</span><span class="bool-val">false</span>;
     <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">uxItemSize</span> <span class="op">==</span> <span class="number">0</span> {
         <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_MUTEXES&quot;</span>) {
-            <span class="comment">//todo</span>
+            
+            <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_MUTEX</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>{
+                <span class="ident">xReturn</span><span class="op">=</span><span class="ident">xTaskPriorityDisinherit</span>(<span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>())<span class="op">==</span><span class="ident">pdTRUE</span>;
+                <span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span><span class="op">=</span><span class="prelude-val">None</span>;
+            }
+
         } <span class="kw">else</span> {
             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
         }
@@ -1234,7 +1248,7 @@
 
     <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">uxMessagesWaiting</span> <span class="op">+</span> <span class="number">1</span>;
 
-    <span class="bool-val">false</span>
+    <span class="ident">xReturn</span>
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvIsQueueFull</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>) -&gt; <span class="ident">bool</span> {
@@ -1389,10 +1403,12 @@
                 <span class="comment">//  * remove this task from the event list again - but as the</span>
                 <span class="comment">//  * scheduler is suspended the task will go onto the pending</span>
                 <span class="comment">//  * ready list instead of the actual ready list. */</span>
-
+                <span class="ident">print</span>(<span class="string">&quot;inheriting!&quot;</span>);
                 <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_MUTEXES&quot;</span>){
+                    <span class="ident">print</span>(<span class="string">&quot;inheriting?&quot;</span>);
                     <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_MUTEX</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>{
                         <span class="macro">taskENTER_CRITICAL!</span>();
+                        <span class="ident">print</span>(<span class="string">&quot;inheriting&quot;</span>);
                         <span class="ident">xInheritanceOccurred</span><span class="op">=</span><span class="ident">xTaskPriorityInherit</span>(<span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>());
                         <span class="macro">taskEXIT_CRITICAL!</span>();
                     }
@@ -1573,5 +1589,5 @@
     }
     <span class="ident">uxHighestPriorityOfWaitingTasks</span>
 }</code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (30f386087 2022-05-05)" ></div>
 </body></html>
