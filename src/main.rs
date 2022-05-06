@@ -8,7 +8,7 @@ mod kernel;
 extern crate alloc;
 use alloc::sync::Arc;
 use alloc::{fmt::format, format};
-use kernel::projdefs::pdPASS;
+use kernel::projdefs::{pdPASS, pdTRUE};
 use core::{borrow::Borrow, ffi::c_void, mem::size_of};
 use kernel::queue::QueueDefinition;
 use kernel::{
@@ -108,6 +108,7 @@ fn task_send(t: *mut c_void) {
     let s1="sending";
     let s2="send correct";
     let s3="send incorrect";
+    let s4="send give";
     let temp:&mut QueueDefinition;
     unsafe {
 
@@ -117,19 +118,25 @@ fn task_send(t: *mut c_void) {
         let mut cnt=0;
         loop {
             testfunc1();
-            if cnt>0{
-                //taskEXIT_CRITICAL!();
-            }
-            cnt+=1;
+
             // xTaskDelayUntil(&mut begin, increment);
             vSendString(&s1);
-            unsafe {
-                xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
-                //result=xSemaphoreGive!(temp);
+                //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
+            result=xSemaphoreTake!(temp,0);
+                
+            if result==pdTRUE{
+                vSendString(&s2);
             }
+            else{
+                vSendString(&s3);
+                vTaskDelay(5000);
+                continue;
+            }
+            vSendString(&s4);
+            xSemaphoreGive!(temp);
             //let s=format!("send:{}",ulValueToSend);
             //vSendString(&s);
-            vTaskDelay(100);
+            vTaskDelay(5000);
             
             testfunc2();
             //vSendString("send gogogogo!!!(in loop)");
@@ -145,7 +152,7 @@ fn task_rec(t: *mut c_void) {
     let mut result:BaseType=0;
     // vTaskDelay(1000);
     vSendString("receiving");
-    let s="take correct";
+    let s="take success";
     let s_="take fail";
     let temp:&mut QueueDefinition;
     unsafe {
@@ -155,32 +162,44 @@ fn task_rec(t: *mut c_void) {
     let mut cnt=0;
     loop {
         testfunc1();
-        if cnt>0{
-            //taskEXIT_CRITICAL!();
-        }
-        cnt+=1;
-        unsafe {
-            xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
-            //result=xSemaphoreTake!(temp,1000);
-        }
+            //xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
+            
+        result=xSemaphoreTake!(temp,0);
         //let s=format!("recv:{}",ulValueToSend);
         //vSendString(&s);
-        if ulValueToSend==100{
+        if result==pdTRUE{
             vSendString(&s);
         }
         else{
             vSendString(&s_);
+            continue;
         }
-        ulValueToSend=99;
+
+        for i in 0..100000{
+            taskYield();
+            //mtCOVERAGE_TEST_MARKER!()
+        }
+        //ulValueToSend=99;
         //vTaskDelay(100);
         //taskENTER_CRITICAL!();
+        xSemaphoreGive!(temp);
         testfunc2();
+    }
+}
+
+fn task_temp(){
+    let s="temp gogogo";
+    loop{
+        vSendString(&s);
+        vTaskDelay(5000);
     }
 }
 lazy_static! {
     pub static ref task1handler: Option<TaskHandle_t> =
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
     pub static ref task2handler: Option<TaskHandle_t> =
+        Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
+    pub static ref task3handler: Option<TaskHandle_t> =
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
 static mut xQueue: Option<QueueDefinition> = None;
@@ -190,6 +209,7 @@ pub fn main_new_1() {
     // vSendString("24234234234234");
     let param1: Param_link = 0;
     let param2: Param_link = 0;
+    let param3: Param_link = 0;
     // let param3: Param_link = 0;
     // let stack1ptr: StackType_t_link =
     //     &*TASK1_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
@@ -204,11 +224,11 @@ pub fn main_new_1() {
     //     xQueue = Some(xQueueCreate(1, size_of::<u32>() as u32));
     // }
     unsafe {
-        xQueue = Some(QueueDefinition::xQueueCreate(
+        /*xQueue = Some(QueueDefinition::xQueueCreate(
             2,
             size_of::<u32>() as u32,
-        ));
-        //xQueue=Some(xSemaphoreCreateBinary!());
+        ));*/
+        xQueue=Some(xQueueCreateMutex(queueQUEUE_TYPE_MUTEX));
     }
     //let s=format!("create1:{}",list_get_num_items(Arc::downgrade(&xQueue.clone().unwrap().read().xTasksWaitingToReceive)))
     /*unsafe {
@@ -241,8 +261,16 @@ pub fn main_new_1() {
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            2,
+            1,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
+        );
+        xTaskCreate(
+            task_temp as u32,
+            "task3",
+            USER_STACK_SIZE as u32,
+            Some(param3),
+            2,
+            Some(Arc::clone(&(task3handler.as_ref().unwrap()))),
         );
     }
     //     // xTaskCreate(

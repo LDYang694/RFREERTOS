@@ -381,11 +381,17 @@ pub fn xQueueGenericSend(
     pdFAIL as BaseType
 }
 
-pub fn prvCopyDataToQueue(xQueue: &mut Queue_t, pvItemToQueue: usize, xPosition: BaseType) -> bool {
+pub fn prvCopyDataToQueue(xQueue: &mut Queue_t, pvItemToQueue: usize, xPosition: BaseType) ->bool {
     let mut uxMessagesWaiting = xQueue.uxMessagesWaiting;
+    let mut xReturn:bool=false;
     if xQueue.uxItemSize == 0 {
         if cfg!(feature = "configUSE_MUTEXES") {
-            //todo
+            
+            if xQueue.ucQueueType==queueQUEUE_TYPE_MUTEX || xQueue.ucQueueType==queueQUEUE_TYPE_RECURSIVE_MUTEX{
+                xReturn=xTaskPriorityDisinherit(xQueue.xMutexHolder.clone())==pdTRUE;
+                xQueue.xMutexHolder=None;
+            }
+
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
@@ -444,7 +450,7 @@ pub fn prvCopyDataToQueue(xQueue: &mut Queue_t, pvItemToQueue: usize, xPosition:
 
     xQueue.uxMessagesWaiting = uxMessagesWaiting + 1;
 
-    false
+    xReturn
 }
 
 pub fn prvIsQueueFull(xQueue: &mut Queue_t) -> bool {
@@ -599,10 +605,12 @@ pub fn xQueueReceive(
                 //  * remove this task from the event list again - but as the
                 //  * scheduler is suspended the task will go onto the pending
                 //  * ready list instead of the actual ready list. */
-
+                print("inheriting!");
                 if cfg!(feature="configUSE_MUTEXES"){
+                    print("inheriting?");
                     if xQueue.ucQueueType==queueQUEUE_TYPE_MUTEX || xQueue.ucQueueType==queueQUEUE_TYPE_RECURSIVE_MUTEX{
                         taskENTER_CRITICAL!();
+                        print("inheriting");
                         xInheritanceOccurred=xTaskPriorityInherit(xQueue.xMutexHolder.clone());
                         taskEXIT_CRITICAL!();
                     }

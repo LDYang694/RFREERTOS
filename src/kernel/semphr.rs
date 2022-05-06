@@ -32,7 +32,7 @@ macro_rules! vSemaphoreDelete {
 #[macro_export]
 macro_rules! xSemaphoreGive {
     ($xSemaphore:expr) => {
-        xQueueGenericSend(&mut $xSemaphore.write(),0,semGIVE_BLOCK_TIME,queueSEND_TO_BACK);
+        xQueueGenericSend($xSemaphore,0,semGIVE_BLOCK_TIME,queueSEND_TO_BACK);
     };
 }
 
@@ -43,9 +43,9 @@ macro_rules! xSemaphoreTake {
     };
 }
 
-pub fn  xQueueCreateMutex(ucQueueType:u8)->QueueHandle_t{
-    let queue=xQueueGenericCreate(1,0,ucQueueType);
-    prvInitialiseMutex(&mut queue.write());
+pub fn  xQueueCreateMutex(ucQueueType:u8)->QueueDefinition{
+    let mut queue=QueueDefinition::xQueueGenericCreate(1,0,ucQueueType);
+    prvInitialiseMutex(&mut queue);
     queue
 }
 
