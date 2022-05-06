@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["main_test_str",""],["task1_str",""],["task2_str",""]]});
