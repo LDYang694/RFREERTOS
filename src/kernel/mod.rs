@@ -18,3 +18,4 @@ pub mod queue;
 pub mod projdefs;
 #[macro_use]
 pub mod semphr;
+pub mod event_group;

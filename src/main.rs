@@ -21,6 +21,7 @@ use kernel::{
     riscv_virt::*,
     tasks::*,
     semphr::*,
+    event_group::*,
     *
 };
 use core::arch::asm;
@@ -110,6 +111,7 @@ fn task_send(t: *mut c_void) {
     let s3="send incorrect";
     let s4="send give";
     let temp:&mut QueueDefinition;
+
     unsafe {
 
         temp=xQueue.as_mut().unwrap();
@@ -129,14 +131,14 @@ fn task_send(t: *mut c_void) {
             }
             else{
                 vSendString(&s3);
-                vTaskDelay(5000);
+                vTaskDelay(50);
                 continue;
             }
             vSendString(&s4);
             xSemaphoreGive!(temp);
             //let s=format!("send:{}",ulValueToSend);
             //vSendString(&s);
-            vTaskDelay(5000);
+            vTaskDelay(50);
             
             testfunc2();
             //vSendString("send gogogogo!!!(in loop)");
@@ -175,10 +177,10 @@ fn task_rec(t: *mut c_void) {
             continue;
         }
 
-        for i in 0..100000{
+        /*for i in 0..100000{
             taskYield();
             //mtCOVERAGE_TEST_MARKER!()
-        }
+        }*/
         //ulValueToSend=99;
         //vTaskDelay(100);
         //taskENTER_CRITICAL!();
@@ -199,8 +201,8 @@ lazy_static! {
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
     pub static ref task2handler: Option<TaskHandle_t> =
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
-    pub static ref task3handler: Option<TaskHandle_t> =
-        Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
+    //pub static ref task3handler: Option<TaskHandle_t> =
+    //    Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
 static mut xQueue: Option<QueueDefinition> = None;
 pub fn main_new_1() {
@@ -261,17 +263,17 @@ pub fn main_new_1() {
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            1,
+            3,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
-        xTaskCreate(
+        /*xTaskCreate(
             task_temp as u32,
             "task3",
             USER_STACK_SIZE as u32,
             Some(param3),
             2,
             Some(Arc::clone(&(task3handler.as_ref().unwrap()))),
-        );
+        );*/
     }
     //     // xTaskCreate(
     //     //     task2 as u32,
@@ -339,6 +341,8 @@ pub fn main_new_1() {
         );
         print(&s);
     }*/
+    let event=Arc::new( RwLock::new( EventGroupDefinition::xEventGroupCreate() ) );
+    vEventGroupDelete(event);
     print("start scheduler!!!!!!!!!");
     vTaskStartScheduler();
     loop {
