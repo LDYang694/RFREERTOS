@@ -1064,35 +1064,9 @@
 <span id="1059">1059</span>
 <span id="1060">1060</span>
 <span id="1061">1061</span>
-<span id="1062">1062</span>
-<span id="1063">1063</span>
-<span id="1064">1064</span>
-<span id="1065">1065</span>
-<span id="1066">1066</span>
-<span id="1067">1067</span>
-<span id="1068">1068</span>
-<span id="1069">1069</span>
-<span id="1070">1070</span>
-<span id="1071">1071</span>
-<span id="1072">1072</span>
-<span id="1073">1073</span>
-<span id="1074">1074</span>
-<span id="1075">1075</span>
-<span id="1076">1076</span>
-<span id="1077">1077</span>
-<span id="1078">1078</span>
-<span id="1079">1079</span>
-<span id="1080">1080</span>
-<span id="1081">1081</span>
-<span id="1082">1082</span>
-<span id="1083">1083</span>
-<span id="1084">1084</span>
-<span id="1085">1085</span>
 </pre><pre class="rust"><code><span class="doccomment">//! task control api</span>
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_IDLE_HOOK&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vApplicationIdleHook</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::configMAX_PRIORITIES</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::kernel</span>::<span class="kw-2">*</span>;
@@ -1378,16 +1352,10 @@
     <span class="ident">print</span>(<span class="string">&quot;prvInitialiseNewTask 33333&quot;</span>);
     <span class="comment">//TODO: connect</span>
     <span class="kw">let</span> <span class="ident">s_</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;top of stack{:X}&quot;</span>, <span class="ident">pxTopOfStack</span>);
-    <span class="kw">let</span> <span class="ident">params</span> <span class="op">=</span> {
-        <span class="kw">match</span> <span class="ident">pvParameters</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">x</span>,
-            <span class="prelude-val">None</span> =&gt; <span class="number">0</span>,
-        }
-    };
     <span class="ident">print</span>(<span class="kw-2">&amp;</span><span class="ident">s_</span>);
     <span class="kw">unsafe</span> {
         <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">pxTopOfStack</span> <span class="op">=</span>
-            <span class="ident">pxPortInitialiseStack</span>(<span class="ident">pxTopOfStack</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>, <span class="ident">pxTaskCode</span>, <span class="ident">params</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>) <span class="kw">as</span> <span class="ident">usize</span>;
+            <span class="ident">pxPortInitialiseStack</span>(<span class="ident">pxTopOfStack</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>, <span class="ident">pxTaskCode</span>, <span class="number">0</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>) <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">uxCriticalNesting</span> <span class="op">=</span> <span class="number">0</span>;
     }
     <span class="kw">let</span> <span class="ident">s_</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;top of stack{:X}&quot;</span>, <span class="ident">pxNewTCB</span>.<span class="ident">read</span>().<span class="ident">pxTopOfStack</span>);
@@ -1402,15 +1370,6 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvIdleTask</span>(<span class="ident">t</span>: <span class="kw-2">*mut</span> <span class="ident">c_void</span>) {
     <span class="ident">vSendString</span>(<span class="string">&quot;idle gogogogo&quot;</span>);
     <span class="kw">loop</span> {
-        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_IDLE_HOOK&quot;</span>)]</span>
-        {
-            <span class="comment">/* Call the user defined function from within the idle task.  This
-             * allows the application designer to add background functionality
-             * without the overhead of a separate task.
-             * NOTE: vApplicationIdleHook() MUST NOT, UNDER ANY CIRCUMSTANCES,
-             * CALL A FUNCTION THAT MIGHT BLOCK. */</span>
-            <span class="ident">vApplicationIdleHook</span>();
-        }<span class="comment">/* configUSE_IDLE_HOOK */</span>
         <span class="ident">vSendString</span>(<span class="string">&quot;idle gogogogo!!!(in loop)&quot;</span>);
     }
 }
@@ -1864,24 +1823,17 @@
 
 <span class="doccomment">/// delete target task</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskDelete</span>(<span class="ident">xTaskToDelete</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>) {
-    <span class="comment">// taskENTER_CRITICAL!();</span>
-    <span class="ident">vTaskEnterCritical</span>();
-    <span class="ident">vSendString</span>(<span class="string">&quot;dededededdede&quot;</span>);
+    <span class="macro">taskENTER_CRITICAL!</span>();
     <span class="kw">let</span> <span class="ident">pxTCB</span> <span class="op">=</span> <span class="ident">prvGetTCBFromHandle</span>(<span class="ident">xTaskToDelete</span>.<span class="ident">clone</span>());
     <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxTCB</span>.<span class="ident">unwrap</span>().<span class="ident">xStateListItem</span>));
     <span class="comment">//todo：事件相关处理</span>
     <span class="comment">//todo：任务和tcb内存释放</span>
     <span class="comment">//todo：钩子函数</span>
-   
+    <span class="macro">taskEXIT_CRITICAL!</span>();
     <span class="kw">let</span> <span class="ident">need_yield</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">xTaskToDelete</span> {
         <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">is_current_tcb</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">x</span>)),
         <span class="prelude-val">None</span> =&gt; <span class="bool-val">true</span>,
     };
-    <span class="kw">if</span> <span class="ident">need_yield</span><span class="op">==</span><span class="bool-val">false</span>{
-        <span class="ident">vSendString</span>(<span class="string">&quot;need yield&quot;</span>);
-    }
-    <span class="comment">// taskEXIT_CRITICAL!();</span>
-    <span class="ident">vTaskExitCritical</span>();
     <span class="kw">if</span> <span class="ident">need_yield</span> {
         <span class="macro">portYIELD!</span>();
     }
