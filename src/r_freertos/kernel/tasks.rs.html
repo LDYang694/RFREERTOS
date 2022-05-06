@@ -1064,6 +1064,14 @@
 <span id="1059">1059</span>
 <span id="1060">1060</span>
 <span id="1061">1061</span>
+<span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
+<span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
 </pre><pre class="rust"><code><span class="doccomment">//! task control api</span>
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
@@ -2125,6 +2133,13 @@
     );
     <span class="ident">prvAddCurrentTaskToDelayedList</span>(<span class="ident">xTicksToWait</span>, <span class="bool-val">true</span>);
 }
-</code></pre></div>
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vTaskRemoveFromUnorderedEventList</span>(<span class="ident">pxEventListItem</span>:<span class="kw-2">&amp;</span><span class="ident">ListItemLink</span>, <span class="ident">xItemValue</span>:<span class="ident">TickType</span>){
+    <span class="ident">list_item_set_value</span>(<span class="ident">pxEventListItem</span>, <span class="ident">xItemValue</span> <span class="op">|</span> <span class="ident">taskEVENT_LIST_ITEM_VALUE_IN_USE</span>);
+    <span class="ident">ux_list_remove</span>( <span class="ident">Arc::downgrade</span>(<span class="ident">pxEventListItem</span>) );
+    <span class="kw">let</span> <span class="ident">pxUnblockedTCB</span>:<span class="ident">TaskHandle_t</span><span class="op">=</span> <span class="ident">Weak::upgrade</span>(<span class="kw-2">&amp;</span><span class="ident">list_item_get_owner</span>(<span class="kw-2">&amp;</span><span class="ident">Arc::downgrade</span>(<span class="ident">pxEventListItem</span>))).<span class="ident">unwrap</span>() ;
+    <span class="ident">ux_list_remove</span>(<span class="ident">Arc::downgrade</span>(<span class="kw-2">&amp;</span><span class="ident">pxUnblockedTCB</span>.<span class="ident">read</span>().<span class="ident">xStateListItem</span>) );
+
+}</code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (30f386087 2022-05-05)" ></div>
 </body></html>

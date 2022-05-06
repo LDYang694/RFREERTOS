@@ -350,6 +350,10 @@
 <span id="345">345</span>
 <span id="346">346</span>
 <span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">no_std</span>]</span>
 <span class="attribute">#![<span class="ident">no_main</span>]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">alloc_error_handler</span>)]</span>
@@ -373,6 +377,7 @@
     <span class="ident">riscv_virt</span>::<span class="kw-2">*</span>,
     <span class="ident">tasks</span>::<span class="kw-2">*</span>,
     <span class="ident">semphr</span>::<span class="kw-2">*</span>,
+    <span class="ident">event_group</span>::<span class="kw-2">*</span>,
     <span class="op">*</span>
 };
 <span class="kw">use</span> <span class="ident">core::arch::asm</span>;
@@ -462,6 +467,7 @@
     <span class="kw">let</span> <span class="ident">s3</span><span class="op">=</span><span class="string">&quot;send incorrect&quot;</span>;
     <span class="kw">let</span> <span class="ident">s4</span><span class="op">=</span><span class="string">&quot;send give&quot;</span>;
     <span class="kw">let</span> <span class="ident">temp</span>:<span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>;
+
     <span class="kw">unsafe</span> {
 
         <span class="ident">temp</span><span class="op">=</span><span class="ident">xQueue</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
@@ -481,14 +487,14 @@
             }
             <span class="kw">else</span>{
                 <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s3</span>);
-                <span class="ident">vTaskDelay</span>(<span class="number">5000</span>);
+                <span class="ident">vTaskDelay</span>(<span class="number">50</span>);
                 <span class="kw">continue</span>;
             }
             <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s4</span>);
             <span class="macro">xSemaphoreGive!</span>(<span class="ident">temp</span>);
             <span class="comment">//let s=format!(&quot;send:{}&quot;,ulValueToSend);</span>
             <span class="comment">//vSendString(&amp;s);</span>
-            <span class="ident">vTaskDelay</span>(<span class="number">5000</span>);
+            <span class="ident">vTaskDelay</span>(<span class="number">50</span>);
             
             <span class="ident">testfunc2</span>();
             <span class="comment">//vSendString(&quot;send gogogogo!!!(in loop)&quot;);</span>
@@ -527,10 +533,10 @@
             <span class="kw">continue</span>;
         }
 
-        <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">100000</span>{
-            <span class="ident">taskYield</span>();
-            <span class="comment">//mtCOVERAGE_TEST_MARKER!()</span>
-        }
+        <span class="comment">/*for i in 0..100000{
+            taskYield();
+            //mtCOVERAGE_TEST_MARKER!()
+        }*/</span>
         <span class="comment">//ulValueToSend=99;</span>
         <span class="comment">//vTaskDelay(100);</span>
         <span class="comment">//taskENTER_CRITICAL!();</span>
@@ -551,8 +557,8 @@
         <span class="prelude-val">Some</span>(<span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">tskTaskControlBlock::default</span>())));
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">task2handler</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span> <span class="op">=</span>
         <span class="prelude-val">Some</span>(<span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">tskTaskControlBlock::default</span>())));
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">task3handler</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span> <span class="op">=</span>
-        <span class="prelude-val">Some</span>(<span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">tskTaskControlBlock::default</span>())));
+    <span class="comment">//pub static ref task3handler: Option&lt;TaskHandle_t&gt; =</span>
+    <span class="comment">//    Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));</span>
 }
 <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xQueue</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">QueueDefinition</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">main_new_1</span>() {
@@ -613,17 +619,17 @@
             <span class="string">&quot;task2&quot;</span>,
             <span class="ident">USER_STACK_SIZE</span> <span class="kw">as</span> <span class="ident">u32</span>,
             <span class="prelude-val">Some</span>(<span class="ident">param2</span>),
-            <span class="number">1</span>,
+            <span class="number">3</span>,
             <span class="prelude-val">Some</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span>(<span class="ident">task2handler</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>()))),
         );
-        <span class="ident">xTaskCreate</span>(
-            <span class="ident">task_temp</span> <span class="kw">as</span> <span class="ident">u32</span>,
-            <span class="string">&quot;task3&quot;</span>,
-            <span class="ident">USER_STACK_SIZE</span> <span class="kw">as</span> <span class="ident">u32</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">param3</span>),
-            <span class="number">2</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span>(<span class="ident">task3handler</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>()))),
-        );
+        <span class="comment">/*xTaskCreate(
+            task_temp as u32,
+            &quot;task3&quot;,
+            USER_STACK_SIZE as u32,
+            Some(param3),
+            2,
+            Some(Arc::clone(&amp;(task3handler.as_ref().unwrap()))),
+        );*/</span>
     }
     <span class="comment">//     // xTaskCreate(</span>
     <span class="comment">//     //     task2 as u32,</span>
@@ -691,6 +697,8 @@
         );
         print(&amp;s);
     }*/</span>
+    <span class="kw">let</span> <span class="ident">event</span><span class="op">=</span><span class="ident">Arc::new</span>( <span class="ident">RwLock::new</span>( <span class="ident">EventGroupDefinition::xEventGroupCreate</span>() ) );
+    <span class="ident">vEventGroupDelete</span>(<span class="ident">event</span>);
     <span class="ident">print</span>(<span class="string">&quot;start scheduler!!!!!!!!!&quot;</span>);
     <span class="ident">vTaskStartScheduler</span>();
     <span class="kw">loop</span> {
