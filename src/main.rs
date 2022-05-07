@@ -8,7 +8,7 @@ mod kernel;
 extern crate alloc;
 use alloc::sync::Arc;
 use alloc::{fmt::format, format};
-use kernel::projdefs::{pdPASS, pdTRUE};
+use kernel::projdefs::{pdPASS, pdTRUE, pdFAIL, pdFALSE};
 use core::{borrow::Borrow, ffi::c_void, mem::size_of};
 use kernel::queue::QueueDefinition;
 use kernel::{
@@ -107,41 +107,27 @@ fn task_send(t: *mut c_void) {
     let mut f = 1;
     let mut result:BaseType=0;
     let s1="sending";
-    let s2="send correct";
-    let s3="send incorrect";
-    let s4="send give";
-    let temp:&mut QueueDefinition;
-
-    unsafe {
-
-        temp=xQueue.as_mut().unwrap();
-    }
     
         let mut cnt=0;
         loop {
-            testfunc1();
 
             // xTaskDelayUntil(&mut begin, increment);
-            vSendString(&s1);
+            //vSendString(&s1);
                 //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
-            result=xSemaphoreTake!(temp,0);
+            //result=xSemaphoreTake!(temp,0);
                 
-            if result==pdTRUE{
-                vSendString(&s2);
-            }
-            else{
-                vSendString(&s3);
-                vTaskDelay(50);
-                continue;
-            }
-            vSendString(&s4);
-            xSemaphoreGive!(temp);
+            //xSemaphoreGive!(temp);
             //let s=format!("send:{}",ulValueToSend);
             //vSendString(&s);
-            vTaskDelay(50);
+            vSendString(&s1);
+            unsafe{
+
+                let temp=xEvent.as_mut().unwrap();
+                xEventGroupWaitBits(temp, 1, pdTRUE, 
+                pdFALSE, 100);
+
+            }
             
-            testfunc2();
-            //vSendString("send gogogogo!!!(in loop)");
         }
 }
 fn task_rec(t: *mut c_void) {
@@ -154,39 +140,19 @@ fn task_rec(t: *mut c_void) {
     let mut result:BaseType=0;
     // vTaskDelay(1000);
     vSendString("receiving");
-    let s="take success";
-    let s_="take fail";
-    let temp:&mut QueueDefinition;
-    unsafe {
+    let s="taking";
 
-        temp=xQueue.as_mut().unwrap();
-    }
+    
     let mut cnt=0;
     loop {
-        testfunc1();
-            //xQueueReceive(temp, &ulValueToSend as *const _ as usize, 10);
-            
-        result=xSemaphoreTake!(temp,0);
-        //let s=format!("recv:{}",ulValueToSend);
-        //vSendString(&s);
-        if result==pdTRUE{
-            vSendString(&s);
-        }
-        else{
-            vSendString(&s_);
-            continue;
-        }
+        vSendString(&s);
+        unsafe{
 
-        /*for i in 0..100000{
-            taskYield();
-            //mtCOVERAGE_TEST_MARKER!()
-        }*/
-        //ulValueToSend=99;
-        //vTaskDelay(100);
-        //taskENTER_CRITICAL!();
-        xSemaphoreGive!(temp);
-        testfunc2();
-    }
+            let temp=xEvent.as_mut().unwrap();
+            xEventGroupSetBits(temp, 1);
+
+        }
+    }       
 }
 
 fn task_temp(){
@@ -205,6 +171,7 @@ lazy_static! {
     //    Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
 static mut xQueue: Option<QueueDefinition> = None;
+static mut xEvent: Option<EventGroupDefinition> = None;
 pub fn main_new_1() {
     // vSendString("111111");
     print("main new");
@@ -231,6 +198,7 @@ pub fn main_new_1() {
             size_of::<u32>() as u32,
         ));*/
         xQueue=Some(xQueueCreateMutex(queueQUEUE_TYPE_MUTEX));
+        xEvent=Some(EventGroupDefinition::xEventGroupCreate() )  ;
     }
     //let s=format!("create1:{}",list_get_num_items(Arc::downgrade(&xQueue.clone().unwrap().read().xTasksWaitingToReceive)))
     /*unsafe {
@@ -263,7 +231,7 @@ pub fn main_new_1() {
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            3,
+            2,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
         /*xTaskCreate(
@@ -341,8 +309,7 @@ pub fn main_new_1() {
         );
         print(&s);
     }*/
-    let event=Arc::new( RwLock::new( EventGroupDefinition::xEventGroupCreate() ) );
-    vEventGroupDelete(event);
+    
     print("start scheduler!!!!!!!!!");
     vTaskStartScheduler();
     loop {
