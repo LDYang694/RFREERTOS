@@ -877,7 +877,7 @@ pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
     xReturn
 }
 
-/// set pxTimeOut to current time (in kernal)
+/// set pxTimeOut to current time (in kernel)
 pub fn vTaskInternalSetTimeOutState(pxTimeOut: &mut TimeOut) {
     unsafe {
         pxTimeOut.xOverflowCount = xNumOfOverflows;
@@ -936,6 +936,8 @@ pub fn xTaskCheckForTimeOut(pxTimeOut: &mut TimeOut, pxTicksToWait: &mut TickTyp
     xReturn
 }
 
+/// inherit mutex holder task's priority to current task's priority <br>
+/// return if the inherit was successful
 pub fn xTaskPriorityInherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
     let mut xReturn: BaseType = pdFALSE;
     match pxMutexHolder {
@@ -976,6 +978,10 @@ pub fn xTaskPriorityInherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
     xReturn
 }
 
+/// disinherit and recover original priority for mutex holder task <br>
+/// disinherit priority only when no other mutex are held <br>
+/// do not change mutex held number
+/// return if disinherit was successful
 pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
     let mut xReturn: BaseType = pdFALSE;
     match pxMutexHolder {
@@ -1006,6 +1012,8 @@ pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType 
     xReturn
 }
 
+/// increase current task's mutex count <br>
+/// return handle of current task
 pub fn pvTaskIncrementMutexHeldCount() -> Option<TaskHandle_t> {
     match &*CURRENT_TCB.write() {
         Some(x) => {
@@ -1016,6 +1024,9 @@ pub fn pvTaskIncrementMutexHeldCount() -> Option<TaskHandle_t> {
     }
 }
 
+/// disinherit and recover original priority for mutex holder task after timeout<br>
+/// disinherit priority only when no other mutex are held <br>
+/// do not change mutex held number
 pub fn vTaskPriorityDisinheritAfterTimeout(
     pxMutexHolder: Option<TaskHandle_t>,
     uxHighestPriorityWaitingTask: UBaseType,
@@ -1052,6 +1063,7 @@ pub fn vTaskPriorityDisinheritAfterTimeout(
     }
 }
 
+///place current task on event list and delay it
 pub fn vTaskPlaceOnEventList(pxEventList: &ListRealLink, xTicksToWait: TickType) {
     v_list_insert(
         pxEventList,
@@ -1060,6 +1072,8 @@ pub fn vTaskPlaceOnEventList(pxEventList: &ListRealLink, xTicksToWait: TickType)
     prvAddCurrentTaskToDelayedList(xTicksToWait, true);
 }
 
+/// remove target task from unordered event list
+/// used in event groups
 pub fn vTaskRemoveFromUnorderedEventList(pxEventListItem: &ListItemLink, xItemValue: TickType) {
     list_item_set_value(
         pxEventListItem,
@@ -1077,6 +1091,8 @@ pub fn vTaskRemoveFromUnorderedEventList(pxEventListItem: &ListItemLink, xItemVa
     }
 }
 
+/// place target task on unordered event list
+/// used in event groups
 pub fn vTaskPlaceOnUnorderedEventList(
     pxEventList: &ListRealLink,
     xItemValue: TickType,
@@ -1095,6 +1111,8 @@ pub fn vTaskPlaceOnUnorderedEventList(
     taskEXIT_CRITICAL!();
 }
 
+/// reset event item value
+/// return original item value
 pub fn uxTaskResetEventItemValue() -> TickType {
     let uxReturn: TickType = list_item_get_value(&get_current_tcb().unwrap().xEventListItem);
     list_item_set_value(
