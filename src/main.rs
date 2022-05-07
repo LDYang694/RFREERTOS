@@ -8,23 +8,14 @@ mod kernel;
 extern crate alloc;
 use alloc::sync::Arc;
 use alloc::{fmt::format, format};
-use kernel::projdefs::{pdPASS, pdTRUE, pdFAIL, pdFALSE};
+use core::arch::asm;
 use core::{borrow::Borrow, ffi::c_void, mem::size_of};
+use kernel::projdefs::{pdFAIL, pdFALSE, pdPASS, pdTRUE};
 use kernel::queue::QueueDefinition;
 use kernel::{
-    config::*,
-    kernel::*,
-    linked_list::*,
-    portable::*,
-    portmacro::*,
-    queue::*,
-    riscv_virt::*,
-    tasks::*,
-    semphr::*,
-    event_group::*,
-    *
+    config::*, event_group::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*,
+    riscv_virt::*, semphr::*, tasks::*, *,
 };
-use core::arch::asm;
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
 
@@ -91,11 +82,11 @@ pub fn main_new() {
     main_new_1();
 }
 
-pub fn testfunc1(){
+pub fn testfunc1() {
     mtCOVERAGE_TEST_MARKER!();
 }
 
-pub fn testfunc2(){
+pub fn testfunc2() {
     mtCOVERAGE_TEST_MARKER!();
 }
 
@@ -105,30 +96,25 @@ fn task_send(t: *mut c_void) {
     let pcMessage1 = "Transfer1";
     let pcMessage2 = "Transfer2";
     let mut f = 1;
-    let mut result:BaseType=0;
-    let s1="sending";
-    
-        let mut cnt=0;
-        loop {
+    let mut result: BaseType = 0;
+    let s1 = "sending";
 
-            // xTaskDelayUntil(&mut begin, increment);
-            //vSendString(&s1);
-                //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
-            //result=xSemaphoreTake!(temp,0);
-                
-            //xSemaphoreGive!(temp);
-            //let s=format!("send:{}",ulValueToSend);
-            //vSendString(&s);
-            vSendString(&s1);
-            unsafe{
+    let mut cnt = 0;
+    loop {
+        // xTaskDelayUntil(&mut begin, increment);
+        //vSendString(&s1);
+        //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
+        //result=xSemaphoreTake!(temp,0);
 
-                let temp=xEvent.as_mut().unwrap();
-                xEventGroupWaitBits(temp, 1, pdTRUE, 
-                pdFALSE, 100);
-
-            }
-            
+        //xSemaphoreGive!(temp);
+        //let s=format!("send:{}",ulValueToSend);
+        //vSendString(&s);
+        vSendString(&s1);
+        unsafe {
+            let temp = xEvent.as_mut().unwrap().clone();
+            xEventGroupWaitBits(temp, 1, pdTRUE, pdFALSE, 100);
         }
+    }
 }
 fn task_rec(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
@@ -137,27 +123,24 @@ fn task_rec(t: *mut c_void) {
     let pcMessage1 = "success";
     let pcMessage2 = "fail";
     let mut f = 1;
-    let mut result:BaseType=0;
+    let mut result: BaseType = 0;
     // vTaskDelay(1000);
     vSendString("receiving");
-    let s="taking";
+    let s = "taking";
 
-    
-    let mut cnt=0;
+    let mut cnt = 0;
     loop {
         vSendString(&s);
-        unsafe{
-
-            let temp=xEvent.as_mut().unwrap();
+        unsafe {
+            let temp = xEvent.as_mut().unwrap().clone();
             xEventGroupSetBits(temp, 1);
-
         }
-    }       
+    }
 }
 
-fn task_temp(){
-    let s="temp gogogo";
-    loop{
+fn task_temp() {
+    let s = "temp gogogo";
+    loop {
         vSendString(&s);
         vTaskDelay(5000);
     }
@@ -171,7 +154,7 @@ lazy_static! {
     //    Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
 static mut xQueue: Option<QueueDefinition> = None;
-static mut xEvent: Option<EventGroupDefinition> = None;
+static mut xEvent: Option<EventGroupHandle> = None;
 pub fn main_new_1() {
     // vSendString("111111");
     print("main new");
@@ -197,8 +180,10 @@ pub fn main_new_1() {
             2,
             size_of::<u32>() as u32,
         ));*/
-        xQueue=Some(xQueueCreateMutex(queueQUEUE_TYPE_MUTEX));
-        xEvent=Some(EventGroupDefinition::xEventGroupCreate() )  ;
+        xQueue = Some(xQueueCreateMutex(queueQUEUE_TYPE_MUTEX));
+        xEvent = Some(Arc::new(RwLock::new(
+            EventGroupDefinition::xEventGroupCreate(),
+        )));
     }
     //let s=format!("create1:{}",list_get_num_items(Arc::downgrade(&xQueue.clone().unwrap().read().xTasksWaitingToReceive)))
     /*unsafe {
@@ -309,7 +294,7 @@ pub fn main_new_1() {
         );
         print(&s);
     }*/
-    
+
     print("start scheduler!!!!!!!!!");
     vTaskStartScheduler();
     loop {

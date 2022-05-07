@@ -1060,31 +1060,46 @@ pub fn vTaskPlaceOnEventList(pxEventList: &ListRealLink, xTicksToWait: TickType)
     prvAddCurrentTaskToDelayedList(xTicksToWait, true);
 }
 
-pub fn vTaskRemoveFromUnorderedEventList(pxEventListItem:&ListItemLink, xItemValue:TickType){
-    list_item_set_value(pxEventListItem, xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE);
-    ux_list_remove( Arc::downgrade(pxEventListItem) );
-    let pxUnblockedTCB:TaskHandle_t= Weak::upgrade(&list_item_get_owner(&Arc::downgrade(pxEventListItem))).unwrap() ;
-    ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem) );
+pub fn vTaskRemoveFromUnorderedEventList(pxEventListItem: &ListItemLink, xItemValue: TickType) {
+    list_item_set_value(
+        pxEventListItem,
+        xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE,
+    );
+    ux_list_remove(Arc::downgrade(pxEventListItem));
+    let pxUnblockedTCB: TaskHandle_t =
+        Weak::upgrade(&list_item_get_owner(&Arc::downgrade(pxEventListItem))).unwrap();
+    ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem));
     prvAddTaskToReadyList(pxUnblockedTCB.clone());
-    if pxUnblockedTCB.read().uxPriority > get_current_tcb().unwrap().uxPriority{
-        unsafe{
-            xYieldPending=true;
+    if pxUnblockedTCB.read().uxPriority > get_current_tcb().unwrap().uxPriority {
+        unsafe {
+            xYieldPending = true;
         }
     }
 }
 
-
-pub fn vTaskPlaceOnUnorderedEventList(pxEventList: &ListRealLink,xItemValue:TickType,xTicksToWait:TickType){
+pub fn vTaskPlaceOnUnorderedEventList(
+    pxEventList: &ListRealLink,
+    xItemValue: TickType,
+    xTicksToWait: TickType,
+) {
     taskENTER_CRITICAL!();
-    list_item_set_value(&get_current_tcb().unwrap().xEventListItem , xItemValue|taskEVENT_LIST_ITEM_VALUE_IN_USE);
-    v_list_insert_end(pxEventList, get_current_tcb().unwrap().xEventListItem.clone());
+    list_item_set_value(
+        &get_current_tcb().unwrap().xEventListItem,
+        xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE,
+    );
+    v_list_insert_end(
+        pxEventList,
+        get_current_tcb().unwrap().xEventListItem.clone(),
+    );
     prvAddCurrentTaskToDelayedList(xTicksToWait, true);
     taskEXIT_CRITICAL!();
 }
 
-pub fn uxTaskResetEventItemValue()->TickType{
-    
-    let uxReturn:TickType=list_item_get_value(&get_current_tcb().unwrap().xEventListItem);
-    list_item_set_value(&get_current_tcb().unwrap().xEventListItem, configMAX_PRIORITIES-&get_current_tcb().unwrap().uxPriority);
+pub fn uxTaskResetEventItemValue() -> TickType {
+    let uxReturn: TickType = list_item_get_value(&get_current_tcb().unwrap().xEventListItem);
+    list_item_set_value(
+        &get_current_tcb().unwrap().xEventListItem,
+        configMAX_PRIORITIES - &get_current_tcb().unwrap().uxPriority,
+    );
     uxReturn
 }
