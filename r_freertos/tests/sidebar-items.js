@@ -1,1 +1,0 @@
-initSidebarItems({"mod":[["test_list",""]]});
