@@ -634,6 +634,79 @@ pub fn xQueueReceive(
         }
     }
 }
+
+pub fn xQueueReceiveFromISR(
+    xQueue: QueueHandle_t,
+    pvBuffer: usize,
+    pxHigherPriorityTaskWoken: &mut BaseType,
+) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    //todo:portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
+    if xQueue.read().uxMessagesWaiting > 0 {
+        let cRxLock: i8 = xQueue.read().cRxLock;
+        prvCopyDataFromQueue(&mut xQueue.write(), pvBuffer);
+        xQueue.write().uxMessagesWaiting -= 1;
+        if cRxLock == queueUNLOCKED {
+            if list_is_empty(&xQueue.write().xTasksWaitingToSend) == false {
+                if xTaskRemoveFromEventList(&xQueue.write().xTasksWaitingToSend) == true {
+                    *pxHigherPriorityTaskWoken = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        } else {
+            xQueue.write().cRxLock = cRxLock + 1;
+        }
+        xReturn = pdTRUE;
+    }
+    xReturn
+}
+
+pub fn xQueueSendFromISR(
+    xQueue: QueueHandle_t,
+    pvBuffer: usize,
+    pxHigherPriorityTaskWoken: &mut BaseType,
+) -> BaseType {
+    xQueueGenericSendFromISR(
+        xQueue,
+        pvBuffer,
+        pxHigherPriorityTaskWoken,
+        queueSEND_TO_BACK,
+    )
+}
+
+pub fn xQueueGenericSendFromISR(
+    xQueue: QueueHandle_t,
+    pvBuffer: usize,
+    pxHigherPriorityTaskWoken: &mut BaseType,
+    xCopyPosition: BaseType,
+) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    if xQueue.read().uxMessagesWaiting < xQueue.read().uxLength || xCopyPosition == queueOVERWRITE {
+        let cTxLock: i8 = xQueue.write().cTxLock;
+
+        prvCopyDataToQueue(&mut xQueue.write(), pvBuffer, xCopyPosition);
+        if cTxLock == queueUNLOCKED {
+            //todo:configUSE_QUEUE_SETS
+            if list_is_empty(&xQueue.write().xTasksWaitingToReceive) == false {
+                if xTaskRemoveFromEventList(&xQueue.write().xTasksWaitingToReceive) == true {
+                    *pxHigherPriorityTaskWoken = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        } else {
+            xQueue.write().cTxLock = cTxLock + 1;
+        }
+        xReturn = pdTRUE;
+    }
+    xReturn
+}
+
 pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: TickType) -> BaseType {
     let mut xEntryTimeSet: BaseType = pdFALSE;
     let mut xTimeOut: TimeOut = Default::default();
@@ -705,13 +778,17 @@ pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tick
         }
     }
 }
-// pub fn xQueueGenericReceive(
-//     xQueue: QueueHandle_t,
-//     pvBuffer: usize,
-//     mut xTicksToWait: TickType,
-//     xJustPeeking: BaseType,
-// ) -> BaseType {
-// }
+
+pub fn xQueuePeekFromISR(xQueue: QueueHandle_t, pvBuffer: usize) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    if xQueue.read().uxMessagesWaiting > 0 {
+        let pcOriginalReadPosition = xQueue.read().pcReadFrom;
+        prvCopyDataFromQueue(&mut xQueue.write(), pvBuffer);
+        xQueue.write().pcReadFrom = pcOriginalReadPosition;
+        xReturn = pdTRUE;
+    }
+    xReturn
+}
 
 pub fn prvUnlockQueue(xQueue: QueueHandle_t) {
     taskENTER_CRITICAL!();

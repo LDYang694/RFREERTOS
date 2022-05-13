@@ -96,6 +96,27 @@ pub fn test_xQueueReceive_fail_empty() {
     assert!(xQueueReceive(xQueue, &mut checkval as *mut BaseType as usize, 0) == pdFALSE);
 }
 
+pub fn test_macro_xQueueSendFromISR_locked() {
+    let xQueue: QueueHandle_t = Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
+        1,
+        size_of::<BaseType>() as UBaseType,
+    )));
+    let testval: BaseType = 0xda;
+    let mut pxHigherPriorityTaskWoken: BaseType = pdFALSE;
+
+    prvLockQueue!(xQueue);
+    assert!(
+        xQueueSendFromISR(
+            xQueue.clone(),
+            &testval as *const BaseType as usize,
+            &mut pxHigherPriorityTaskWoken
+        ) == pdTRUE
+    );
+    assert!(xQueue.read().uxMessagesWaiting == 1);
+    assert!(xQueue.read().cRxLock == queueLOCKED_UNMODIFIED);
+    assert!(xQueue.read().cTxLock == queueLOCKED_UNMODIFIED + 1);
+}
+
 pub fn test_xQueueReceiveFromISR_locked() {
     let xQueue: QueueHandle_t = Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
         1,
@@ -105,11 +126,30 @@ pub fn test_xQueueReceiveFromISR_locked() {
     xQueueSend(xQueue.clone(), &testval as *const BaseType as usize, 0);
     prvLockQueue!(xQueue);
     let checkval: BaseType = 0;
-    assert!(xQueueReceive(xQueue.clone(), &checkval as *const BaseType as usize, 0) == pdTRUE);
-    let s = format!("{}", xQueue.read().cRxLock);
-    vSendString(&s);
-    //assert!(xQueue.read().cRxLock == queueLOCKED_UNMODIFIED + 1);
-    //assert!(xQueue.read().cTxLock == queueLOCKED_UNMODIFIED);
+    let mut pxHigherPriorityTaskWoken: BaseType = pdFALSE;
+    assert!(
+        xQueueReceiveFromISR(
+            xQueue.clone(),
+            &checkval as *const BaseType as usize,
+            &mut pxHigherPriorityTaskWoken
+        ) == pdTRUE
+    );
+    assert!(xQueue.read().uxMessagesWaiting == 0);
+    assert!(xQueue.read().cRxLock == queueLOCKED_UNMODIFIED + 1);
+    assert!(xQueue.read().cTxLock == queueLOCKED_UNMODIFIED);
+}
+
+pub fn test_xQueuePeekFromISR_success() {
+    let xQueue: QueueHandle_t = Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
+        1,
+        size_of::<BaseType>() as UBaseType,
+    )));
+    let testval: BaseType = 0xbc;
+    xQueueSend(xQueue.clone(), &testval as *const BaseType as usize, 0);
+    let mut checkval: BaseType = 0;
+    assert!(xQueuePeekFromISR(xQueue.clone(), &mut checkval as *mut BaseType as usize) == pdTRUE);
+    assert!(checkval == testval);
+    assert!(xQueue.read().uxMessagesWaiting == 1);
 }
 
 pub fn test_func_queue(t: *mut c_void) {
@@ -119,7 +159,9 @@ pub fn test_func_queue(t: *mut c_void) {
     test_xQueuePeek_zeroItemSize_full();
     test_xQueuePeek_xQueueReceive_waiting_higher_priority();
     test_xQueueReceive_fail_empty();
+    test_macro_xQueueSendFromISR_locked();
     test_xQueueReceiveFromISR_locked();
+    test_xQueuePeekFromISR_success();
     vSendString("test passed!");
     loop {}
 }
