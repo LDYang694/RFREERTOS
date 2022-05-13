@@ -641,23 +641,28 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
     /*
     默认传入有效handle or curtcb
      */
-    let xTaskToSuspend = xTaskToSuspend_.unwrap();
+    let xTaskToSuspend = prvGetTCBFromHandle(xTaskToSuspend_).unwrap();
     use crate::kernel::kernel::SUSPENDED_TASK_LIST;
     taskENTER_CRITICAL!();
     {
-        let pxTCB = xTaskToSuspend.read();
+        //let pxTCB = xTaskToSuspend;
         // let pxTCB = prvGetTCBFromHandle(xTaskToSuspend);
         /* 从就绪/阻塞列表中删除任务并放入挂起列表中。 */
-        if ux_list_remove(Arc::downgrade(&pxTCB.xStateListItem)) == 0 {
+
+        if ux_list_remove(Arc::downgrade(&xTaskToSuspend.xStateListItem)) == 0 {
             // taskRESET_READY_PRIORITY( pxTCB->uxPriority );
             //TODO:
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
-        ux_list_remove(Arc::downgrade(&pxTCB.xEventListItem));
-        v_list_insert_end(&SUSPENDED_TASK_LIST, pxTCB.xStateListItem.clone());
+        vSendString("test");
+        ux_list_remove(Arc::downgrade(&xTaskToSuspend.xEventListItem));
+        vSendString("test");
+        v_list_insert_end(&SUSPENDED_TASK_LIST, xTaskToSuspend.xStateListItem.clone());
+        vSendString("test");
     }
     taskEXIT_CRITICAL!();
+
     if (get_scheduler_running!() != false) {
         taskENTER_CRITICAL!();
         {
@@ -668,7 +673,8 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
         mtCOVERAGE_TEST_MARKER!();
     }
     // if ( pxTCB == pxCurrentTCB ){//TODO: pxCurrentTCB
-    if is_current_tcb(Arc::downgrade(&xTaskToSuspend)) {
+
+    if is_current_tcb_raw(xTaskToSuspend) {
         if get_scheduler_running!() {
             /* The current task has just been suspended. */
             // assert!(get_scheduler_suspended!() == 0);

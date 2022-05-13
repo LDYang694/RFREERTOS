@@ -26,6 +26,8 @@ pub type ListItemOwnerWeakLink = Weak<RwLock<TCB_t>>;
 // pub type TCB = u32;
 use alloc::string;
 use core::option::Option;
+
+use super::riscv_virt::vSendString;
 //define list types here
 #[derive(Debug)]
 pub struct XListItem {
@@ -340,6 +342,7 @@ pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
         );
     }
     //TODO:pxItemToRemove->pvContainer = NULL;
+
     (px_list.upgrade().unwrap()).write().ux_number_of_items -= 1;
     list_item_set_container(&px_item_to_remove, Default::default());
     list_get_num_items(&px_list)

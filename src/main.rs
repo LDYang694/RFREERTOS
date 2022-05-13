@@ -8,6 +8,7 @@ mod kernel;
 mod tests;
 extern crate alloc;
 use crate::tests::test_list::*;
+use crate::tests::test_queue::*;
 use alloc::sync::Arc;
 use alloc::{fmt::format, format};
 use core::arch::asm;
@@ -82,7 +83,7 @@ fn task3(t: *mut c_void) {
 }
 pub fn main_new() {
     //main_new_1();
-    test_main();
+    test_main_queue();
 }
 
 pub fn testfunc1() {

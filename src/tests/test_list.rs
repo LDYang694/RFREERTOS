@@ -111,7 +111,7 @@ pub fn test_macro_listIS_CONTAINED_WITHIN() {
     assert!(!list_is_contained_within(&pxList, &pxNewListItems[1]));
 }
 
-pub fn test_func(t: *mut c_void) {
+pub fn test_func_list(t: *mut c_void) {
     vSendString("testing list");
     let xList: ListT = Default::default();
     let pxList: ListRealLink = Arc::new(RwLock::new(xList));
@@ -133,11 +133,11 @@ lazy_static! {
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
 
-pub fn test_main() {
+pub fn test_main_list() {
     let param1: Param_link = 0;
     unsafe {
         xTaskCreate(
-            test_func as u32,
+            test_func_list as u32,
             "test_func",
             USER_STACK_SIZE as u32,
             Some(param1),

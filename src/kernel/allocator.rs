@@ -3,7 +3,6 @@ use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
 use core::arch::asm;
 
-
 use super::riscv_virt::{print, vSendString};
 use super::tasks::{vTaskEnterCritical, vTaskExitCritical};
 

@@ -1,17 +1,17 @@
 //! portable apis
 
 extern crate alloc;
-use alloc::sync::{Arc, Weak};
 use crate::config::*;
+use crate::kernel::kernel::READY_TASK_LISTS;
+use crate::kernel::kernel::{TCB1_p, TCB2_p};
 use crate::linked_list::*;
 use crate::portDISABLE_INTERRUPTS;
 use crate::portENABLE_INTERRUPTS;
 use crate::portmacro::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
-use crate::kernel::kernel::READY_TASK_LISTS;
-use crate::kernel::kernel::{TCB1_p, TCB2_p};
 use alloc::format;
+use alloc::sync::{Arc, Weak};
 use core::arch::asm;
 use spin::RwLock;
 
@@ -32,10 +32,10 @@ pub static mut pxCurrentTCB: UBaseType = 0;
 pub static mut pullNextTime: UBaseType = 0;
 
 #[no_mangle]
-pub static mut xISRStackTop: *const StackType= 0 as *const StackType;
+pub static mut xISRStackTop: *const StackType = 0 as *const StackType;
 
 #[no_mangle]
-pub static mut pullMachineTimerCompareRegister:UBaseType = 0;
+pub static mut pullMachineTimerCompareRegister: UBaseType = 0;
 
 pub static mut pxCurrentTCB_: Option<*const tskTaskControlBlock> = None;
 
@@ -44,26 +44,26 @@ static mut X_ISRSTACK: [StackType; CONFIG_ISR_STACK_SIZE_WORDS] = [0; CONFIG_ISR
 static mut ULL_NEXT_TIME: u64 = 0;
 pub const ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE: UBaseType = CONFIG_MTIMECMP_BASE_ADDRESS;
 
-/* 
+/*
 extern "C" {
     pub static mut : u32;
-    
+
 }*/
 //todo:safe  global var and pointer
 
 /// get current mtime
-fn get_mtime()->u64{
-    let mut result:u64=0;
+fn get_mtime() -> u64 {
+    let mut result: u64 = 0;
     let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
     let pul_time_low: *const UBaseType = CONFIG_MTIME_BASE_ADDRESS as *const UBaseType;
-    unsafe{
-        let mut ul_current_time_low: UBaseType= *pul_time_high;
-        let mut ul_current_time_high: UBaseType= *pul_time_low;
-        result= ul_current_time_high as u64;
-        result=result<<32;
-        result+= (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
+    unsafe {
+        let mut ul_current_time_low: UBaseType = *pul_time_high;
+        let mut ul_current_time_high: UBaseType = *pul_time_low;
+        result = ul_current_time_high as u64;
+        result = result << 32;
+        result += (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
     }
-    
+
     result
 }
 
@@ -101,7 +101,7 @@ pub fn v_port_setup_timer_interrupt() {
 /// copy current tcb to pxCurrentTCB for c interface
 pub fn auto_set_currentTcb() {
     unsafe {
-        match get_current_tcb(){
+        match get_current_tcb() {
             Some(x) => pxCurrentTCB = x as *const tskTaskControlBlock as u32,
             None => pxCurrentTCB = 0,
         }
@@ -131,48 +131,51 @@ pub fn x_port_start_scheduler() -> BaseType {
 /// use with auto_set_currentTcb()
 pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {
     unsafe {
-        match tcb{
-            Some(x)=>{
-                pxCurrentTCB_=Some(&*(*x.into_raw()).read());
+        match tcb {
+            Some(x) => {
+                pxCurrentTCB_ = Some(&*(*x.into_raw()).read());
             }
-            None=>{
-                pxCurrentTCB_=None;
+            None => {
+                pxCurrentTCB_ = None;
             }
         }
     }
 }
 
 /// get current tcb
-pub fn get_current_tcb()->Option<&'static mut tskTaskControlBlock>{
-    unsafe{
-        match pxCurrentTCB_{
-            Some(x)=>{
-                Some(&mut *(x as *mut tskTaskControlBlock))
-            }
-            None=>{
-                None
-            }
+pub fn get_current_tcb() -> Option<&'static mut tskTaskControlBlock> {
+    unsafe {
+        match pxCurrentTCB_ {
+            Some(x) => Some(&mut *(x as *mut tskTaskControlBlock)),
+            None => None,
         }
     }
 }
 
 /// return if target tcb is current tcb
-pub fn is_current_tcb(tcb: ListItemOwnerWeakLink)->bool{
-    unsafe{
-        match pxCurrentTCB_{
-            Some(x)=>{
-                let temp:*const tskTaskControlBlock=&*(*tcb.into_raw()).read();
-                temp==x
+pub fn is_current_tcb(tcb: ListItemOwnerWeakLink) -> bool {
+    unsafe {
+        match pxCurrentTCB_ {
+            Some(x) => {
+                let temp: *const tskTaskControlBlock = &*(*tcb.into_raw()).read();
+                temp == x
             }
-            None=>false
+            None => false,
         }
     }
 }
 
-
-
-
-
+pub fn is_current_tcb_raw(tcb: &mut tskTaskControlBlock) -> bool {
+    unsafe {
+        match pxCurrentTCB_ {
+            Some(x) => {
+                let temp: *const tskTaskControlBlock = tcb as *const tskTaskControlBlock;
+                temp == x
+            }
+            None => false,
+        }
+    }
+}
 
 /// switch context
 #[no_mangle]
@@ -180,15 +183,12 @@ pub extern "C" fn vTaskSwitchContext() {
     //todo
     // // print("vTaskSwitchContext");
     //port_disable_interrupts!();
-    unsafe{
-        if uxSchedulerSuspended==0{
-                xYieldPending=false;
+    unsafe {
+        if uxSchedulerSuspended == 0 {
+            xYieldPending = false;
             taskSELECT_HIGHEST_PRIORITY_TASK();
-        }
-        else{
-                xYieldPending=true;
+        } else {
+            xYieldPending = true;
         }
     }
-    
-    
 }
