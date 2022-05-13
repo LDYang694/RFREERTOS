@@ -1,7 +1,8 @@
 //! task control api
 
 extern crate alloc;
-
+#[cfg(feature = "configUSE_IDLE_HOOK")]
+use crate::vApplicationIdleHook;
 use crate::configMAX_PRIORITIES;
 use crate::kernel::kernel::*;
 use crate::kernel::linked_list::*;
@@ -74,8 +75,9 @@ macro_rules! vTaskMissedYield {
 
 pub const taskEVENT_LIST_ITEM_VALUE_IN_USE: UBaseType = 0x8000;
 
-/// initialise task stack
+
 extern "C" {
+    /// initialise task stack space ( Extern C )
     pub fn pxPortInitialiseStack(
         pxTopOfStack: *mut StackType_t,
         pxCode: u32,
@@ -88,15 +90,23 @@ pub struct TimeOut {
     pub xOverflowCount: BaseType,
     pub xTimeOnEntering: TickType,
 }
-
+///
+/// tskTaskControlBlock
 #[derive(Debug, Clone)]
 pub struct tskTaskControlBlock {
+    ///Stack top pointer
     pub pxTopOfStack: StackType_t_link,
+    ///Stack bottom pointer
     pxStack: StackType_t_link,
+    ///Task name
     pcTaskName: String,
+    ///Task status list pointer
     pub xStateListItem: ListItemLink,
+    ///Task evnet list pointer
     pub xEventListItem: ListItemLink,
+    ///
     pub uxCriticalNesting: UBaseType_t,
+    /// Task priority
     pub uxPriority: UBaseType,
     pub uxMutexesHeld: UBaseType,
     pub uxBasePriority: UBaseType,
@@ -128,7 +138,7 @@ pub type TCB_t = tskTCB;
 //TaskHandle_t=tskTaskControlBlock*
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
 
-/// set target task's priority
+/// set priority of target task
 pub fn vTaskPrioritySet(pxTask: Option<TaskHandle_t>, uxNewPriority: UBaseType) {
     vTaskEnterCritical();
     match pxTask {
@@ -176,7 +186,9 @@ pub fn uxTaskPriorityGet(pxTask: Option<TaskHandle_t>) -> UBaseType {
     }
 }
 
-/// create task (static)
+/// Create tasks static
+///
+///
 #[cfg(feature = "configSUPPORT_STATIC_ALLOCATION")]
 pub fn xTaskCreateStatic(
     pxTaskCode: u32,
@@ -228,7 +240,7 @@ pub fn xTaskCreateStatic(
     Some(xReturn)
 }
 
-/// add task to ready list
+/// add new task to ready list
 pub fn prvAddNewTaskToReadyList(pxNewTCB: TCB_t_link) {
     // taskENTER_CRITICAL!();
     {
@@ -249,6 +261,7 @@ pub fn prvAddTaskToReadyList(pxNewTCB: TCB_t_link) {
         (pxNewTCB.read().xStateListItem).clone(),
     );
 }
+///set max uxTopReadyPriority
 pub fn taskRECORD_READY_PRIORITY(uxPriority: UBaseType) {
     //TODO: set max uxTopReadyPriority
 }
@@ -304,11 +317,21 @@ pub fn prvInitialiseNewTask(
 pub fn prvIdleTask(t: *mut c_void) {
     vSendString("idle gogogogo");
     loop {
+        #[cfg(feature = "configUSE_IDLE_HOOK")]
+        {
+            /* Call the user defined function from within the idle task.  This
+             * allows the application designer to add background functionality
+             * without the overhead of a separate task.
+             * NOTE: vApplicationIdleHook() MUST NOT, UNDER ANY CIRCUMSTANCES,
+             * CALL A FUNCTION THAT MIGHT BLOCK. */
+            vApplicationIdleHook();
+        } /* configUSE_IDLE_HOOK */
         vSendString("idle gogogogo!!!(in loop)");
     }
 }
 
 /// start scheduler
+/// when create all tasks call vTaskStartScheduler
 pub fn vTaskStartScheduler() {
     unsafe {
         XSCHEDULERRUNNING = pdTRUE;
@@ -336,10 +359,10 @@ pub fn vTaskStartScheduler() {
     }
 }
 
-fn prvInitialiseTaskLists() {
-    //initial in list impl
-}
-
+// fn prvInitialiseTaskLists() {
+//     //initial in list impl
+// }
+/// Enter task critical area
 pub fn vTaskEnterCritical() {
     portDISABLE_INTERRUPTS!();
     unsafe {
@@ -362,7 +385,7 @@ pub fn vTaskEnterCritical() {
         }
     }
 }
-
+/// Exit task critical area
 pub fn vTaskExitCritical() {
     unsafe {
         if XSCHEDULERRUNNING != pdFALSE {
@@ -388,6 +411,7 @@ pub fn vTaskExitCritical() {
 }
 
 /// set current tcb to task with highest priority
+/// when want to start highest priority task call taskSELECT_HIGHEST_PRIORITY_TASK
 pub fn taskSELECT_HIGHEST_PRIORITY_TASK() {
     //TODO: uxTopReadyPriority全局变量设置和更新
     //TODO: 函数规范化
@@ -442,7 +466,16 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
     }
     //vTaskExitCritical();
 }
-
+/// Delay Task xTicksToDelay Relativly
+/// used in task function
+/// # Examples
+/// ```
+/// fn task_example(t: *mut c_void){
+///     loop{
+///         vTaskDelay(1000);
+///     }
+/// }
+/// ```
 pub fn vTaskDelay(xTicksToDelay: TickType) {
     vTaskEnterCritical();
     //todo
@@ -452,7 +485,19 @@ pub fn vTaskDelay(xTicksToDelay: TickType) {
     taskYield();
 }
 
-/// delay task until pxPreviousWakeTime+pxPreviousWakeTime <br>
+//TODO: exampke
+/// Delay task until pxPreviousWakeTime+pxPreviousWakeTime
+/// used in task function
+/// # Examples
+/// ```
+/// fn task_example(t: *mut c_void){
+///     let mut PreviousWakeTime=0;
+///     let TimeIncrement=100;
+///     loop{
+///         xTaskDelayUntil(&PreviousWakeTime,TimeIncrement);
+///     }
+/// }
+/// ```
 pub fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrement: TickType) {
     let mut xShouldDelay: bool = false;
 
@@ -556,7 +601,34 @@ pub fn xPortSysTickHandler() {
 }
 #[cfg(feature = "configSUPPORT_DYNAMIC_ALLOCATION")]
 
-/// create task (not static)
+/// create task dynamic
+///
+/// # Examples
+///
+/// ```
+/// lazy_static! {
+/// pub static ref task1handler: Option<TaskHandle_t> =
+///     Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
+/// }
+/// fn task_example(t: *mut c_void){
+///     loop{
+///         //do somthing
+///     }
+/// }
+/// fn main(){
+///     let params=0;
+///     xTaskCreate(
+///     task_example as u32,    //task define ,should be same as example defination
+///     "task_example",         //task name
+///     USER_STACK_SIZE as u32, //task stack depth
+///     Some(params),           //task params
+///     3,                      //task priority
+///     Some(Arc::clone(&(task1handler.as_ref().unwrap()))), //task handler
+///     );
+///
+/// }
+/// ```
+///
 pub fn xTaskCreate(
     pxTaskCode: u32,
     pcName: &str,
@@ -636,6 +708,7 @@ macro_rules! get_uxCurrentNumberOfTasks {
 }
 
 /// suspend task until resumed
+/// assert params is not Option::None
 #[cfg(feature = "INCLUDE_vTaskSuspend")]
 pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
     /*
