@@ -655,11 +655,8 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
         } else {
             mtCOVERAGE_TEST_MARKER!();
         }
-        vSendString("test");
         ux_list_remove(Arc::downgrade(&xTaskToSuspend.xEventListItem));
-        vSendString("test");
         v_list_insert_end(&SUSPENDED_TASK_LIST, xTaskToSuspend.xStateListItem.clone());
-        vSendString("test");
     }
     taskEXIT_CRITICAL!();
 

@@ -87,7 +87,7 @@ impl Default for ListT {
 
 /// set previous item
 pub fn list_item_set_pre(item: &ListItemWeakLink, pre: ListItemWeakLink) {
-    (item.upgrade().unwrap()).write().px_previous = pre;
+    item.upgrade().unwrap().write().px_previous = pre;
 }
 
 /// set next item
@@ -326,11 +326,16 @@ pub fn v_list_insert(px_list: &ListRealLink, px_new_list_item: ListItemLink) {
 /// return number of items after remove
 pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
     let px_list = list_item_get_container(&px_item_to_remove);
+    match px_list.upgrade() {
+        Some(x) => {}
+        None => {
+            return 0;
+        }
+    }
     list_item_set_pre(
         &list_item_get_next(&px_item_to_remove),
         list_item_get_pre(&px_item_to_remove),
     );
-
     list_item_set_next(
         &list_item_get_pre(&px_item_to_remove),
         list_item_get_next(&px_item_to_remove),
@@ -341,7 +346,6 @@ pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
             Weak::clone(&list_item_get_pre(&px_item_to_remove)),
         );
     }
-    //TODO:pxItemToRemove->pvContainer = NULL;
 
     (px_list.upgrade().unwrap()).write().ux_number_of_items -= 1;
     list_item_set_container(&px_item_to_remove, Default::default());

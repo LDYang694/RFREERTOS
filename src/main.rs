@@ -157,7 +157,7 @@ lazy_static! {
     //pub static ref task3handler: Option<TaskHandle_t> =
     //    Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
-static mut xQueue: Option<QueueDefinition> = None;
+static mut xQueue: Option<QueueHandle_t> = None;
 static mut xEvent: Option<EventGroupHandle> = None;
 pub fn main_new_1() {
     // vSendString("111111");
