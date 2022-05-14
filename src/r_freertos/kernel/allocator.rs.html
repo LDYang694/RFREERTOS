@@ -72,23 +72,15 @@
 <span id="67">67</span>
 <span id="68">68</span>
 <span id="69">69</span>
-<span id="70">70</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">kernel::config::KERNEL_HEAP_SIZE</span>, <span class="ident">portDISABLE_INTERRUPTS</span>, <span class="ident">portENABLE_INTERRUPTS</span>};
+</pre><pre class="rust"><code><span class="doccomment">//! Global Allocatot Definition &lt;br&gt;</span>
+<span class="doccomment">//! use buddy_system_allocator and wrap as SimpleAllocator</span>
+<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::tasks</span>::{<span class="ident">vTaskEnterCritical</span>, <span class="ident">vTaskExitCritical</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::config::KERNEL_HEAP_SIZE</span>;
 <span class="kw">use</span> <span class="ident">buddy_system_allocator::LockedHeap</span>;
 <span class="kw">use</span> <span class="ident">core::alloc</span>::{<span class="ident">GlobalAlloc</span>, <span class="ident">Layout</span>};
-<span class="kw">use</span> <span class="ident">core::arch::asm</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::riscv_virt</span>::{<span class="ident">print</span>, <span class="ident">vSendString</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::tasks</span>::{<span class="ident">vTaskEnterCritical</span>, <span class="ident">vTaskExitCritical</span>};
 
-<span class="comment">// pub fn init_heap() {</span>
-<span class="comment">//     static mut HEAP: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];</span>
-<span class="comment">//     unsafe {</span>
-<span class="comment">//         DYNAMIC_ALLOCATOR</span>
-<span class="comment">//             .lock()</span>
-<span class="comment">//             .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);</span>
-<span class="comment">//     }</span>
-<span class="comment">// }</span>
+<span class="doccomment">/// INITIAL Start should init_heap first</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_heap</span>() {
     <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">HEAP</span>: [<span class="ident">u8</span>; <span class="ident">KERNEL_HEAP_SIZE</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="ident">KERNEL_HEAP_SIZE</span>];
     <span class="kw">unsafe</span> {
@@ -100,13 +92,15 @@
 }
 
 <span class="attribute">#[<span class="ident">global_allocator</span>]</span>
-<span class="comment">// static DYNAMIC_ALLOCATOR: LockedHeap&lt;32&gt; = LockedHeap::&lt;32&gt;::empty();</span>
+<span class="doccomment">/// DYNAMIC_ALLOCATOR as global_allocator</span>
 <span class="kw">static</span> <span class="ident">DYNAMIC_ALLOCATOR</span>: <span class="ident">SimpleAllocator</span> <span class="op">=</span> <span class="ident">SimpleAllocator::empty</span>();
 <span class="attribute">#[<span class="ident">alloc_error_handler</span>]</span>
+<span class="doccomment">/// alloc_error_handler function</span>
 <span class="kw">fn</span> <span class="ident">alloc_error_handler</span>(<span class="kw">_</span>: <span class="ident">core::alloc::Layout</span>) -&gt; <span class="op">!</span> {
     <span class="macro">panic!</span>(<span class="string">&quot;alloc_error_handler do nothing but panic!&quot;</span>);
 }
 
+<span class="doccomment">/// Critical Wrapped Buddy System Allocator</span>
 <span class="kw">struct</span> <span class="ident">SimpleAllocator</span> {
     <span class="ident">Buddy_System_Allocator</span>: <span class="ident">LockedHeap</span><span class="op">&lt;</span><span class="number">32</span><span class="op">&gt;</span>,
 }
@@ -114,7 +108,6 @@
 <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">GlobalAlloc</span> <span class="kw">for</span> <span class="ident">SimpleAllocator</span> {
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">u8</span> {
         <span class="ident">vTaskEnterCritical</span>();
-        <span class="comment">// print(&quot;alloc&quot;);</span>
         <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">Buddy_System_Allocator</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>);
         <span class="ident">vTaskExitCritical</span>();
         <span class="ident">x</span>
@@ -122,27 +115,32 @@
 
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
         <span class="ident">vTaskEnterCritical</span>();
-        <span class="comment">// vSendString(&quot;dealloc&quot;);</span>
         <span class="self">self</span>.<span class="ident">Buddy_System_Allocator</span>.<span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>);
         <span class="ident">vTaskExitCritical</span>();
     }
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">alloc_zeroed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">u8</span> {
-        <span class="self">self</span>.<span class="ident">Buddy_System_Allocator</span>.<span class="ident">alloc_zeroed</span>(<span class="ident">layout</span>)
+        <span class="ident">vTaskEnterCritical</span>();
+        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">Buddy_System_Allocator</span>.<span class="ident">alloc_zeroed</span>(<span class="ident">layout</span>);
+        <span class="ident">vTaskExitCritical</span>();
+        <span class="ident">x</span>
     }
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">realloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">u8</span> {
-        <span class="self">self</span>.<span class="ident">Buddy_System_Allocator</span>.<span class="ident">realloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>)
+        <span class="ident">vTaskEnterCritical</span>();
+        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">Buddy_System_Allocator</span>.<span class="ident">realloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>);
+        <span class="ident">vTaskExitCritical</span>();
+        <span class="ident">x</span>
     }
 }
+
 <span class="kw">impl</span> <span class="ident">SimpleAllocator</span> {
     <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">empty</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">SimpleAllocator</span> {
             <span class="ident">Buddy_System_Allocator</span>: <span class="ident">LockedHeap</span>::<span class="op">&lt;</span><span class="number">32</span><span class="op">&gt;</span><span class="ident">::empty</span>(),
         }
     }
-    <span class="comment">// pub unsafe fn init(&amp;mut self, start: usize, size: usize) {</span>
-    <span class="comment">//     self.Buddy_System_Allocator.lock().init(start, size)</span>
-    <span class="comment">// }</span>
+ 
 }
+
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a5ad0d29a 2022-05-12)" ></div>
 </body></html>

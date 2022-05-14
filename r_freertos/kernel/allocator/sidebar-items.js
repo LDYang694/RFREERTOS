@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["alloc_error_handler",""],["init_heap",""]],"static":[["DYNAMIC_ALLOCATOR",""]],"struct":[["SimpleAllocator",""]]});
+initSidebarItems({"fn":[["alloc_error_handler","alloc_error_handler function"],["init_heap","INITIAL Start should init_heap first"]],"static":[["DYNAMIC_ALLOCATOR","DYNAMIC_ALLOCATOR as global_allocator"]],"struct":[["SimpleAllocator","Critical Wrapped Buddy System Allocator"]]});

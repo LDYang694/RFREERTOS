@@ -64,7 +64,7 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">KERNEL_HEAP_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x400000</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">USER_STACK_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x10000</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PORT_ISR_STACK_FILL_BYTE</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="number">0xee</span>;
-
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">portTICK_RATE_MS</span>:<span class="ident">TickType</span><span class="op">=</span><span class="number">1000</span><span class="op">/</span><span class="ident">CONFIG_TICK_RATE_HZ</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PRIM_HART</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CLINT_MSIP</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0x0000</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CLINT_MTIMECMP</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0x4000</span>;
