@@ -3,6 +3,7 @@
 #![feature(alloc_error_handler)]
 #![allow(non_snake_case)]
 #![feature(box_into_inner)]
+mod ffi;
 #[allow(dead_code)]
 mod kernel;
 mod tests;
@@ -26,6 +27,10 @@ use spin::RwLock;
 pub extern "C" fn main() -> ! {
     main_new();
     loop {}
+}
+
+extern "C" {
+    fn test_() -> BaseType;
 }
 
 fn delay(time: u32) {
@@ -83,6 +88,13 @@ fn task3(t: *mut c_void) {
 }
 pub fn main_new() {
     //main_new_1();
+    let val: BaseType;
+    unsafe {
+        val = test_();
+    }
+    let s = format!("{}", val);
+    vSendString(&s);
+    loop {}
     test_main_queue();
 }
 

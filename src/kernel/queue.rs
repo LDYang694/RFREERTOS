@@ -465,10 +465,13 @@ pub fn prvIsQueueEmpty(xQueue: QueueHandle_t) -> bool {
     taskEXIT_CRITICAL!();
     xReturn
 }
-pub fn vQueueDelete(xQueue: QueueHandle_t) {
-    let pxQueue = &*xQueue.write();
+
+#[no_mangle]
+pub extern "C" fn vQueueDelete(xQueue: QueueHandle_t) {
     let alloc_size: usize =
         mem::size_of::<xQUEUE>() + (xQueue.read().uxLength * xQueue.read().uxItemSize) as usize;
+    let pxQueue = &*xQueue.write();
+
     let layout = Layout::from_size_align(alloc_size as usize, 4)
         .ok()
         .unwrap();
@@ -493,7 +496,7 @@ pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
         unsafe {
             let xx = *(xQueue.pcReadFrom as *mut i32);
             let s = format!(
-                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}",
                 xQueue.pcReadFrom, pvBuffer, xx, xQueue.uxItemSize
             );
             vSendString(&s);
@@ -504,14 +507,16 @@ pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
             );
             let x = *(pvBuffer as *mut i32);
             let s_ = format!(
-                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}",
                 xQueue.pcReadFrom, pvBuffer, x, xQueue.uxItemSize
             );
             vSendString(&s_);
         }
     }
 }
-pub fn xQueueReceive(
+
+#[no_mangle]
+pub extern "C" fn xQueueReceive(
     xQueue: QueueHandle_t,
     pvBuffer: usize,
     mut xTicksToWait: TickType,
