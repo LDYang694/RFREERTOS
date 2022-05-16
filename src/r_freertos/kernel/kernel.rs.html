@@ -3,7 +3,9 @@
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../r_freertos/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../r_freertos/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../r_freertos/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -72,12 +74,6 @@
 <span id="67">67</span>
 <span id="68">68</span>
 <span id="69">69</span>
-<span id="70">70</span>
-<span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">no_std</span>]</span>
 <span class="comment">// #![feature(alloc_error_handler)]</span>
 <span class="comment">// #![no_main]</span>
@@ -86,15 +82,13 @@
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
-
-
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::allocator::init_heap</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::linked_list</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portable</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::projdefs</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::riscv_virt</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::tasks</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::projdefs</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">alloc::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">core::arch::global_asm</span>;
 <span class="kw">use</span> <span class="ident">core::ffi::c_void</span>;
@@ -102,6 +96,8 @@
 <span class="kw">use</span> <span class="ident">core::panic::PanicInfo</span>;
 <span class="kw">use</span> <span class="ident">lazy_static</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">spin::RwLock</span>;
+
+<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::portmacro::BaseType</span>;
 
 <span class="macro">global_asm!</span>(<span class="macro">include_str!</span>(<span class="string">&quot;start.S&quot;</span>));
 
@@ -128,12 +124,7 @@
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">get_current_task_handle</span> {
     () =&gt; {
-        <span class="ident"><span class="kw">crate</span>::CURRENT_TCB</span>
-            .<span class="ident">read</span>()
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">as_ref</span>()
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">clone</span>()
+        <span class="ident"><span class="kw">crate</span>::CURRENT_TCB</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>()
     };
 }
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SchedulerState</span> {
@@ -141,7 +132,6 @@
     <span class="ident">Suspended</span>,
     <span class="ident">Running</span>,
 }
-
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kernel_init</span>() {
@@ -154,5 +144,5 @@
     <span class="kw">loop</span> {}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (f1f721e64 2022-05-13)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (42e1761c7 2022-05-15)" ></div>
 </body></html>
