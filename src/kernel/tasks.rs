@@ -214,6 +214,8 @@ pub fn xTaskCreateStatic(
     //         pxNewTCB->ucStaticallyAllocated = tskSTATICALLY_ALLOCATED_STACK_AND_TCB;
     //     }
     // #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
+    let s_ = format!("top of stack{:X}", pxNewTCB.read().pxTopOfStack);
+    print(&s_);
     prvInitialiseNewTask(
         pxTaskCode,
         pcName,
@@ -225,6 +227,7 @@ pub fn xTaskCreateStatic(
     );
     print("xTaskCreateStatic 3333");
     prvAddNewTaskToReadyList(pxNewTCB.clone());
+
     Some(xReturn)
 }
 
@@ -241,8 +244,9 @@ pub fn prvAddNewTaskToReadyList(pxNewTCB: TCB_t_link) {
 /// add task to ready list
 pub fn prvAddTaskToReadyList(pxNewTCB: TCB_t_link) {
     let uxPriority = pxNewTCB.read().uxPriority;
-    // let s_ = format!("uxPriority{:X}", uxPriority);
-    // print(&s_);
+    let s = format!("{:X}", pxNewTCB.read().xStateListItem.read().x_item_value);
+    print(&s);
+
     taskRECORD_READY_PRIORITY(uxPriority);
     v_list_insert_end(
         &READY_TASK_LISTS[uxPriority as usize],
@@ -309,7 +313,8 @@ pub fn prvIdleTask(t: *mut c_void) {
 }
 
 /// start scheduler
-pub fn vTaskStartScheduler() {
+#[no_mangle]
+pub extern "C" fn vTaskStartScheduler() {
     unsafe {
         XSCHEDULERRUNNING = pdTRUE;
     }

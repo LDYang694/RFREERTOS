@@ -93,7 +93,8 @@ pub fn main_new() {
         val = test_();
     }
     let s = format!("{}", val);
-    vSendString(&s);
+    print(&s);
+    vTaskStartScheduler();
     loop {}
     test_main_queue();
 }
