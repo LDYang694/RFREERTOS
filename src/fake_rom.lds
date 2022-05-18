@@ -1,11 +1,14 @@
+OUTPUT_FORMAT("elf64-littleriscv", "elf64-littleriscv", "elf64-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY( _start )
+
+STACK_SIZE = 0x100000
 
 MEMORY
 {
 	/* Fake ROM area */
-	rom (rxa) : ORIGIN = 0x45000000, LENGTH = 32M /*0x80000000-0x82000000*/
-	ram (wxa) : ORIGIN = 0x47000000, LENGTH = 32M /*0x82000000-0x84000000*/
+	rom (rxa) : ORIGIN = 0x40000000, LENGTH = 128M /*0x80000000-0x82000000*/
+	ram (wxa) : ORIGIN = 0x48000000, LENGTH = 128M /*0x82000000-0x84000000*/
 }
 
 SECTIONS
@@ -112,7 +115,7 @@ SECTIONS
 	{
 		. = ALIGN(16);
 		/* TODO: replace 512K with __stack_size */
-		. += 2 * 1024 * 1024; /* __stack_siz = 512K */
+		. += STACK_SIZE; /* __stack_siz = 2M */
 		_stack_top = .;
 	} >ram AT>ram
 }

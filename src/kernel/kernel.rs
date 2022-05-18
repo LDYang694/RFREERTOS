@@ -59,13 +59,21 @@ pub enum SchedulerState {
     Suspended,
     Running,
 }
-
+extern "C" {
+    fn sys_clock_init();
+    fn sys_uart0_init();
+    // fn table_val_set();
+}
 #[no_mangle]
 pub extern "C" fn kernel_init() {
-    print("enter kernel init.");
-    // sys_clock_init();
-	sys_jtag_init();
-	sys_uart_init();
+    unsafe{
+        sys_clock_init();
+        sys_uart0_init();
+        // table_val_set();
+    }
+	
+    // all_interrupt_enable();
+    // clint_timer_init();
     init_heap();
 }
 

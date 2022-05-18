@@ -29,6 +29,18 @@
 	.globl _start
 	.type _start,@function
 _start:
+    /*disable interrupt*/
+    csrrci x0, mstatus, 0x8
+    csrw mie, zero
+
+    /*enable theadisaee*/
+    li t1, EN_THEADISAEE
+    csrs mxstatus, t1
+
+    /*invaild ICACHE/DCACHE/BTB/BHT*/
+    li t2, 0x30013
+    csrs mcor, t2
+
 	.cfi_startproc
 	.cfi_undefined ra
 .option push
