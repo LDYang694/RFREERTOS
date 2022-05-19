@@ -2,7 +2,7 @@ extern crate cc;
 
 fn main() {
     cc::Build::new()
-        .compiler("")
+        .compiler("~/Downloads/XuanTie/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.6/bin/riscv64-unknown-elf-gcc")
         .file("src/kernel/portASM.S")
         .file("src/kernel/temp.c")
         .file("src/bare/clint.c")
