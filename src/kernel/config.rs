@@ -13,7 +13,7 @@ pub const CONFIG_CPU_CLOCK_HZ:UBaseType = 1000000;
 pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 pub const USER_STACK_SIZE: usize = 0x10000;
 pub const PORT_ISR_STACK_FILL_BYTE: BaseType = 0xee;
-
+pub const portTICK_RATE_MS:TickType=1000/CONFIG_TICK_RATE_HZ;
 pub const PRIM_HART: usize = 0;
 pub const CLINT_MSIP: u32 = 0x0000;
 pub const CLINT_MTIMECMP: u32 = 0x4000;

@@ -1,4 +1,4 @@
-//! queue impletation and api
+//! Queue Definition and api
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::riscv_virt::print;
@@ -76,11 +76,14 @@ pub type Queue_t = xQUEUE;
 
 #[derive(Default)]
 pub struct QueueDefinition {
-    pcMesQueue: Vec<u8>, //message space
-
+    pcMesQueue: Vec<u8>,
+    ///queue message space
     pcHead: usize,
+    /// queue header pointer
     pcTail: usize,
+    /// queue tail pointer
     pcWriteTo: usize,
+    ///
     pcReadFrom: usize,
     pub cRxLock: i8,
     pub cTxLock: i8,
@@ -94,6 +97,12 @@ pub struct QueueDefinition {
     pub ucQueueType: u8,
 }
 impl QueueDefinition {
+    /// QueueCreate function
+    /// # Examples
+    /// ```
+    /// let xQueue = QueueDefinition::xQueueCreate(2,size_of::<u32>() as u32);
+    ///
+    /// ```
     pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> Self {
         QueueDefinition::xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
     }

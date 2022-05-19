@@ -1,7 +1,5 @@
-// use std::cell::RefCell;
 #![allow(non_snake_case)]
-
-//! linked list implementation and api
+//! Bidirectional linked list Definition and API
 
 use spin::RwLock;
 // use std::collections::LinkedList;
@@ -31,11 +29,16 @@ use super::riscv_virt::vSendString;
 //define list types here
 #[derive(Debug)]
 pub struct XListItem {
-    pub x_item_value: TickType, /* 辅助值，用于帮助节点做顺序排列 */
+    /// Used to help arrange nodes in order
+    pub x_item_value: TickType,
+    /// Point to the next linked list item
     pub px_next: ListItemWeakLink,
+    /// Point to the previous linked list item
     pub px_previous: ListItemWeakLink,
+    ///Point to the linked list where the node is located, and point to the kernel object that owns the node
     pub pv_owner: ListItemOwnerWeakLink, /* 指向拥有该节点的内核对象，通常是 TCB */
-    pub px_container: ListWeakLink,      /* 指向该节点所在的链表 */
+    /// Point to the linked list where the node is located
+    pub px_container: ListWeakLink, /* 指向该节点所在的链表 */
 }
 pub type ListItemT = XListItem;
 impl XListItem {
