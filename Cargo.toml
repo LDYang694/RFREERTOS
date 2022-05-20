@@ -1,0 +1,20 @@
+[package]
+name = "bare_freertos"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+spin = "0.5.2"
+buddy_system_allocator = "0.8.0"
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+
+[build-dependencies]
+cc = "1.0"
+
+[features]
+default = ["configSUPPORT_STATIC_ALLOCATION","configSUPPORT_DYNAMIC_ALLOCATION","INCLUDE_vTaskSuspend"]
+configSUPPORT_STATIC_ALLOCATION = []
+configSUPPORT_DYNAMIC_ALLOCATION=[]
+INCLUDE_vTaskSuspend=[]

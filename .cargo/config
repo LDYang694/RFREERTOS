@@ -1,0 +1,9 @@
+[target.riscv64gc-unknown-none-elf]
+rustflags = [
+    "-C", "link-arg=-Tsrc/link.ld"
+]
+linker = "/home/chenyy/Downloads/XuanTie/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.6/bin/riscv64-unknown-elf-ld"
+ar = "/home/chenyy/Downloads/XuanTie/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.6/bin/riscv64-unknown-elf-gcc-ar"
+
+[build]
+target = "riscv64gc-unknown-none-elf"
