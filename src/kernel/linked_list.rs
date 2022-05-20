@@ -8,8 +8,10 @@ extern crate alloc;
 use crate::tasks::*;
 // use std::rc::Weak;
 //use std::boxed::Box;
+use crate::kernel::riscv_virt::*;
 use crate::portable::*;
 use crate::portmacro::*;
+use alloc::format;
 use alloc::sync::{Arc, Weak};
 use core::clone::Clone;
 use core::default::Default;
@@ -169,6 +171,17 @@ pub fn list_item_get_owner(item: &ListItemWeakLink) -> ListItemOwnerWeakLink {
     owner
 }
 
+/// get owner of item <br>
+/// owner is saved as C ptr
+pub fn list_item_get_c_owner(item: &ListItemWeakLink) -> Option<TaskHandle_t> {
+    let owner = item.upgrade().unwrap().read().pv_owner_c;
+    if owner == 0 {
+        return None;
+    } else {
+        return Some(unsafe { Arc::from_raw(owner as *const RwLock<tskTaskControlBlock>) });
+    }
+}
+
 /// get num of item in list(Weak)
 pub fn list_get_num_items(px_list: &ListWeakLink) -> UBaseType {
     let num = (px_list.upgrade().unwrap()).read().ux_number_of_items;
@@ -243,10 +256,18 @@ impl ListT {
         } else {
             let mut iterator = Arc::downgrade(&self.x_list_end);
             loop {
+                /*if iterator.ptr_eq(&Arc::downgrade(&self.x_list_end)) {
+                    print("end!");
+                } else {
+                    print("not end");
+                }*/
                 iterator = list_item_get_next(&iterator);
                 let value = list_item_get_value(&Weak::upgrade(&iterator).unwrap());
-                //println!(" insert find value {}", value);
-                if value > x_value_of_insertion {
+                /*print(&format!(
+                    "val:{}/{} {}",
+                    value, x_value_of_insertion, &self.ux_number_of_items
+                ));*/
+                if value >= x_value_of_insertion {
                     break;
                 }
             }

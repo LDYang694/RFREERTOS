@@ -258,7 +258,10 @@ pub fn prvAddNewTaskToReadyList(pxNewTCB: TCB_t_link) {
 /// add task to ready list
 pub fn prvAddTaskToReadyList(pxNewTCB: TCB_t_link) {
     let uxPriority = pxNewTCB.read().uxPriority;
-    let s = format!("{:X}", pxNewTCB.read().xStateListItem.read().x_item_value);
+    let s = format!(
+        "add to readylist{:X}",
+        pxNewTCB.read().xStateListItem.read().x_item_value
+    );
     print(&s);
 
     taskRECORD_READY_PRIORITY(uxPriority);
@@ -583,10 +586,26 @@ pub extern "C" fn xTaskIncrementTick() {
                             list_get_head_entry(&DELAYED_TASK_LIST).upgrade().unwrap();
                         if head.read().x_item_value <= xTickCount {
                             ux_list_remove(Arc::downgrade(&head));
-                            let owner_: ListItemOwnerWeakLink =
-                                list_item_get_owner(&Arc::downgrade(&head));
-                            let prio: UBaseType = owner_.upgrade().unwrap().read().uxPriority;
+                            let owner: TaskHandle_t;
+                            let temp = list_item_get_c_owner(&Arc::downgrade(&head));
+                            let from_c: bool;
+                            match temp {
+                                Some(x) => {
+                                    owner = x;
+                                    from_c = true;
+                                }
+                                None => {
+                                    owner = list_item_get_owner(&Arc::downgrade(&head))
+                                        .upgrade()
+                                        .unwrap();
+                                    from_c = false;
+                                }
+                            }
+                            let prio: UBaseType = owner.read().uxPriority;
                             v_list_insert_end(&READY_TASK_LISTS[prio as usize], head);
+                            if from_c {
+                                let temp_ = Arc::into_raw(owner);
+                            }
                         } else {
                             xNextTaskUnblockTime = head.read().x_item_value;
                             break;
@@ -925,7 +944,6 @@ pub fn vTaskResumeAll() -> bool {
 
 /// remove first task from event list, and insert the task to ready list
 pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
-    vSendString("in!");
     let pxUnblockedTCB: TaskHandle_t;
     let from_c: bool;
     let test = list_get_c_owner_of_head_entry(pxEventList);
@@ -946,16 +964,15 @@ pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
         uxSchedulerSuspended_ = uxSchedulerSuspended;
     }
     ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xEventListItem));
-    vSendString("ready");
     if uxSchedulerSuspended_ == 0 {
-        vSendString("no suspend");
+        //vSendString("no suspend");
         ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem));
         prvAddTaskToReadyList(pxUnblockedTCB.clone());
         if cfg!(feature = "configUSE_TICKLESS_IDLE") {
             prvResetNextTaskUnblockTime();
         }
     } else {
-        vSendString("suspend");
+        //vSendString("suspend");
         v_list_insert_end(
             &PENDING_READY_LIST,
             pxUnblockedTCB.read().xEventListItem.clone(),

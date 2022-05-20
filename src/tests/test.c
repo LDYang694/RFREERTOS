@@ -1,5 +1,6 @@
 #include "../ffi/queue.h"
 #include "../ffi/tasks.h"
+#include "../ffi/semphr.h"
 #include "tests.h"
 #include "test_queue.h"
 #include <setjmp.h>
@@ -16,15 +17,14 @@ void task_func1()
     
     while(true)
     {
-        //taskENTER_CRITICAL();
         result=xQueueSend(qhandle,0,10);
+        //result=xSemaphoreGive(qhandle);
         if(result==1){
             rustPrint("send success!");
         }
         else{
             rustPrint("send fail!");
         }
-        //taskEXIT_CRITICAL();
     }
 }
 
@@ -33,15 +33,14 @@ void task_func2(){
     rustPrint("func2");
     while(true){
 
-        //taskENTER_CRITICAL();
         result=xQueueReceive(qhandle,0,10);
+        //result=xSemaphoreTake(qhandle,10);
         if(result==1){
             rustPrint("recv success!");
         }
         else{
             rustPrint("recv fail!");
         }
-        //taskEXIT_CRITICAL();
 
     }
 }
@@ -55,6 +54,7 @@ int test_(){
     TaskHandle_t handle1=xTaskCreateStatic(task_func1,name1,0x10000,0,stack1,buffer1,3);
     TaskHandle_t handle2=xTaskCreateStatic(task_func2,name2,0x10000,0,stack2,buffer2,3);
     qhandle=xQueueCreate(2,0);
+    //qhandle=xSemaphoreCreateBinary();
     //vTaskStartScheduler();
     
     return recv;

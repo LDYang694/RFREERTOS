@@ -1,9 +1,12 @@
+use crate::ffi::queue::*;
 use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
 use crate::kernel::riscv_virt::*;
 use crate::kernel::semphr::*;
-use crate::{vSemaphoreDelete, xSemaphoreCreateBinary, xSemaphoreGive, xSemaphoreTake};
+use crate::kernel::tasks::*;
+use crate::{portENTER_CRITICAL, portEXIT_CRITICAL, taskENTER_CRITICAL};
+use crate::{vSemaphoreDelete, xSemaphoreCreateBinary};
 use alloc::sync::{Arc, Weak};
 use alloc::{fmt::format, format};
 use core::ffi::c_void;
@@ -11,6 +14,7 @@ use core::mem::forget;
 use core::mem::size_of;
 use spin::RwLock;
 
+use super::queue::xQueueGenericSendToC;
 use super::queue::QueueHandle_c;
 
 #[no_mangle]
@@ -36,18 +40,14 @@ pub extern "C" fn vSemaphoreDeleteToC(xQueue: QueueHandle_c) {
 }
 
 #[no_mangle]
-pub extern "C" fn xSemaphoreGiveToC(xQueue: QueueHandle_c) -> BaseType {
-    let temp = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xSemaphoreGive!(temp.clone());
-    let xQueue_ = Arc::into_raw(temp);
+pub extern "C" fn xSemaphoreGiveToC(mut xQueue: QueueHandle_c) -> BaseType {
+    let xReturn = xQueueGenericSendToC(xQueue, 0, semGIVE_BLOCK_TIME, queueSEND_TO_BACK);
     xReturn
 }
 
 #[no_mangle]
-pub extern "C" fn xSemaphoreTakeToC(xQueue: QueueHandle_c, xBlockTime: UBaseType) -> BaseType {
-    let temp = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xSemaphoreTake!(temp.clone(), xBlockTime);
-    let xQueue_ = Arc::into_raw(temp);
+pub extern "C" fn xSemaphoreTakeToC(mut xQueue: QueueHandle_c, xBlockTime: UBaseType) -> BaseType {
+    let xReturn = xQueueReceiveToC(xQueue, 0, xBlockTime);
     xReturn
 }
 
@@ -59,7 +59,9 @@ pub extern "C" fn xQueueCreateMutexToC(ucQueueType: u8) -> QueueHandle_c {
 
 #[no_mangle]
 pub extern "C" fn prvInitialiseMutexToC(xQueue: QueueHandle_c) {
+    taskENTER_CRITICAL!();
     let temp = unsafe { Arc::from_raw(xQueue) };
     prvInitialiseMutex(temp.clone());
     let xQueue_ = Arc::into_raw(temp);
+    portEXIT_CRITICAL!();
 }

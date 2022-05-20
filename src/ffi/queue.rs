@@ -1,8 +1,5 @@
-#[macro_use]
 use crate::kernel::linked_list::*;
-#[macro_use]
 use crate::kernel::portable::*;
-#[macro_use]
 use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
 use crate::kernel::riscv_virt::*;
@@ -83,6 +80,7 @@ pub extern "C" fn xQueueReceiveToC(
     xReturn
 } */
 
+/*
 #[no_mangle]
 pub extern "C" fn xQueuePeekToC(
     xQueue: *mut RwLock<QueueDefinition>,
@@ -93,7 +91,7 @@ pub extern "C" fn xQueuePeekToC(
     let xReturn = xQueuePeek(temp.clone(), pvBuffer, xTicksToWait);
     let xQueue_ = Arc::into_raw(temp);
     xReturn
-}
+}*/
 
 #[no_mangle]
 pub extern "C" fn vQueueDeleteToC(xQueue: *mut RwLock<QueueDefinition>) {
@@ -151,7 +149,6 @@ pub fn xQueueGenericSendToC(
     let mut xTimeout: TimeOut = Default::default();
     loop {
         taskENTER_CRITICAL!();
-        vSendString("sending");
         let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
 
         {
@@ -238,7 +235,6 @@ pub extern "C" fn xQueueReceiveToC(
     //let xQueue = &mut (*xq.write());
     loop {
         taskENTER_CRITICAL!();
-        vSendString("receiving");
         let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
         {
             let uxMessagesWaiting = xQueue_.read().uxMessagesWaiting;
@@ -348,6 +344,91 @@ pub extern "C" fn xQueueReceiveToC(
             } else {
                 xQueue = Arc::into_raw(xQueue_);
                 vTaskResumeAll();
+            }
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn xQueuePeekToC(
+    mut xQueue: QueueHandle_c,
+    pvBuffer: usize,
+    mut xTicksToWait: TickType,
+) -> BaseType {
+    let mut xEntryTimeSet: BaseType = pdFALSE;
+    let mut xTimeOut: TimeOut = Default::default();
+    let mut pcOriginalReadPosition: usize = 0;
+
+    loop {
+        taskENTER_CRITICAL!();
+        let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
+        {
+            let uxMessagesWaiting = xQueue_.read().uxMessagesWaiting;
+            if uxMessagesWaiting > 0 {
+                //TODO:
+                pcOriginalReadPosition = xQueue_.read().pcReadFrom;
+                prvCopyDataFromQueue(&mut xQueue_.write(), pvBuffer);
+                //different from queuereceive
+                // xQueue.uxMessagesWaiting = uxMessagesWaiting - 1;
+                /* The data is not being removed, so reset the read pointer. */
+                xQueue_.write().pcReadFrom = pcOriginalReadPosition;
+                if list_is_empty(&xQueue_.write().xTasksWaitingToReceive) == false {
+                    if (xTaskRemoveFromEventList(&xQueue_.write().xTasksWaitingToReceive) != false)
+                    {
+                        queueYIELD_IF_USING_PREEMPTION!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                } else {
+                    //list empty
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+                xQueue = Arc::into_raw(xQueue_);
+                taskEXIT_CRITICAL!();
+                return pdPASS;
+            } else {
+                if xTicksToWait == 0 {
+                    xQueue = Arc::into_raw(xQueue_);
+                    taskEXIT_CRITICAL!();
+                    return errQUEUE_EMPTY;
+                } else if xEntryTimeSet == pdFALSE {
+                    vTaskInternalSetTimeOutState(&mut xTimeOut);
+                    xEntryTimeSet = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            }
+        }
+
+        vTaskSuspendAll();
+        taskEXIT_CRITICAL!();
+
+        prvLockQueue!(xQueue_.clone());
+        if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
+            if (prvIsQueueEmpty(xQueue_.clone()) != false) {
+                vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToReceive, xTicksToWait);
+
+                prvUnlockQueue(xQueue_.clone());
+                xQueue = Arc::into_raw(xQueue_);
+                if (vTaskResumeAll() == false) {
+                    portYIELD_WITHIN_API!();
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                prvUnlockQueue(xQueue_.clone());
+                xQueue = Arc::into_raw(xQueue_);
+                vTaskResumeAll();
+            }
+        } else {
+            prvUnlockQueue(xQueue_.clone());
+            let empty = prvIsQueueEmpty(xQueue_.clone());
+            xQueue = Arc::into_raw(xQueue_);
+            vTaskResumeAll();
+            if empty != false {
+                return errQUEUE_EMPTY;
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
             }
         }
     }
