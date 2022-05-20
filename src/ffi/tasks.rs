@@ -5,6 +5,7 @@ use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
 use crate::kernel::riscv_virt::*;
 use crate::kernel::tasks::*;
+use crate::{portENTER_CRITICAL, portEXIT_CRITICAL};
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::{fmt::format, format};
@@ -36,7 +37,7 @@ pub extern "C" fn xTaskCreateStaticToC(
     uxPriority: UBaseType,
 ) -> TaskHandle_c {
     let name = get_str_from_cchar(pcName);
-    let handle: Option<TaskHandle_t> = xTaskCreateStatic(
+    let handle: TaskHandle_t = xTaskCreateStatic(
         pxTaskCode,
         &name,
         ulStackDepth,
@@ -44,8 +45,14 @@ pub extern "C" fn xTaskCreateStaticToC(
         Some(puxStackBuffer),
         unsafe { Some(Arc::from_raw(pxTaskBuffer)) },
         uxPriority,
-    );
-    Arc::into_raw(handle.unwrap())
+    )
+    .unwrap();
+    handle.write().build_from_c = true;
+    let owner_c: TaskHandle_c = Arc::as_ptr(&handle);
+    handle.write().xEventListItem.write().pv_owner_c = owner_c as usize;
+    handle.write().xStateListItem.write().pv_owner_c = owner_c as usize;
+    let xReturn = Arc::into_raw(handle);
+    xReturn
 }
 
 #[no_mangle]
@@ -58,15 +65,6 @@ pub extern "C" fn xTaskCreateToC(
     pxCreatedTask: TaskHandle_c,
 ) -> BaseType {
     let name = get_str_from_cchar(pcName);
-    print(&name);
-    /*unsafe {
-        let val = RwLock::new(tskTaskControlBlock::default());
-        memcpy(
-            pxCreatedTask as *mut c_void,
-            &val as TaskHandle_c as *const c_void,
-            size_of::<RwLock<tskTaskControlBlock>>(),
-        );
-    }*/
     let temp = unsafe { Arc::from_raw(pxCreatedTask) };
 
     let xReturn: BaseType = xTaskCreate(
@@ -77,8 +75,11 @@ pub extern "C" fn xTaskCreateToC(
         uxPriority,
         Some(temp.clone()),
     );
+    temp.write().build_from_c = true;
+    let owner_c: TaskHandle_c = Arc::as_ptr(&temp);
+    temp.write().xEventListItem.write().pv_owner_c = owner_c as usize;
+    temp.write().xStateListItem.write().pv_owner_c = owner_c as usize;
     let pxCreatedTask_ = Arc::into_raw(temp);
-    print("create complete");
     xReturn
 }
 
@@ -102,4 +103,14 @@ pub extern "C" fn vTaskResumeToC(xTaskToResume_: TaskHandle_c) {
         vTaskSuspend(temp.clone());
         let xTaskToResume = Arc::into_raw(temp.unwrap());
     }
+}
+
+#[no_mangle]
+pub extern "C" fn taskENTER_CRITICAL_ToC() {
+    portENTER_CRITICAL!();
+}
+
+#[no_mangle]
+pub extern "C" fn taskEXIT_CRITICAL_ToC() {
+    portEXIT_CRITICAL!();
 }

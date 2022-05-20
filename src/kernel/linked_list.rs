@@ -39,6 +39,7 @@ pub struct XListItem {
     pub pv_owner: ListItemOwnerWeakLink, /* 指向拥有该节点的内核对象，通常是 TCB */
     /// Point to the linked list where the node is located
     pub px_container: ListWeakLink, /* 指向该节点所在的链表 */
+    pub pv_owner_c: usize,
 }
 pub type ListItemT = XListItem;
 impl XListItem {
@@ -49,6 +50,7 @@ impl XListItem {
             px_previous: Default::default(),
             pv_owner: Default::default(),
             px_container: Default::default(),
+            pv_owner_c: Default::default(),
         }
     }
 }
@@ -61,6 +63,7 @@ impl Default for ListItemT {
             px_previous: Default::default(),
             pv_owner: Default::default(),
             px_container: Default::default(),
+            pv_owner_c: Default::default(),
         }
     }
 }
@@ -208,6 +211,14 @@ pub fn list_get_owner_of_head_entry(px_list: &ListRealLink) -> ListItemOwnerWeak
     owner
 }
 
+/// get owner of head entry in list <br>
+/// owner is saved as C ptr
+/// do not alter current index
+pub fn list_get_c_owner_of_head_entry(px_list: &ListRealLink) -> Option<TaskHandle_t> {
+    let ret = px_list.write().get_c_owner_of_head_entry();
+    ret
+}
+
 impl ListT {
     /// insert target item into end of list
     pub fn insert_end(&mut self, px_new_list_item: ListItemWeakLink) {
@@ -273,6 +284,17 @@ impl ListT {
         let target: &ListItemWeakLink = &(end.px_next);
 
         list_item_get_owner(target)
+    }
+
+    pub fn get_c_owner_of_head_entry(&mut self) -> Option<TaskHandle_t> {
+        let end = self.x_list_end.read();
+        let target: ListItemLink = end.px_next.upgrade().unwrap();
+        let owner = target.read().pv_owner_c;
+        if owner == 0 {
+            return None;
+        } else {
+            return Some(unsafe { Arc::from_raw(owner as *const RwLock<tskTaskControlBlock>) });
+        }
     }
 }
 

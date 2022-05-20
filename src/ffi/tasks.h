@@ -6,6 +6,8 @@
 #define xTaskCreate xTaskCreateToC
 #define vTaskSuspend vTaskSuspendToC
 #define vTaskResume vTaskResumeToC
+#define taskENTER_CRITICAL taskENTER_CRITICAL_ToC
+#define taskEXIT_CRITICAL taskEXIT_CRITICAL_ToC
 
 void vTaskStartScheduler();
 void* get_task_handle();
@@ -18,3 +20,6 @@ void xTaskCreateToC(unsigned int pxTaskCode,char* pcName,unsigned int ulStackDep
 
 void vTaskSuspendToC(TaskHandle_t xTaskToSuspend_);
 void vTaskResumeToC(TaskHandle_t xTaskToResume_);
+
+void taskENTER_CRITICAL_ToC();
+void taskEXIT_CRITICAL_ToC();

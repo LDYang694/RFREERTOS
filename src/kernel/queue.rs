@@ -84,14 +84,14 @@ pub struct QueueDefinition {
     /// queue tail pointer
     pcWriteTo: usize,
     ///
-    pcReadFrom: usize,
+    pub pcReadFrom: usize,
     pub cRxLock: i8,
     pub cTxLock: i8,
     pub xTasksWaitingToSend: ListRealLink,
     pub xTasksWaitingToReceive: ListRealLink,
     pub uxMessagesWaiting: UBaseType,
-    uxLength: UBaseType,
-    uxItemSize: UBaseType,
+    pub uxLength: UBaseType,
+    pub uxItemSize: UBaseType,
     pub xMutexHolder: Option<TaskHandle_t>,
     pub uxRecursiveCallCount: UBaseType,
     pub ucQueueType: u8,
@@ -524,8 +524,7 @@ pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn xQueueReceive(
+pub fn xQueueReceive(
     xQueue: QueueHandle_t,
     pvBuffer: usize,
     mut xTicksToWait: TickType,

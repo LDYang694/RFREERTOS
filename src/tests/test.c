@@ -7,24 +7,54 @@
 int shouldAbortOnAssertion = false;   
 volatile CEXCEPTION_FRAME_T CExceptionFrames[CEXCEPTION_NUM_ID] = {{ 0 }};
 
-void task_func()
+QueueHandle_t qhandle;
+
+void task_func1()
 {
-    rustPrint("rustprint");
+    int result;
+    rustPrint("func1");
+    
     while(true)
     {
+        //taskENTER_CRITICAL();
+        result=xQueueSend(qhandle,0,10);
+        if(result==1){
+            rustPrint("send success!");
+        }
+        else{
+            rustPrint("send fail!");
+        }
+        //taskEXIT_CRITICAL();
+    }
+}
+
+void task_func2(){
+    int result;
+    rustPrint("func2");
+    while(true){
+
+        //taskENTER_CRITICAL();
+        result=xQueueReceive(qhandle,0,10);
+        if(result==1){
+            rustPrint("recv success!");
+        }
+        else{
+            rustPrint("recv fail!");
+        }
+        //taskEXIT_CRITICAL();
 
     }
 }
 
 int test_(){
     int temp=0xff,recv=0;
-    char name[20]="task_func",*stack=rustMalloc(0x10000);
-    TaskHandle_t buffer=get_task_handle();
-    TaskHandle_t handle=xTaskCreateStatic(task_func,name,0x10000,0,stack,buffer,3);
-    if(buffer==handle)
-        rustPrint("true");
-    else
-        rustPrint("false");
+    char name1[20]="task_func1",*stack1=rustMalloc(0x10000);
+    char name2[20]="task_func1",*stack2=rustMalloc(0x10000);
+    TaskHandle_t buffer1=get_task_handle();
+    TaskHandle_t buffer2=get_task_handle();
+    TaskHandle_t handle1=xTaskCreateStatic(task_func1,name1,0x10000,0,stack1,buffer1,3);
+    TaskHandle_t handle2=xTaskCreateStatic(task_func2,name2,0x10000,0,stack2,buffer2,3);
+    qhandle=xQueueCreate(2,0);
     //vTaskStartScheduler();
     
     return recv;

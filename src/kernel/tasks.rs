@@ -109,6 +109,8 @@ pub struct tskTaskControlBlock {
     pub uxPriority: UBaseType,
     pub uxMutexesHeld: UBaseType,
     pub uxBasePriority: UBaseType,
+    /// mark for ffi
+    pub build_from_c: bool,
 }
 impl Default for tskTaskControlBlock {
     fn default() -> Self {
@@ -122,6 +124,7 @@ impl Default for tskTaskControlBlock {
             uxPriority: 0,
             uxBasePriority: 0,
             uxMutexesHeld: 0,
+            build_from_c: false,
         }
     }
 }
@@ -923,7 +926,20 @@ pub fn vTaskResumeAll() -> bool {
 /// remove first task from event list, and insert the task to ready list
 pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
     vSendString("in!");
-    let pxUnblockedTCB = list_get_owner_of_head_entry(pxEventList).upgrade().unwrap();
+    let pxUnblockedTCB: TaskHandle_t;
+    let from_c: bool;
+    let test = list_get_c_owner_of_head_entry(pxEventList);
+    match test {
+        Some(x) => {
+            pxUnblockedTCB = x;
+            from_c = true;
+        }
+        None => {
+            pxUnblockedTCB = list_get_owner_of_head_entry(pxEventList).upgrade().unwrap();
+            from_c = false;
+        }
+    }
+
     let xReturn: bool;
     let uxSchedulerSuspended_: UBaseType;
     unsafe {
@@ -952,6 +968,9 @@ pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
         }
     } else {
         xReturn = false;
+    }
+    if from_c {
+        let temp = Arc::into_raw(pxUnblockedTCB);
     }
     xReturn
 }

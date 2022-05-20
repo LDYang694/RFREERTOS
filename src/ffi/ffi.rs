@@ -2,9 +2,11 @@ use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
 use crate::kernel::riscv_virt::*;
+use crate::portYIELD;
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::{fmt::format, format};
+use core::arch::asm;
 use core::ffi::c_void;
 use core::mem::forget;
 use core::mem::size_of;
@@ -45,4 +47,9 @@ pub extern "C" fn rustMalloc(size_: usize) -> usize {
         stack_ptr = alloc::alloc::alloc(layout);
     }
     stack_ptr as usize
+}
+
+#[no_mangle]
+pub extern "C" fn rustYield() {
+    portYIELD!();
 }
