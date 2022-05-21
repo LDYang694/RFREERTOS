@@ -1058,7 +1058,7 @@ pub fn xTaskCheckForTimeOut(pxTimeOut: &mut TimeOut, pxTicksToWait: &mut TickTyp
 
 /// inherit mutex holder task's priority to current task's priority <br>
 /// return if the inherit was successful
-pub fn xTaskPriorityInherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
+pub fn xTaskPriorityInherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType {
     let mut xReturn: BaseType = pdFALSE;
     match pxMutexHolder {
         Some(pxMutexHolder_) => {
@@ -1102,7 +1102,7 @@ pub fn xTaskPriorityInherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
 /// disinherit priority only when no other mutex are held <br>
 /// do not change mutex held number
 /// return if disinherit was successful
-pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<TaskHandle_t>) -> BaseType {
+pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType {
     let mut xReturn: BaseType = pdFALSE;
     match pxMutexHolder {
         Some(pxMutexHolder_) => {
@@ -1148,7 +1148,7 @@ pub fn pvTaskIncrementMutexHeldCount() -> Option<TaskHandle_t> {
 /// disinherit priority only when no other mutex are held <br>
 /// do not change mutex held number
 pub fn vTaskPriorityDisinheritAfterTimeout(
-    pxMutexHolder: Option<TaskHandle_t>,
+    pxMutexHolder: Option<&TaskHandle_t>,
     uxHighestPriorityWaitingTask: UBaseType,
 ) {
     let uxPriorityToUse: UBaseType;

@@ -9,14 +9,11 @@ mod ffi;
 mod kernel;
 mod tests;
 extern crate alloc;
-use crate::tests::test_list::*;
-use crate::tests::test_queue::*;
+use alloc::format;
 use alloc::sync::Arc;
-use alloc::{fmt::format, format};
 use core::arch::asm;
-use core::{borrow::Borrow, ffi::c_void, mem::size_of};
-use kernel::projdefs::{pdFAIL, pdFALSE, pdPASS, pdTRUE};
-use kernel::queue::QueueDefinition;
+use core::ffi::c_void;
+use kernel::projdefs::{pdFALSE, pdTRUE};
 use kernel::{
     config::*, event_group::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*,
     riscv_virt::*, semphr::*, tasks::*, *,
@@ -97,7 +94,6 @@ pub fn main_new() {
     print(&s);
     //vTaskStartScheduler();
     loop {}
-    test_main_queue();
 }
 
 pub fn testfunc1() {

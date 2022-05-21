@@ -61,7 +61,7 @@ pub extern "C" fn xQueueCreateMutexToC(ucQueueType: u8) -> QueueHandle_c {
 pub extern "C" fn prvInitialiseMutexToC(xQueue: QueueHandle_c) {
     taskENTER_CRITICAL!();
     let temp = unsafe { Arc::from_raw(xQueue) };
-    prvInitialiseMutex(temp.clone());
+    prvInitialiseMutex(&temp);
     let xQueue_ = Arc::into_raw(temp);
     portEXIT_CRITICAL!();
 }

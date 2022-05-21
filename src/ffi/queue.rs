@@ -36,7 +36,6 @@ pub extern "C" fn xQueueCreateToC(
 
 #[no_mangle]
 pub extern "C" fn uxQueueMessagesWaiting(xQueue: QueueHandle_c) -> UBaseType {
-    //forget(xQueue.clone());
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
     let ret = temp.read().uxMessagesWaiting;
     let xQueue_ = Arc::into_raw(temp);
@@ -65,40 +64,12 @@ pub extern "C" fn xQueueSendToC(
     xReturn
 }
 
-/*
 #[no_mangle]
-pub extern "C" fn xQueueReceiveToC(
-    xQueue: *mut RwLock<QueueDefinition>,
-    pvBuffer: usize,
-    mut xTicksToWait: TickType,
-) -> BaseType {
-    portENTER_CRITICAL!();
-    let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xQueueReceive(temp.clone(), pvBuffer, xTicksToWait);
-    let xQueue_ = Arc::into_raw(temp);
-    portEXIT_CRITICAL!();
-    xReturn
-} */
-
-/*
-#[no_mangle]
-pub extern "C" fn xQueuePeekToC(
-    xQueue: *mut RwLock<QueueDefinition>,
-    pvBuffer: usize,
-    mut xTicksToWait: TickType,
-) -> BaseType {
-    let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xQueuePeek(temp.clone(), pvBuffer, xTicksToWait);
-    let xQueue_ = Arc::into_raw(temp);
-    xReturn
-}*/
-
-#[no_mangle]
-pub extern "C" fn vQueueDeleteToC(xQueue: *mut RwLock<QueueDefinition>) {
+pub extern "C" fn vQueueDeleteToC(xQueue: QueueHandle_c) {
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
     //vQueueDelete(temp); todo:fix dealloc bug
 }
-
+/*
 #[no_mangle]
 pub extern "C" fn xQueueSendFromISRToC(
     xQueue: *mut RwLock<QueueDefinition>,
@@ -136,7 +107,7 @@ pub extern "C" fn xQueuePeekFromISRToC(
     let xReturn = xQueuePeekFromISR(temp.clone(), pvBuffer);
     let xQueue_ = Arc::into_raw(temp);
     xReturn
-}
+}*/
 
 pub fn xQueueGenericSendToC(
     mut xQueue: QueueHandle_c,
@@ -198,20 +169,20 @@ pub fn xQueueGenericSendToC(
 
         prvLockQueue!(xQueue_.clone());
         if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
-            if prvIsQueueFull(xQueue_.clone()) == true {
+            if prvIsQueueFull(&xQueue_) == true {
                 vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToSend, xTicksToWait);
-                prvUnlockQueue(xQueue_.clone());
+                prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
                 if vTaskResumeAll() == false {
                     portYIELD_WITHIN_API!();
                 }
             } else {
-                prvUnlockQueue(xQueue_.clone());
+                prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
                 vTaskResumeAll();
             }
         } else {
-            prvUnlockQueue(xQueue_.clone());
+            prvUnlockQueue(&xQueue_);
             xQueue = Arc::into_raw(xQueue_);
             vTaskResumeAll();
             return errQUEUE_FULL;
@@ -287,7 +258,7 @@ pub extern "C" fn xQueueReceiveToC(
 
         prvLockQueue!(xQueue_.clone());
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
-            if (prvIsQueueEmpty(xQueue_.clone()) != false) {
+            if (prvIsQueueEmpty(&xQueue_) != false) {
                 vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToReceive, xTicksToWait);
 
                 // /* Unlocking the queue means queue events can effect the
@@ -302,14 +273,14 @@ pub extern "C" fn xQueueReceiveToC(
                         taskENTER_CRITICAL!();
                         print("inheriting");
                         xInheritanceOccurred =
-                            xTaskPriorityInherit(xQueue_.write().xMutexHolder.clone());
+                            xTaskPriorityInherit(xQueue_.write().xMutexHolder.as_ref());
                         taskEXIT_CRITICAL!();
                     } else {
                         mtCOVERAGE_TEST_MARKER!();
                     }
                 }
 
-                prvUnlockQueue(xQueue_.clone());
+                prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
                 if (vTaskResumeAll() == false) {
                     portYIELD_WITHIN_API!();
@@ -317,21 +288,21 @@ pub extern "C" fn xQueueReceiveToC(
                     mtCOVERAGE_TEST_MARKER!();
                 }
             } else {
-                prvUnlockQueue(xQueue_.clone());
+                prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
                 vTaskResumeAll();
             }
         } else {
-            prvUnlockQueue(xQueue_.clone());
+            prvUnlockQueue(&xQueue_);
 
-            if prvIsQueueEmpty(xQueue_.clone()) != false {
+            if prvIsQueueEmpty(&xQueue_) != false {
                 if cfg!(feature = "configUSE_MUTEXES") {
                     if xInheritanceOccurred != pdFALSE {
                         taskENTER_CRITICAL!();
                         let uxHighestWaitingPriority =
-                            prvGetDisinheritPriorityAfterTimeout(xQueue_.clone());
+                            prvGetDisinheritPriorityAfterTimeout(&xQueue_);
                         vTaskPriorityDisinheritAfterTimeout(
-                            xQueue_.write().xMutexHolder.clone(),
+                            xQueue_.write().xMutexHolder.as_ref(),
                             uxHighestWaitingPriority,
                         );
                         taskEXIT_CRITICAL!();
@@ -404,10 +375,10 @@ pub extern "C" fn xQueuePeekToC(
 
         prvLockQueue!(xQueue_.clone());
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
-            if (prvIsQueueEmpty(xQueue_.clone()) != false) {
+            if (prvIsQueueEmpty(&xQueue_) != false) {
                 vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToReceive, xTicksToWait);
 
-                prvUnlockQueue(xQueue_.clone());
+                prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
                 if (vTaskResumeAll() == false) {
                     portYIELD_WITHIN_API!();
@@ -415,13 +386,13 @@ pub extern "C" fn xQueuePeekToC(
                     mtCOVERAGE_TEST_MARKER!();
                 }
             } else {
-                prvUnlockQueue(xQueue_.clone());
+                prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
                 vTaskResumeAll();
             }
         } else {
-            prvUnlockQueue(xQueue_.clone());
-            let empty = prvIsQueueEmpty(xQueue_.clone());
+            prvUnlockQueue(&xQueue_);
+            let empty = prvIsQueueEmpty(&xQueue_);
             xQueue = Arc::into_raw(xQueue_);
             vTaskResumeAll();
             if empty != false {

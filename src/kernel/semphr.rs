@@ -61,11 +61,11 @@ pub fn xQueueCreateMutex(ucQueueType: u8) -> QueueHandle_t {
         0,
         ucQueueType,
     )));
-    prvInitialiseMutex(queue.clone());
+    prvInitialiseMutex(&queue);
     queue
 }
 
-pub fn prvInitialiseMutex(pxNewQueue: QueueHandle_t) {
+pub fn prvInitialiseMutex(pxNewQueue: &QueueHandle_t) {
     pxNewQueue.write().xMutexHolder = None;
     pxNewQueue.write().uxRecursiveCallCount = 0;
     xQueueGenericSend(pxNewQueue, 0, 0, queueSEND_TO_BACK);

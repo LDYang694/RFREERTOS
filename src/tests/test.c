@@ -94,11 +94,11 @@ int queue_test_func()
 int test_(){
     int temp=0xff,recv=0;
     char name1[20]="task_func1",*stack1=rustMalloc(0x10000);
-    //char name2[20]="task_func1",*stack2=rustMalloc(0x10000);
+    char name2[20]="task_func2",*stack2=rustMalloc(0x10000);
     TaskHandle_t buffer1=get_task_handle();
-    //TaskHandle_t buffer2=get_task_handle();
-    TaskHandle_t handle1=xTaskCreateStatic(queue_test_func,name1,0x10000,0,stack1,buffer1,3);
-    //TaskHandle_t handle2=xTaskCreateStatic(task_func2,name2,0x10000,0,stack2,buffer2,3);
+    TaskHandle_t buffer2=get_task_handle();
+    TaskHandle_t handle1=xTaskCreateStatic(task_func1,name1,0x10000,0,stack1,buffer1,3);
+    TaskHandle_t handle2=xTaskCreateStatic(task_func2,name2,0x10000,0,stack2,buffer2,3);
     qhandle=xQueueCreate(2,0);
     //qhandle=xSemaphoreCreateBinary();
     
