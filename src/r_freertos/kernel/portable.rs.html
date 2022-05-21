@@ -202,17 +202,17 @@
 </pre><pre class="rust"><code><span class="doccomment">//! portable apis</span>
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
+<span class="kw">use</span> <span class="ident">alloc::sync</span>::{<span class="ident">Arc</span>, <span class="ident">Weak</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::kernel::READY_TASK_LISTS</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::kernel</span>::{<span class="ident">TCB1_p</span>, <span class="ident">TCB2_p</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::linked_list</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portDISABLE_INTERRUPTS</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portENABLE_INTERRUPTS</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portmacro</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::riscv_virt</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::tasks</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::kernel::READY_TASK_LISTS</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::kernel</span>::{<span class="ident">TCB1_p</span>, <span class="ident">TCB2_p</span>};
 <span class="kw">use</span> <span class="ident">alloc::format</span>;
-<span class="kw">use</span> <span class="ident">alloc::sync</span>::{<span class="ident">Arc</span>, <span class="ident">Weak</span>};
 <span class="kw">use</span> <span class="ident">core::arch::asm</span>;
 <span class="kw">use</span> <span class="ident">spin::RwLock</span>;
 
@@ -233,10 +233,10 @@
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pullNextTime</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xISRStackTop</span>: <span class="kw-2">*const</span> <span class="ident">StackType</span> <span class="op">=</span> <span class="number">0</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">StackType</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">xISRStackTop</span>: <span class="kw-2">*const</span> <span class="ident">StackType</span><span class="op">=</span> <span class="number">0</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">StackType</span>;
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pullMachineTimerCompareRegister</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pullMachineTimerCompareRegister</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
 
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">pxCurrentTCB_</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">*const</span> <span class="ident">tskTaskControlBlock</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
@@ -245,26 +245,26 @@
 <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">ULL_NEXT_TIME</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="ident">CONFIG_MTIMECMP_BASE_ADDRESS</span>;
 
-<span class="comment">/*
+<span class="comment">/* 
 extern &quot;C&quot; {
     pub static mut : u32;
-
+    
 }*/</span>
 <span class="comment">//todo:safe  global var and pointer</span>
 
 <span class="doccomment">/// get current mtime</span>
-<span class="kw">fn</span> <span class="ident">get_mtime</span>() -&gt; <span class="ident">u64</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">fn</span> <span class="ident">get_mtime</span>()-&gt;<span class="ident">u64</span>{
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span>:<span class="ident">u64</span><span class="op">=</span><span class="number">0</span>;
     <span class="kw">let</span> <span class="ident">pul_time_high</span>: <span class="kw-2">*const</span> <span class="ident">UBaseType</span> <span class="op">=</span> (<span class="ident">CONFIG_MTIME_BASE_ADDRESS</span> <span class="op">+</span> <span class="number">4</span>) <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">UBaseType</span>;
     <span class="kw">let</span> <span class="ident">pul_time_low</span>: <span class="kw-2">*const</span> <span class="ident">UBaseType</span> <span class="op">=</span> <span class="ident">CONFIG_MTIME_BASE_ADDRESS</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">UBaseType</span>;
-    <span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ul_current_time_low</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">pul_time_high</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ul_current_time_high</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">pul_time_low</span>;
-        <span class="ident">result</span> <span class="op">=</span> <span class="ident">ul_current_time_high</span> <span class="kw">as</span> <span class="ident">u64</span>;
-        <span class="ident">result</span> <span class="op">=</span> <span class="ident">result</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">32</span>;
-        <span class="ident">result</span> <span class="op">+</span><span class="op">=</span> (<span class="ident">ul_current_time_low</span> <span class="op">+</span> <span class="ident">uxTimerIncrementsForOneTick</span>) <span class="kw">as</span> <span class="ident">u64</span>;
+    <span class="kw">unsafe</span>{
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ul_current_time_low</span>: <span class="ident">UBaseType</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">pul_time_high</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ul_current_time_high</span>: <span class="ident">UBaseType</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">pul_time_low</span>;
+        <span class="ident">result</span><span class="op">=</span> <span class="ident">ul_current_time_high</span> <span class="kw">as</span> <span class="ident">u64</span>;
+        <span class="ident">result</span><span class="op">=</span><span class="ident">result</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="number">32</span>;
+        <span class="ident">result</span><span class="op">+</span><span class="op">=</span> (<span class="ident">ul_current_time_low</span> <span class="op">+</span> <span class="ident">uxTimerIncrementsForOneTick</span>) <span class="kw">as</span> <span class="ident">u64</span>;
     }
-
+    
     <span class="ident">result</span>
 }
 
@@ -302,7 +302,7 @@ extern &quot;C&quot; {
 <span class="doccomment">/// copy current tcb to pxCurrentTCB for c interface</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">auto_set_currentTcb</span>() {
     <span class="kw">unsafe</span> {
-        <span class="kw">match</span> <span class="ident">get_current_tcb</span>() {
+        <span class="kw">match</span> <span class="ident">get_current_tcb</span>(){
             <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">pxCurrentTCB</span> <span class="op">=</span> <span class="ident">x</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">tskTaskControlBlock</span> <span class="kw">as</span> <span class="ident">u32</span>,
             <span class="prelude-val">None</span> =&gt; <span class="ident">pxCurrentTCB</span> <span class="op">=</span> <span class="number">0</span>,
         }
@@ -332,51 +332,48 @@ extern &quot;C&quot; {
 <span class="doccomment">/// use with auto_set_currentTcb()</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_current_tcb</span>(<span class="ident">tcb</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ListItemOwnerWeakLink</span><span class="op">&gt;</span>) {
     <span class="kw">unsafe</span> {
-        <span class="kw">match</span> <span class="ident">tcb</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
-                <span class="ident">pxCurrentTCB_</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="kw-2">*</span><span class="ident">x</span>.<span class="ident">into_raw</span>()).<span class="ident">read</span>());
+        <span class="kw">match</span> <span class="ident">tcb</span>{
+            <span class="prelude-val">Some</span>(<span class="ident">x</span>)=&gt;{
+                <span class="ident">pxCurrentTCB_</span><span class="op">=</span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="kw-2">*</span><span class="ident">x</span>.<span class="ident">into_raw</span>()).<span class="ident">read</span>());
             }
-            <span class="prelude-val">None</span> =&gt; {
-                <span class="ident">pxCurrentTCB_</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+            <span class="prelude-val">None</span>=&gt;{
+                <span class="ident">pxCurrentTCB_</span><span class="op">=</span><span class="prelude-val">None</span>;
             }
         }
     }
 }
 
 <span class="doccomment">/// get current tcb</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_current_tcb</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="ident">tskTaskControlBlock</span><span class="op">&gt;</span> {
-    <span class="kw">unsafe</span> {
-        <span class="kw">match</span> <span class="ident">pxCurrentTCB_</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">x</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">tskTaskControlBlock</span>)),
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_current_tcb</span>()-&gt;<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="ident">tskTaskControlBlock</span><span class="op">&gt;</span>{
+    <span class="kw">unsafe</span>{
+        <span class="kw">match</span> <span class="ident">pxCurrentTCB_</span>{
+            <span class="prelude-val">Some</span>(<span class="ident">x</span>)=&gt;{
+                <span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">x</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">tskTaskControlBlock</span>))
+            }
+            <span class="prelude-val">None</span>=&gt;{
+                <span class="prelude-val">None</span>
+            }
         }
     }
 }
 
 <span class="doccomment">/// return if target tcb is current tcb</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_current_tcb</span>(<span class="ident">tcb</span>: <span class="ident">ListItemOwnerWeakLink</span>) -&gt; <span class="ident">bool</span> {
-    <span class="kw">unsafe</span> {
-        <span class="kw">match</span> <span class="ident">pxCurrentTCB_</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
-                <span class="kw">let</span> <span class="ident">temp</span>: <span class="kw-2">*const</span> <span class="ident">tskTaskControlBlock</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="kw-2">*</span><span class="ident">tcb</span>.<span class="ident">into_raw</span>()).<span class="ident">read</span>();
-                <span class="ident">temp</span> <span class="op">==</span> <span class="ident">x</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_current_tcb</span>(<span class="ident">tcb</span>: <span class="ident">ListItemOwnerWeakLink</span>)-&gt;<span class="ident">bool</span>{
+    <span class="kw">unsafe</span>{
+        <span class="kw">match</span> <span class="ident">pxCurrentTCB_</span>{
+            <span class="prelude-val">Some</span>(<span class="ident">x</span>)=&gt;{
+                <span class="kw">let</span> <span class="ident">temp</span>:<span class="kw-2">*const</span> <span class="ident">tskTaskControlBlock</span><span class="op">=</span><span class="kw-2">&amp;</span><span class="kw-2">*</span>(<span class="kw-2">*</span><span class="ident">tcb</span>.<span class="ident">into_raw</span>()).<span class="ident">read</span>();
+                <span class="ident">temp</span><span class="op">==</span><span class="ident">x</span>
             }
-            <span class="prelude-val">None</span> =&gt; <span class="bool-val">false</span>,
+            <span class="prelude-val">None</span>=&gt;<span class="bool-val">false</span>
         }
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_current_tcb_raw</span>(<span class="ident">tcb</span>: <span class="kw-2">&amp;mut</span> <span class="ident">tskTaskControlBlock</span>) -&gt; <span class="ident">bool</span> {
-    <span class="kw">unsafe</span> {
-        <span class="kw">match</span> <span class="ident">pxCurrentTCB_</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
-                <span class="kw">let</span> <span class="ident">temp</span>: <span class="kw-2">*const</span> <span class="ident">tskTaskControlBlock</span> <span class="op">=</span> <span class="ident">tcb</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">tskTaskControlBlock</span>;
-                <span class="ident">temp</span> <span class="op">==</span> <span class="ident">x</span>
-            }
-            <span class="prelude-val">None</span> =&gt; <span class="bool-val">false</span>,
-        }
-    }
-}
+
+
+
+
 
 <span class="doccomment">/// switch context</span>
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
@@ -384,15 +381,18 @@ extern &quot;C&quot; {
     <span class="comment">//todo</span>
     <span class="comment">// // print(&quot;vTaskSwitchContext&quot;);</span>
     <span class="comment">//port_disable_interrupts!();</span>
-    <span class="kw">unsafe</span> {
-        <span class="kw">if</span> <span class="ident">uxSchedulerSuspended</span> <span class="op">==</span> <span class="number">0</span> {
-            <span class="ident">xYieldPending</span> <span class="op">=</span> <span class="bool-val">false</span>;
+    <span class="kw">unsafe</span>{
+        <span class="kw">if</span> <span class="ident">uxSchedulerSuspended</span><span class="op">==</span><span class="number">0</span>{
+                <span class="ident">xYieldPending</span><span class="op">=</span><span class="bool-val">false</span>;
             <span class="ident">taskSELECT_HIGHEST_PRIORITY_TASK</span>();
-        } <span class="kw">else</span> {
-            <span class="ident">xYieldPending</span> <span class="op">=</span> <span class="bool-val">true</span>;
+        }
+        <span class="kw">else</span>{
+                <span class="ident">xYieldPending</span><span class="op">=</span><span class="bool-val">true</span>;
         }
     }
+    
+    
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (42e1761c7 2022-05-15)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (e6a4afc3a 2022-05-20)" ></div>
 </body></html>

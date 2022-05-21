@@ -798,69 +798,12 @@
 <span id="791">791</span>
 <span id="792">792</span>
 <span id="793">793</span>
-<span id="794">794</span>
-<span id="795">795</span>
-<span id="796">796</span>
-<span id="797">797</span>
-<span id="798">798</span>
-<span id="799">799</span>
-<span id="800">800</span>
-<span id="801">801</span>
-<span id="802">802</span>
-<span id="803">803</span>
-<span id="804">804</span>
-<span id="805">805</span>
-<span id="806">806</span>
-<span id="807">807</span>
-<span id="808">808</span>
-<span id="809">809</span>
-<span id="810">810</span>
-<span id="811">811</span>
-<span id="812">812</span>
-<span id="813">813</span>
-<span id="814">814</span>
-<span id="815">815</span>
-<span id="816">816</span>
-<span id="817">817</span>
-<span id="818">818</span>
-<span id="819">819</span>
-<span id="820">820</span>
-<span id="821">821</span>
-<span id="822">822</span>
-<span id="823">823</span>
-<span id="824">824</span>
-<span id="825">825</span>
-<span id="826">826</span>
-<span id="827">827</span>
-<span id="828">828</span>
-<span id="829">829</span>
-<span id="830">830</span>
-<span id="831">831</span>
-<span id="832">832</span>
-<span id="833">833</span>
-<span id="834">834</span>
-<span id="835">835</span>
-<span id="836">836</span>
-<span id="837">837</span>
-<span id="838">838</span>
-<span id="839">839</span>
-<span id="840">840</span>
-<span id="841">841</span>
-<span id="842">842</span>
-<span id="843">843</span>
-<span id="844">844</span>
-<span id="845">845</span>
-<span id="846">846</span>
-<span id="847">847</span>
-<span id="848">848</span>
-<span id="849">849</span>
-<span id="850">850</span>
-<span id="851">851</span>
-<span id="852">852</span>
-<span id="853">853</span>
-<span id="854">854</span>
-<span id="855">855</span>
-</pre><pre class="rust"><code><span class="doccomment">//! queue impletation and api</span>
+</pre><pre class="rust"><code>
+
+
+
+
+<span class="doccomment">//! queue impletation and api</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::projdefs</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::riscv_virt::print</span>;
@@ -870,13 +813,16 @@
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueSEND_TO_BACK</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="number">1</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueOVERWRITE</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="number">2</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueUNLOCKED</span>: <span class="ident">i8</span> <span class="op">=</span> <span class="op">-</span><span class="number">1</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueLOCKED_UNMODIFIED</span>: <span class="ident">i8</span> <span class="op">=</span> <span class="number">0</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueINT8_MAX</span>: <span class="ident">i8</span> <span class="op">=</span> <span class="number">127</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueUNLOCKED</span>:<span class="ident">i8</span> <span class="op">=</span> <span class="op">-</span><span class="number">1</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueLOCKED_UNMODIFIED</span>:<span class="ident">i8</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">queueINT8_MAX</span>:<span class="ident">i8</span> <span class="op">=</span> <span class="number">127</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">pdPass</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="number">0</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::projdefs</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::tasks</span>::<span class="kw-2">*</span>;
+
+
+
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">queueYIELD_IF_USING_PREEMPTION</span> {
@@ -885,18 +831,16 @@
     };
 }
 
-<span class="doccomment">/// lock queue &lt;br&gt;</span>
-<span class="doccomment">/// accept QueueHandle_t</span>
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">prvLockQueue</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>: <span class="ident">expr</span> ) =&gt; {
         <span class="macro">taskENTER_CRITICAL!</span>();
         {
-            <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">write</span>().<span class="ident">cRxLock</span> <span class="op">==</span> <span class="ident">queueUNLOCKED</span> {
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">write</span>().<span class="ident">cRxLock</span> <span class="op">=</span> <span class="ident">queueLOCKED_UNMODIFIED</span>;
+            <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">cRxLock</span><span class="op">==</span><span class="ident">queueUNLOCKED</span>{
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">cRxLock</span><span class="op">=</span><span class="ident">queueLOCKED_UNMODIFIED</span>;
             }
-            <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">write</span>().<span class="ident">cTxLock</span> <span class="op">==</span> <span class="ident">queueUNLOCKED</span> {
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">write</span>().<span class="ident">cTxLock</span> <span class="op">=</span> <span class="ident">queueLOCKED_UNMODIFIED</span>;
+            <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">cTxLock</span><span class="op">==</span><span class="ident">queueUNLOCKED</span>{
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pxQueue</span>.<span class="ident">cTxLock</span><span class="op">=</span><span class="ident">queueLOCKED_UNMODIFIED</span>;
             }
         }
         <span class="macro">taskEXIT_CRITICAL!</span>();
@@ -936,6 +880,11 @@
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">xQUEUE</span> <span class="op">=</span> <span class="ident">QueueDefinition</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Queue_t</span> <span class="op">=</span> <span class="ident">xQUEUE</span>;
 
+
+
+
+
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">QueueDefinition</span> {
     <span class="ident">pcMesQueue</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="comment">//message space</span>
@@ -944,8 +893,8 @@
     <span class="ident">pcTail</span>: <span class="ident">usize</span>,
     <span class="ident">pcWriteTo</span>: <span class="ident">usize</span>,
     <span class="ident">pcReadFrom</span>: <span class="ident">usize</span>,
-    <span class="kw">pub</span> <span class="ident">cRxLock</span>: <span class="ident">i8</span>,
-    <span class="kw">pub</span> <span class="ident">cTxLock</span>: <span class="ident">i8</span>,
+    <span class="ident">cRxLock</span>:<span class="ident">i8</span>,
+    <span class="ident">cTxLock</span>:<span class="ident">i8</span>,
     <span class="kw">pub</span> <span class="ident">xTasksWaitingToSend</span>: <span class="ident">ListRealLink</span>,
     <span class="kw">pub</span> <span class="ident">xTasksWaitingToReceive</span>: <span class="ident">ListRealLink</span>,
     <span class="kw">pub</span> <span class="ident">uxMessagesWaiting</span>: <span class="ident">UBaseType</span>,
@@ -953,10 +902,10 @@
     <span class="ident">uxItemSize</span>: <span class="ident">UBaseType</span>,
     <span class="kw">pub</span> <span class="ident">xMutexHolder</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">uxRecursiveCallCount</span>: <span class="ident">UBaseType</span>,
-    <span class="kw">pub</span> <span class="ident">ucQueueType</span>: <span class="ident">u8</span>,
+    <span class="kw">pub</span> <span class="ident">ucQueueType</span>:<span class="ident">u8</span>,
 }
 <span class="kw">impl</span> <span class="ident">QueueDefinition</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueCreate</span>(<span class="ident">uxQueueLength</span>: <span class="ident">UBaseType</span>, <span class="ident">uxItemSize</span>: <span class="ident">UBaseType</span>) -&gt; <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueCreate</span>(<span class="ident">uxQueueLength</span>: <span class="ident">UBaseType</span>, <span class="ident">uxItemSize</span>: <span class="ident">UBaseType</span>)-&gt;<span class="self">Self</span>{
         <span class="ident">QueueDefinition::xQueueGenericCreate</span>(<span class="ident">uxQueueLength</span>, <span class="ident">uxItemSize</span>, <span class="ident">queueQUEUE_TYPE_BASE</span>)
     }
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configSUPPORT_DYNAMIC_ALLOCATION&quot;</span>)]</span>
@@ -983,7 +932,7 @@
         <span class="ident">ucQueueType</span>: <span class="ident">u8</span>,
     ) {
         <span class="kw">let</span> <span class="ident">pxNewQueue</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="self">self</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">QueueDefinition</span> <span class="kw">as</span> <span class="ident">usize</span>;
-        <span class="kw">let</span> <span class="ident">pucQueueStorage</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pcMesQueue</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>;
+        <span class="kw">let</span> <span class="ident">pucQueueStorage</span>:<span class="ident">usize</span><span class="op">=</span><span class="self">self</span>.<span class="ident">pcMesQueue</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="comment">// let pucQueueStorage:usize=self.pcMesQueue.</span>
         <span class="kw">if</span> (<span class="ident">uxItemSize</span> <span class="op">==</span> <span class="number">0</span>) {
             <span class="self">self</span>.<span class="ident">pcHead</span> <span class="op">=</span> <span class="ident">pxNewQueue</span>;
@@ -992,8 +941,9 @@
         }
         <span class="self">self</span>.<span class="ident">uxLength</span> <span class="op">=</span> <span class="ident">uxQueueLength</span>;
         <span class="self">self</span>.<span class="ident">uxItemSize</span> <span class="op">=</span> <span class="ident">uxItemSize</span>;
-        <span class="self">self</span>.<span class="ident">ucQueueType</span> <span class="op">=</span> <span class="ident">ucQueueType</span>;
+        <span class="self">self</span>.<span class="ident">ucQueueType</span><span class="op">=</span><span class="ident">ucQueueType</span>;
         <span class="self">self</span>.<span class="ident">xQueueGenericReset</span>(<span class="number">1</span>);
+
     }
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueGenericReset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">xNewQueue</span>: <span class="ident">BaseType</span>) -&gt; <span class="ident">BaseType</span> {
         <span class="ident">vTaskEnterCritical</span>();
@@ -1004,7 +954,7 @@
             <span class="comment">//TODO: union</span>
             <span class="self">self</span>.<span class="ident">pcReadFrom</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pcHead</span> <span class="op">+</span> ((<span class="self">self</span>.<span class="ident">uxLength</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">*</span> <span class="self">self</span>.<span class="ident">uxItemSize</span>) <span class="kw">as</span> <span class="ident">usize</span>;
             <span class="self">self</span>.<span class="ident">cRxLock</span> <span class="op">=</span> <span class="ident">queueUNLOCKED</span>;
-            <span class="self">self</span>.<span class="ident">cTxLock</span> <span class="op">=</span> <span class="ident">queueUNLOCKED</span>;
+            <span class="self">self</span>.<span class="ident">cTxLock</span> <span class="op">-</span> <span class="ident">queueUNLOCKED</span>;
             <span class="comment">//TODO:lock</span>
 
             <span class="kw">if</span> (<span class="ident">xNewQueue</span> <span class="op">==</span> <span class="number">0</span>) {
@@ -1017,6 +967,9 @@
         <span class="number">1</span>
     }
 }
+
+
+
 
 <span class="doccomment">/// create queue &lt;br&gt;</span>
 <span class="doccomment">/// interface for user</span>
@@ -1094,6 +1047,7 @@
     <span class="ident">pxNewQueue_</span>.<span class="ident">uxLength</span> <span class="op">=</span> <span class="ident">uxQueueLength</span>;
     <span class="ident">pxNewQueue_</span>.<span class="ident">uxItemSize</span> <span class="op">=</span> <span class="ident">uxItemSize</span>;
 
+
     <span class="ident">print</span>(<span class="string">&quot;prvInitialiseNewQueue 2222&quot;</span>);
     <span class="ident">xQueueGenericReset</span>(<span class="ident">pxNewQueue_</span>, <span class="number">1</span>);
     <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">pxNewQueue_</span>.<span class="ident">xTasksWaitingToReceive</span>.<span class="ident">read</span>().<span class="ident">ux_number_of_items</span>;
@@ -1104,6 +1058,9 @@
     );
     <span class="ident">print</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>)
 }
+
+
+
 
 <span class="doccomment">/// reset target queue</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueGenericReset</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>, <span class="ident">xNewQueue</span>: <span class="ident">BaseType</span>) -&gt; <span class="ident">BaseType</span> {
@@ -1155,7 +1112,7 @@
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueGenericSend</span>(
-    <span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>,
+    <span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>,
     <span class="ident">pvItemToQueue</span>: <span class="ident">usize</span>,
     <span class="kw-2">mut</span> <span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>,
     <span class="ident">xCopyPosition</span>: <span class="ident">BaseType</span>,
@@ -1166,16 +1123,15 @@
     <span class="kw">loop</span> {
         <span class="macro">taskENTER_CRITICAL!</span>();
         {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xQueue_</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">write</span>();
-            <span class="kw">if</span> <span class="ident">xQueue_</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">&lt;</span> <span class="ident">xQueue_</span>.<span class="ident">uxLength</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xCopyPosition</span> <span class="op">==</span> <span class="ident">queueOVERWRITE</span> {
+            <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">&lt;</span> <span class="ident">xQueue</span>.<span class="ident">uxLength</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xCopyPosition</span> <span class="op">==</span> <span class="ident">queueOVERWRITE</span> {
                 <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_QUEUE_SETS&quot;</span>) {
-                    <span class="kw">let</span> <span class="ident">uxPreviousMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue_</span>.<span class="ident">uxMessagesWaiting</span>;
-                    <span class="ident">xYieldRequired</span> <span class="op">=</span> <span class="ident">prvCopyDataToQueue</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xQueue_</span>, <span class="ident">pvItemToQueue</span>, <span class="ident">xCopyPosition</span>);
+                    <span class="kw">let</span> <span class="ident">uxPreviousMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span>;
+                    <span class="ident">xYieldRequired</span> <span class="op">=</span> <span class="ident">prvCopyDataToQueue</span>(<span class="ident">xQueue</span>, <span class="ident">pvItemToQueue</span>, <span class="ident">xCopyPosition</span>);
                     <span class="comment">//todo</span>
                 } <span class="kw">else</span> {
-                    <span class="ident">xYieldRequired</span> <span class="op">=</span> <span class="ident">prvCopyDataToQueue</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xQueue_</span>, <span class="ident">pvItemToQueue</span>, <span class="ident">xCopyPosition</span>);
-                    <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue_</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">false</span> {
-                        <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue_</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">true</span> {
+                    <span class="ident">xYieldRequired</span> <span class="op">=</span> <span class="ident">prvCopyDataToQueue</span>(<span class="ident">xQueue</span>, <span class="ident">pvItemToQueue</span>, <span class="ident">xCopyPosition</span>);
+                    <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">false</span> {
+                        <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">true</span> {
                             <span class="macro">queueYIELD_IF_USING_PREEMPTION!</span>();
                         } <span class="kw">else</span> {
                             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
@@ -1204,20 +1160,20 @@
 
         <span class="ident">vTaskSuspendAll</span>();
 
-        <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+        <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>);
         <span class="kw">if</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xTimeout</span>, <span class="kw-2">&amp;mut</span> <span class="ident">xTicksToWait</span>) <span class="op">==</span> <span class="ident">pdFALSE</span> {
-            <span class="kw">if</span> <span class="ident">prvIsQueueFull</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>()) <span class="op">==</span> <span class="bool-val">true</span> {
-                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToSend</span>, <span class="ident">xTicksToWait</span>);
-                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+            <span class="kw">if</span> <span class="ident">prvIsQueueFull</span>(<span class="ident">xQueue</span>) <span class="op">==</span> <span class="bool-val">true</span> {
+                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToSend</span>, <span class="ident">xTicksToWait</span>);
+                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="kw">if</span> <span class="ident">vTaskResumeAll</span>() <span class="op">==</span> <span class="bool-val">false</span> {
                     <span class="macro">portYIELD_WITHIN_API!</span>();
                 }
             } <span class="kw">else</span> {
-                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="ident">vTaskResumeAll</span>();
             }
         } <span class="kw">else</span> {
-            <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+            <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
             <span class="ident">vTaskResumeAll</span>();
             <span class="kw">return</span> <span class="ident">errQUEUE_FULL</span>;
         }
@@ -1225,21 +1181,17 @@
     <span class="ident">pdFAIL</span> <span class="kw">as</span> <span class="ident">BaseType</span>
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvCopyDataToQueue</span>(
-    <span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>,
-    <span class="ident">pvItemToQueue</span>: <span class="ident">usize</span>,
-    <span class="ident">xPosition</span>: <span class="ident">BaseType</span>,
-) -&gt; <span class="ident">bool</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvCopyDataToQueue</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>, <span class="ident">pvItemToQueue</span>: <span class="ident">usize</span>, <span class="ident">xPosition</span>: <span class="ident">BaseType</span>) -&gt;<span class="ident">bool</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>:<span class="ident">bool</span><span class="op">=</span><span class="bool-val">false</span>;
     <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">uxItemSize</span> <span class="op">==</span> <span class="number">0</span> {
         <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_MUTEXES&quot;</span>) {
-            <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span> <span class="op">==</span> <span class="ident">queueQUEUE_TYPE_MUTEX</span>
-                <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span> <span class="op">==</span> <span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>
-            {
-                <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">xTaskPriorityDisinherit</span>(<span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>()) <span class="op">==</span> <span class="ident">pdTRUE</span>;
-                <span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+            
+            <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_MUTEX</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>{
+                <span class="ident">xReturn</span><span class="op">=</span><span class="ident">xTaskPriorityDisinherit</span>(<span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>())<span class="op">==</span><span class="ident">pdTRUE</span>;
+                <span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span><span class="op">=</span><span class="prelude-val">None</span>;
             }
+
         } <span class="kw">else</span> {
             <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
         }
@@ -1301,11 +1253,11 @@
     <span class="ident">xReturn</span>
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvIsQueueFull</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>) -&gt; <span class="ident">bool</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvIsQueueFull</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>) -&gt; <span class="ident">bool</span> {
     <span class="kw">let</span> <span class="ident">xReturn</span>: <span class="ident">bool</span>;
     <span class="macro">taskENTER_CRITICAL!</span>();
     {
-        <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxMessagesWaiting</span> <span class="op">==</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxLength</span> {
+        <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">==</span> <span class="ident">xQueue</span>.<span class="ident">uxLength</span> {
             <span class="ident">xReturn</span> <span class="op">=</span> <span class="bool-val">true</span>;
         } <span class="kw">else</span> {
             <span class="ident">xReturn</span> <span class="op">=</span> <span class="bool-val">false</span>;
@@ -1314,11 +1266,11 @@
     <span class="macro">taskEXIT_CRITICAL!</span>();
     <span class="ident">xReturn</span>
 }
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>) -&gt; <span class="ident">bool</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>) -&gt; <span class="ident">bool</span> {
     <span class="kw">let</span> <span class="ident">xReturn</span>: <span class="ident">bool</span>;
     <span class="macro">taskENTER_CRITICAL!</span>();
     {
-        <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxMessagesWaiting</span> <span class="op">==</span> <span class="number">0</span> {
+        <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">==</span> <span class="number">0</span> {
             <span class="ident">xReturn</span> <span class="op">=</span> <span class="bool-val">true</span>;
         } <span class="kw">else</span> {
             <span class="ident">xReturn</span> <span class="op">=</span> <span class="bool-val">false</span>;
@@ -1327,13 +1279,10 @@
     <span class="macro">taskEXIT_CRITICAL!</span>();
     <span class="ident">xReturn</span>
 }
-
-<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
-<span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">vQueueDelete</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vQueueDelete</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>) {
+    <span class="kw">let</span> <span class="ident">pxQueue</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">xQueue</span>.<span class="ident">write</span>();
     <span class="kw">let</span> <span class="ident">alloc_size</span>: <span class="ident">usize</span> <span class="op">=</span>
         <span class="ident">mem::size_of</span>::<span class="op">&lt;</span><span class="ident">xQUEUE</span><span class="op">&gt;</span>() <span class="op">+</span> (<span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxLength</span> <span class="op">*</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxItemSize</span>) <span class="kw">as</span> <span class="ident">usize</span>;
-    <span class="kw">let</span> <span class="ident">pxQueue</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">xQueue</span>.<span class="ident">write</span>();
-
     <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">Layout::from_size_align</span>(<span class="ident">alloc_size</span> <span class="kw">as</span> <span class="ident">usize</span>, <span class="number">4</span>)
         .<span class="ident">ok</span>()
         .<span class="ident">unwrap</span>();
@@ -1342,11 +1291,20 @@
     }
 }
 <span class="comment">//消息队列发送</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueSend</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>, <span class="ident">pvItemToQueue</span>: <span class="ident">usize</span>, <span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>) -&gt; <span class="ident">BaseType</span> {
-    <span class="ident">xQueueGenericSend</span>(<span class="ident">xQueue</span>, <span class="ident">pvItemToQueue</span>, <span class="ident">xTicksToWait</span>, <span class="ident">queueSEND_TO_BACK</span>)
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueSend</span>(
+    <span class="ident">xQueue</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">QueueHandle_t</span><span class="op">&gt;</span>,
+    <span class="ident">pvItemToQueue</span>: <span class="ident">usize</span>,
+    <span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>,
+) -&gt; <span class="ident">BaseType</span> {
+    <span class="ident">xQueueGenericSend</span>(
+        <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="ident">xQueue</span>.<span class="ident">unwrap</span>().<span class="ident">write</span>(),
+        <span class="ident">pvItemToQueue</span>,
+        <span class="ident">xTicksToWait</span>,
+        <span class="ident">queueSEND_TO_BACK</span>,
+    )
 }
 <span class="comment">//消息队列读取</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvCopyDataFromQueue</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>, <span class="ident">pvBuffer</span>: <span class="ident">usize</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvCopyDataFromQueue</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Queue_t</span>, <span class="ident">pvBuffer</span>: <span class="ident">usize</span>) {
     <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">uxItemSize</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
         <span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span> <span class="op">+</span><span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">uxItemSize</span> <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">pcTail</span> {
@@ -1358,7 +1316,7 @@
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">xx</span> <span class="op">=</span> <span class="kw-2">*</span>(<span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">i32</span>);
             <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="macro">format!</span>(
-                <span class="string">&quot;Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}&quot;</span>,
+                <span class="string">&quot;Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}&quot;</span>,
                 <span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span>, <span class="ident">pvBuffer</span>, <span class="ident">xx</span>, <span class="ident">xQueue</span>.<span class="ident">uxItemSize</span>
             );
             <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>);
@@ -1369,17 +1327,15 @@
             );
             <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="kw-2">*</span>(<span class="ident">pvBuffer</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">i32</span>);
             <span class="kw">let</span> <span class="ident">s_</span> <span class="op">=</span> <span class="macro">format!</span>(
-                <span class="string">&quot;Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}&quot;</span>,
+                <span class="string">&quot;Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}&quot;</span>,
                 <span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span>, <span class="ident">pvBuffer</span>, <span class="ident">x</span>, <span class="ident">xQueue</span>.<span class="ident">uxItemSize</span>
             );
             <span class="ident">vSendString</span>(<span class="kw-2">&amp;</span><span class="ident">s_</span>);
         }
     }
 }
-
-<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
-<span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">xQueueReceive</span>(
-    <span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueReceive</span>(
+    <span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>,
     <span class="ident">pvBuffer</span>: <span class="ident">usize</span>,
     <span class="kw-2">mut</span> <span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>,
 ) -&gt; <span class="ident">BaseType</span> {
@@ -1387,35 +1343,33 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xEntryTimeSet</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xTimeOut</span>: <span class="ident">TimeOut</span> <span class="op">=</span> <span class="ident">Default::default</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pcOriginalReadPosition</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xInheritanceOccurred</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xInheritanceOccurred</span>:<span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
     <span class="comment">//let xq = xQueue.unwrap();</span>
     <span class="comment">//let xQueue = &amp;mut (*xq.write());</span>
     <span class="kw">loop</span> {
         <span class="macro">taskENTER_CRITICAL!</span>();
         {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xQueue_</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">write</span>();
-            <span class="kw">let</span> <span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue_</span>.<span class="ident">uxMessagesWaiting</span>;
+            <span class="kw">let</span> <span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span>;
             <span class="kw">if</span> <span class="ident">uxMessagesWaiting</span> <span class="op">&gt;</span> <span class="number">0</span> {
                 <span class="comment">//TODO:</span>
-                <span class="ident">pcOriginalReadPosition</span> <span class="op">=</span> <span class="ident">xQueue_</span>.<span class="ident">pcReadFrom</span>;
-                <span class="kw">if</span> <span class="ident">xQueue_</span>.<span class="ident">uxItemSize</span> <span class="op">&gt;</span> <span class="number">0</span> {
-                    <span class="ident">prvCopyDataFromQueue</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xQueue_</span>, <span class="ident">pvBuffer</span>);
+                <span class="ident">pcOriginalReadPosition</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span>;
+                <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">uxItemSize</span><span class="op">&gt;</span><span class="number">0</span>{
+                    <span class="ident">prvCopyDataFromQueue</span>(<span class="ident">xQueue</span>, <span class="ident">pvBuffer</span>);
                 }
+                
+                <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">uxMessagesWaiting</span> <span class="op">-</span> <span class="number">1</span>;
 
-                <span class="ident">xQueue_</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">uxMessagesWaiting</span> <span class="op">-</span> <span class="number">1</span>;
-
-                <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_MUTEXES&quot;</span>) {
-                    <span class="kw">if</span> <span class="ident">xQueue_</span>.<span class="ident">ucQueueType</span> <span class="op">==</span> <span class="ident">queueQUEUE_TYPE_MUTEX</span>
-                        <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue_</span>.<span class="ident">ucQueueType</span> <span class="op">==</span> <span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>
-                    {
-                        <span class="ident">xQueue_</span>.<span class="ident">xMutexHolder</span> <span class="op">=</span> <span class="ident">pvTaskIncrementMutexHeldCount</span>();
-                    } <span class="kw">else</span> {
+                <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_MUTEXES&quot;</span>){
+                    <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_MUTEX</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>{
+                        <span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span><span class="op">=</span><span class="ident">pvTaskIncrementMutexHeldCount</span>();
+                    }
+                    <span class="kw">else</span>{
                         <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                     }
                 }
 
-                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue_</span>.<span class="ident">xTasksWaitingToSend</span>) <span class="op">==</span> <span class="bool-val">false</span> {
-                    <span class="kw">if</span> (<span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue_</span>.<span class="ident">xTasksWaitingToSend</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
+                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToSend</span>) <span class="op">==</span> <span class="bool-val">false</span> {
+                    <span class="kw">if</span> (<span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToSend</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
                         <span class="macro">queueYIELD_IF_USING_PREEMPTION!</span>();
                     } <span class="kw">else</span> {
                         <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
@@ -1441,10 +1395,10 @@
         <span class="comment">// {if xQueue.uxMessagesWaiting&lt;xQueue.uxLength||xC}</span>
         <span class="macro">taskEXIT_CRITICAL!</span>();
         <span class="ident">vTaskSuspendAll</span>();
-        <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+        <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>);
         <span class="kw">if</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xTimeOut</span>, <span class="kw-2">&amp;mut</span> <span class="ident">xTicksToWait</span>) <span class="op">==</span> <span class="ident">pdFALSE</span> {
-            <span class="kw">if</span> (<span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>()) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
-                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>, <span class="ident">xTicksToWait</span>);
+            <span class="kw">if</span> (<span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
+                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>, <span class="ident">xTicksToWait</span>);
 
                 <span class="comment">// /* Unlocking the queue means queue events can effect the</span>
                 <span class="comment">//  * event list. It is possible that interrupts occurring now</span>
@@ -1452,45 +1406,39 @@
                 <span class="comment">//  * scheduler is suspended the task will go onto the pending</span>
                 <span class="comment">//  * ready list instead of the actual ready list. */</span>
                 <span class="ident">print</span>(<span class="string">&quot;inheriting!&quot;</span>);
-                <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_MUTEXES&quot;</span>) {
+                <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_MUTEXES&quot;</span>){
                     <span class="ident">print</span>(<span class="string">&quot;inheriting?&quot;</span>);
-                    <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">ucQueueType</span> <span class="op">==</span> <span class="ident">queueQUEUE_TYPE_MUTEX</span>
-                        <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">ucQueueType</span> <span class="op">==</span> <span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>
-                    {
+                    <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_MUTEX</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xQueue</span>.<span class="ident">ucQueueType</span><span class="op">==</span><span class="ident">queueQUEUE_TYPE_RECURSIVE_MUTEX</span>{
                         <span class="macro">taskENTER_CRITICAL!</span>();
                         <span class="ident">print</span>(<span class="string">&quot;inheriting&quot;</span>);
-                        <span class="ident">xInheritanceOccurred</span> <span class="op">=</span>
-                            <span class="ident">xTaskPriorityInherit</span>(<span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>());
+                        <span class="ident">xInheritanceOccurred</span><span class="op">=</span><span class="ident">xTaskPriorityInherit</span>(<span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>());
                         <span class="macro">taskEXIT_CRITICAL!</span>();
-                    } <span class="kw">else</span> {
+                    }
+                    <span class="kw">else</span>{
                         <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                     }
                 }
 
-                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+                <span class="ident">prvUnlockQueue</span>( <span class="ident">xQueue</span> );
                 <span class="kw">if</span> (<span class="ident">vTaskResumeAll</span>() <span class="op">==</span> <span class="bool-val">false</span>) {
                     <span class="macro">portYIELD_WITHIN_API!</span>();
                 } <span class="kw">else</span> {
                     <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                 }
             } <span class="kw">else</span> {
-                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="ident">vTaskResumeAll</span>();
             }
         } <span class="kw">else</span> {
-            <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+            <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
             <span class="ident">vTaskResumeAll</span>();
 
-            <span class="kw">if</span> <span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>()) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span> {
-                <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_MUTEXES&quot;</span>) {
-                    <span class="kw">if</span> <span class="ident">xInheritanceOccurred</span> <span class="op">!</span><span class="op">=</span> <span class="ident">pdFALSE</span> {
+            <span class="kw">if</span> <span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span> {
+                <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_MUTEXES&quot;</span>){
+                    <span class="kw">if</span> <span class="macro">xInheritanceOccurred!</span><span class="op">=</span><span class="ident">pdFALSE</span>{
                         <span class="macro">taskENTER_CRITICAL!</span>();
-                        <span class="kw">let</span> <span class="ident">uxHighestWaitingPriority</span> <span class="op">=</span>
-                            <span class="ident">prvGetDisinheritPriorityAfterTimeout</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
-                        <span class="ident">vTaskPriorityDisinheritAfterTimeout</span>(
-                            <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>(),
-                            <span class="ident">uxHighestWaitingPriority</span>,
-                        );
+                        <span class="kw">let</span> <span class="ident">uxHighestWaitingPriority</span><span class="op">=</span><span class="ident">prvGetDisinheritPriorityAfterTimeout</span>(<span class="ident">xQueue</span>);
+                        <span class="ident">vTaskPriorityDisinheritAfterTimeout</span>(<span class="ident">xQueue</span>.<span class="ident">xMutexHolder</span>.<span class="ident">clone</span>(),<span class="ident">uxHighestWaitingPriority</span>);
                         <span class="macro">taskEXIT_CRITICAL!</span>();
                     }
                 }
@@ -1501,99 +1449,25 @@
         }
     }
 }
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueReceiveFromISR</span>(
-    <span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>,
-    <span class="ident">pvBuffer</span>: <span class="ident">usize</span>,
-    <span class="ident">pxHigherPriorityTaskWoken</span>: <span class="kw-2">&amp;mut</span> <span class="ident">BaseType</span>,
-) -&gt; <span class="ident">BaseType</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
-    <span class="comment">//todo:portASSERT_IF_INTERRUPT_PRIORITY_INVALID();</span>
-    <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxMessagesWaiting</span> <span class="op">&gt;</span> <span class="number">0</span> {
-        <span class="kw">let</span> <span class="ident">cRxLock</span>: <span class="ident">i8</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">cRxLock</span>;
-        <span class="ident">prvCopyDataFromQueue</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xQueue</span>.<span class="ident">write</span>(), <span class="ident">pvBuffer</span>);
-        <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">uxMessagesWaiting</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
-        <span class="kw">if</span> <span class="ident">cRxLock</span> <span class="op">==</span> <span class="ident">queueUNLOCKED</span> {
-            <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToSend</span>) <span class="op">==</span> <span class="bool-val">false</span> {
-                <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToSend</span>) <span class="op">==</span> <span class="bool-val">true</span> {
-                    <span class="kw-2">*</span><span class="ident">pxHigherPriorityTaskWoken</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
-                } <span class="kw">else</span> {
-                    <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
-                }
-            } <span class="kw">else</span> {
-                <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
-            }
-        } <span class="kw">else</span> {
-            <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">cRxLock</span> <span class="op">=</span> <span class="ident">cRxLock</span> <span class="op">+</span> <span class="number">1</span>;
-        }
-        <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
-    }
-    <span class="ident">xReturn</span>
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueSendFromISR</span>(
-    <span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>,
-    <span class="ident">pvBuffer</span>: <span class="ident">usize</span>,
-    <span class="ident">pxHigherPriorityTaskWoken</span>: <span class="kw-2">&amp;mut</span> <span class="ident">BaseType</span>,
-) -&gt; <span class="ident">BaseType</span> {
-    <span class="ident">xQueueGenericSendFromISR</span>(
-        <span class="ident">xQueue</span>,
-        <span class="ident">pvBuffer</span>,
-        <span class="ident">pxHigherPriorityTaskWoken</span>,
-        <span class="ident">queueSEND_TO_BACK</span>,
-    )
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueGenericSendFromISR</span>(
-    <span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>,
-    <span class="ident">pvBuffer</span>: <span class="ident">usize</span>,
-    <span class="ident">pxHigherPriorityTaskWoken</span>: <span class="kw-2">&amp;mut</span> <span class="ident">BaseType</span>,
-    <span class="ident">xCopyPosition</span>: <span class="ident">BaseType</span>,
-) -&gt; <span class="ident">BaseType</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
-    <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxMessagesWaiting</span> <span class="op">&lt;</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxLength</span> <span class="op">|</span><span class="op">|</span> <span class="ident">xCopyPosition</span> <span class="op">==</span> <span class="ident">queueOVERWRITE</span> {
-        <span class="kw">let</span> <span class="ident">cTxLock</span>: <span class="ident">i8</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">cTxLock</span>;
-
-        <span class="ident">prvCopyDataToQueue</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xQueue</span>.<span class="ident">write</span>(), <span class="ident">pvBuffer</span>, <span class="ident">xCopyPosition</span>);
-        <span class="kw">if</span> <span class="ident">cTxLock</span> <span class="op">==</span> <span class="ident">queueUNLOCKED</span> {
-            <span class="comment">//todo:configUSE_QUEUE_SETS</span>
-            <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">false</span> {
-                <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">true</span> {
-                    <span class="kw-2">*</span><span class="ident">pxHigherPriorityTaskWoken</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
-                } <span class="kw">else</span> {
-                    <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
-                }
-            } <span class="kw">else</span> {
-                <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
-            }
-        } <span class="kw">else</span> {
-            <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">cTxLock</span> <span class="op">=</span> <span class="ident">cTxLock</span> <span class="op">+</span> <span class="number">1</span>;
-        }
-        <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
-    }
-    <span class="ident">xReturn</span>
-}
-
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueuePeek</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>, <span class="ident">pvBuffer</span>: <span class="ident">usize</span>, <span class="kw-2">mut</span> <span class="ident">xTicksToWait</span>: <span class="ident">TickType</span>) -&gt; <span class="ident">BaseType</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xEntryTimeSet</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xTimeOut</span>: <span class="ident">TimeOut</span> <span class="op">=</span> <span class="ident">Default::default</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pcOriginalReadPosition</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
-
+    <span class="kw">let</span> <span class="ident">xQueue</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="ident">xQueue</span>.<span class="ident">write</span>();
     <span class="kw">loop</span> {
         <span class="macro">taskENTER_CRITICAL!</span>();
         {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xQueue_</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="ident">xQueue</span>.<span class="ident">write</span>();
-            <span class="kw">let</span> <span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue_</span>.<span class="ident">uxMessagesWaiting</span>;
+            <span class="kw">let</span> <span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">uxMessagesWaiting</span>;
             <span class="kw">if</span> <span class="ident">uxMessagesWaiting</span> <span class="op">&gt;</span> <span class="number">0</span> {
                 <span class="comment">//TODO:</span>
-                <span class="ident">pcOriginalReadPosition</span> <span class="op">=</span> <span class="ident">xQueue_</span>.<span class="ident">pcReadFrom</span>;
-                <span class="ident">prvCopyDataFromQueue</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xQueue_</span>, <span class="ident">pvBuffer</span>);
+                <span class="ident">pcOriginalReadPosition</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span>;
+                <span class="ident">prvCopyDataFromQueue</span>(<span class="ident">xQueue</span>, <span class="ident">pvBuffer</span>);
                 <span class="comment">//different from queuereceive</span>
                 <span class="comment">// xQueue.uxMessagesWaiting = uxMessagesWaiting - 1;</span>
                 <span class="comment">/* The data is not being removed, so reset the read pointer. */</span>
-                <span class="ident">xQueue_</span>.<span class="ident">pcReadFrom</span> <span class="op">=</span> <span class="ident">pcOriginalReadPosition</span>;
-                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue_</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">false</span> {
-                    <span class="kw">if</span> (<span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue_</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
+                <span class="ident">xQueue</span>.<span class="ident">pcReadFrom</span> <span class="op">=</span> <span class="ident">pcOriginalReadPosition</span>;
+                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">false</span> {
+                    <span class="kw">if</span> (<span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
                         <span class="macro">queueYIELD_IF_USING_PREEMPTION!</span>();
                     } <span class="kw">else</span> {
                         <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
@@ -1619,25 +1493,25 @@
         <span class="comment">// {if xQueue.uxMessagesWaiting&lt;xQueue.uxLength||xC}</span>
         <span class="macro">taskEXIT_CRITICAL!</span>();
         <span class="ident">vTaskSuspendAll</span>();
-        <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+        <span class="macro">prvLockQueue!</span>(<span class="ident">xQueue</span>);
         <span class="kw">if</span> <span class="ident">xTaskCheckForTimeOut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xTimeOut</span>, <span class="kw-2">&amp;mut</span> <span class="ident">xTicksToWait</span>) <span class="op">==</span> <span class="ident">pdFALSE</span> {
-            <span class="kw">if</span> (<span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>()) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
-                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>, <span class="ident">xTicksToWait</span>);
+            <span class="kw">if</span> (<span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>) {
+                <span class="ident">vTaskPlaceOnEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>, <span class="ident">xTicksToWait</span>);
 
-                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="kw">if</span> (<span class="ident">vTaskResumeAll</span>() <span class="op">==</span> <span class="bool-val">false</span>) {
                     <span class="macro">portYIELD_WITHIN_API!</span>();
                 } <span class="kw">else</span> {
                     <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                 }
             } <span class="kw">else</span> {
-                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+                <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
                 <span class="ident">vTaskResumeAll</span>();
             }
         } <span class="kw">else</span> {
-            <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>());
+            <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>);
             <span class="ident">vTaskResumeAll</span>();
-            <span class="kw">if</span> <span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>.<span class="ident">clone</span>()) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span> {
+            <span class="kw">if</span> <span class="ident">prvIsQueueEmpty</span>(<span class="ident">xQueue</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span> {
                 <span class="kw">return</span> <span class="ident">errQUEUE_EMPTY</span>;
             } <span class="kw">else</span> {
                 <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
@@ -1645,76 +1519,77 @@
         }
     }
 }
+<span class="comment">// pub fn xQueueGenericReceive(</span>
+<span class="comment">//     xQueue: QueueHandle_t,</span>
+<span class="comment">//     pvBuffer: usize,</span>
+<span class="comment">//     mut xTicksToWait: TickType,</span>
+<span class="comment">//     xJustPeeking: BaseType,</span>
+<span class="comment">// ) -&gt; BaseType {</span>
+<span class="comment">// }</span>
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueuePeekFromISR</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>, <span class="ident">pvBuffer</span>: <span class="ident">usize</span>) -&gt; <span class="ident">BaseType</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">xReturn</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="ident">pdFALSE</span>;
-    <span class="kw">if</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">uxMessagesWaiting</span> <span class="op">&gt;</span> <span class="number">0</span> {
-        <span class="kw">let</span> <span class="ident">pcOriginalReadPosition</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">pcReadFrom</span>;
-        <span class="ident">prvCopyDataFromQueue</span>(<span class="kw-2">&amp;mut</span> <span class="ident">xQueue</span>.<span class="ident">write</span>(), <span class="ident">pvBuffer</span>);
-        <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">pcReadFrom</span> <span class="op">=</span> <span class="ident">pcOriginalReadPosition</span>;
-        <span class="ident">xReturn</span> <span class="op">=</span> <span class="ident">pdTRUE</span>;
-    }
-    <span class="ident">xReturn</span>
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvUnlockQueue</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>){
     <span class="macro">taskENTER_CRITICAL!</span>();
     {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cTxLock</span>: <span class="ident">i8</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">cTxLock</span>;
-        <span class="kw">while</span> <span class="ident">cTxLock</span> <span class="op">&gt;</span> <span class="ident">queueUNLOCKED</span> {
-            <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_QUEUE_SETS&quot;</span>) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cTxLock</span>:<span class="ident">i8</span><span class="op">=</span><span class="ident">xQueue</span>.<span class="ident">cTxLock</span>;
+        <span class="kw">while</span> <span class="ident">cTxLock</span><span class="op">&gt;</span><span class="ident">queueUNLOCKED</span>{
+            <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_QUEUE_SETS&quot;</span>){
                 <span class="comment">//todo</span>
-            } <span class="kw">else</span> {
-                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">false</span> {
-                    <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span> {
+            }
+            <span class="kw">else</span>{
+                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>)<span class="op">==</span><span class="bool-val">false</span>{
+                    <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>{
                         <span class="macro">vTaskMissedYield!</span>();
-                    } <span class="kw">else</span> {
+                    }
+                    <span class="kw">else</span>{
                         <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                     }
-                } <span class="kw">else</span> {
+                }
+                <span class="kw">else</span>{
                     <span class="kw">break</span>;
                 }
             }
-            <span class="ident">cTxLock</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="ident">cTxLock</span><span class="op">-</span><span class="op">=</span><span class="number">1</span>;
         }
-        <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">cTxLock</span> <span class="op">=</span> <span class="ident">queueUNLOCKED</span>;
+        <span class="ident">xQueue</span>.<span class="ident">cTxLock</span><span class="op">=</span><span class="ident">queueUNLOCKED</span>;
     }
     <span class="macro">taskEXIT_CRITICAL!</span>();
 
     <span class="macro">taskENTER_CRITICAL!</span>();
     {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cRxLock</span>: <span class="ident">i8</span> <span class="op">=</span> <span class="ident">xQueue</span>.<span class="ident">read</span>().<span class="ident">cTxLock</span>;
-        <span class="kw">while</span> <span class="ident">cRxLock</span> <span class="op">&gt;</span> <span class="ident">queueUNLOCKED</span> {
-            <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;configUSE_QUEUE_SETS&quot;</span>) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cRxLock</span>:<span class="ident">i8</span><span class="op">=</span><span class="ident">xQueue</span>.<span class="ident">cTxLock</span>;
+        <span class="kw">while</span> <span class="ident">cRxLock</span><span class="op">&gt;</span><span class="ident">queueUNLOCKED</span>{
+            <span class="kw">if</span> <span class="macro">cfg!</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;configUSE_QUEUE_SETS&quot;</span>){
                 <span class="comment">//todo</span>
-            } <span class="kw">else</span> {
-                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>) <span class="op">==</span> <span class="bool-val">false</span> {
-                    <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span> {
+            }
+            <span class="kw">else</span>{
+                <span class="kw">if</span> <span class="ident">list_is_empty</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>)<span class="op">==</span><span class="bool-val">false</span>{
+                    <span class="kw">if</span> <span class="ident">xTaskRemoveFromEventList</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>) <span class="op">!</span><span class="op">=</span> <span class="bool-val">false</span>{
                         <span class="macro">vTaskMissedYield!</span>();
-                    } <span class="kw">else</span> {
+                    }
+                    <span class="kw">else</span>{
                         <span class="macro">mtCOVERAGE_TEST_MARKER!</span>();
                     }
-                } <span class="kw">else</span> {
+                }
+                <span class="kw">else</span>{
                     <span class="kw">break</span>;
                 }
             }
-            <span class="ident">cRxLock</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="ident">cRxLock</span><span class="op">-</span><span class="op">=</span><span class="number">1</span>;
         }
-        <span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">cRxLock</span> <span class="op">=</span> <span class="ident">queueUNLOCKED</span>;
+        <span class="ident">xQueue</span>.<span class="ident">cRxLock</span><span class="op">=</span><span class="ident">queueUNLOCKED</span>;
     }
     <span class="macro">taskEXIT_CRITICAL!</span>();
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvGetDisinheritPriorityAfterTimeout</span>(<span class="ident">xQueue</span>: <span class="ident">QueueHandle_t</span>) -&gt; <span class="ident">UBaseType</span> {
-    <span class="kw">let</span> <span class="ident">uxHighestPriorityOfWaitingTasks</span>: <span class="ident">UBaseType</span>;
-    <span class="kw">if</span> <span class="ident">list_current_list_length</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>) <span class="op">&gt;</span> <span class="number">0</span> {
-        <span class="ident">uxHighestPriorityOfWaitingTasks</span> <span class="op">=</span> <span class="ident">configMAX_PRIORITIES</span>
-            <span class="op">-</span> <span class="ident">list_get_value_of_head_entry</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">write</span>().<span class="ident">xTasksWaitingToReceive</span>);
-    } <span class="kw">else</span> {
-        <span class="ident">uxHighestPriorityOfWaitingTasks</span> <span class="op">=</span> <span class="ident">tskIDLE_PRIORITY</span>;
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvGetDisinheritPriorityAfterTimeout</span>(<span class="ident">xQueue</span>: <span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>)-&gt;<span class="ident">UBaseType</span>{
+    <span class="kw">let</span> <span class="ident">uxHighestPriorityOfWaitingTasks</span>:<span class="ident">UBaseType</span>;
+    <span class="kw">if</span> <span class="ident">list_current_list_length</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>)<span class="op">&gt;</span><span class="number">0</span>{
+        <span class="ident">uxHighestPriorityOfWaitingTasks</span><span class="op">=</span><span class="ident">configMAX_PRIORITIES</span><span class="op">-</span><span class="ident">list_get_value_of_head_entry</span>(<span class="kw-2">&amp;</span><span class="ident">xQueue</span>.<span class="ident">xTasksWaitingToReceive</span>);
+    }
+    <span class="kw">else</span>{
+        <span class="ident">uxHighestPriorityOfWaitingTasks</span><span class="op">=</span><span class="ident">tskIDLE_PRIORITY</span>;
     }
     <span class="ident">uxHighestPriorityOfWaitingTasks</span>
-}
-</code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (42e1761c7 2022-05-15)" ></div>
+}</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (e6a4afc3a 2022-05-20)" ></div>
 </body></html>

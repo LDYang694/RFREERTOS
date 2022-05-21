@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["get_str_from_cchar",""],["rustAssert",""],["rustMalloc",""],["rustPrint",""]]});

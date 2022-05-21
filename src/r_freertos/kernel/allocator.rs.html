@@ -75,10 +75,12 @@
 <span id="68">68</span>
 <span id="69">69</span>
 <span id="70">70</span>
+<span id="71">71</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">kernel::config::KERNEL_HEAP_SIZE</span>, <span class="ident">portDISABLE_INTERRUPTS</span>, <span class="ident">portENABLE_INTERRUPTS</span>};
 <span class="kw">use</span> <span class="ident">buddy_system_allocator::LockedHeap</span>;
 <span class="kw">use</span> <span class="ident">core::alloc</span>::{<span class="ident">GlobalAlloc</span>, <span class="ident">Layout</span>};
 <span class="kw">use</span> <span class="ident">core::arch::asm</span>;
+
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::riscv_virt</span>::{<span class="ident">print</span>, <span class="ident">vSendString</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::tasks</span>::{<span class="ident">vTaskEnterCritical</span>, <span class="ident">vTaskExitCritical</span>};
@@ -146,5 +148,5 @@
     <span class="comment">// }</span>
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (42e1761c7 2022-05-15)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (e6a4afc3a 2022-05-20)" ></div>
 </body></html>

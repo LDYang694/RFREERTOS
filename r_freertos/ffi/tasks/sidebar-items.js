@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["get_task_handle",""],["memcpy",""],["vTaskResumeToC",""],["vTaskSuspendToC",""],["xTaskCreateStaticToC",""],["xTaskCreateToC",""]],"type":[["TaskHandle_c",""]]});

@@ -62,54 +62,27 @@
 <span id="55">55</span>
 <span id="56">56</span>
 <span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
-<span id="62">62</span>
-<span id="63">63</span>
-<span id="64">64</span>
-<span id="65">65</span>
-<span id="66">66</span>
-<span id="67">67</span>
-<span id="68">68</span>
-<span id="69">69</span>
-<span id="70">70</span>
-<span id="71">71</span>
-<span id="72">72</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::portable</span>::<span class="kw-2">*</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::queue</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::portable</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::portmacro</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kernel::queue</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">alloc::sync</span>::{<span class="ident">Arc</span>, <span class="ident">Weak</span>};
-<span class="kw">use</span> <span class="ident">spin::RwLock</span>;
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SemaphoreHandle_t</span> <span class="op">=</span> <span class="ident">QueueHandle_t</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">semGIVE_BLOCK_TIME</span>: <span class="ident">TickType</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">SemaphoreHandle_t</span><span class="op">=</span><span class="ident">QueueHandle_t</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">semGIVE_BLOCK_TIME</span>:<span class="ident">TickType</span> <span class="op">=</span> <span class="number">0</span>;
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
-<span class="macro">macro_rules!</span> <span class="ident">xSemaphoreCreateBinary</span> {
+<span class="macro">macro_rules!</span>  <span class="ident">xSemaphoreCreateBinary</span>{
     () =&gt; {
-        <span class="ident">QueueDefinition::xQueueGenericCreate</span>(
-            <span class="number">1</span>,
-            <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>,
-            <span class="ident">queueQUEUE_TYPE_BINARY_SEMAPHORE</span>,
-        );
+        <span class="ident">QueueDefinition::xQueueGenericCreate</span>(<span class="number">1</span>, <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>, <span class="ident">queueQUEUE_TYPE_BINARY_SEMAPHORE</span>);
     };
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xSemaphoreCreateCounting</span>(
-    <span class="ident">uxMaxCount</span>: <span class="ident">UBaseType</span>,
-    <span class="ident">uxInitialCount</span>: <span class="ident">UBaseType</span>,
-) -&gt; <span class="ident">QueueDefinition</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">QueueDefinition::xQueueGenericCreate</span>(
-        <span class="ident">uxMaxCount</span>,
-        <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>,
-        <span class="ident">queueQUEUE_TYPE_COUNTING_SEMAPHORE</span>,
-    );
-
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xSemaphoreCreateCounting</span>(<span class="ident">uxMaxCount</span>:<span class="ident">UBaseType</span>, <span class="ident">uxInitialCount</span>:<span class="ident">UBaseType</span>)-&gt;<span class="ident">QueueDefinition</span>{
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">handle</span><span class="op">=</span>
+    <span class="ident">QueueDefinition::xQueueGenericCreate</span>(<span class="ident">uxMaxCount</span>, <span class="ident">semSEMAPHORE_QUEUE_ITEM_LENGTH</span>, <span class="ident">queueQUEUE_TYPE_COUNTING_SEMAPHORE</span>);
+    
     <span class="comment">//todo:asserts</span>
-    <span class="ident">handle</span>.<span class="ident">uxMessagesWaiting</span> <span class="op">=</span> <span class="ident">uxInitialCount</span>;
+    <span class="ident">handle</span>.<span class="ident">uxMessagesWaiting</span><span class="op">=</span><span class="ident">uxInitialCount</span>;
 
     <span class="ident">handle</span>
 }
@@ -123,32 +96,29 @@
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">xSemaphoreGive</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>:<span class="ident">expr</span>) =&gt; {
-        <span class="ident">xQueueGenericSend</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>, <span class="number">0</span>, <span class="ident">semGIVE_BLOCK_TIME</span>, <span class="ident">queueSEND_TO_BACK</span>);
+        <span class="ident">xQueueGenericSend</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>,<span class="number">0</span>,<span class="ident">semGIVE_BLOCK_TIME</span>,<span class="ident">queueSEND_TO_BACK</span>);
     };
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">xSemaphoreTake</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>:<span class="ident">expr</span>,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xBlockTime</span>:<span class="ident">expr</span>) =&gt; {
-        <span class="ident">xQueueReceive</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>, <span class="number">0</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">xBlockTime</span>)
+        <span class="ident">xQueueReceive</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xSemaphore</span>,<span class="number">0</span>,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">xBlockTime</span>)
     };
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">xQueueCreateMutex</span>(<span class="ident">ucQueueType</span>: <span class="ident">u8</span>) -&gt; <span class="ident">QueueHandle_t</span> {
-    <span class="kw">let</span> <span class="ident">queue</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">QueueDefinition::xQueueGenericCreate</span>(
-        <span class="number">1</span>,
-        <span class="number">0</span>,
-        <span class="ident">ucQueueType</span>,
-    )));
-    <span class="ident">prvInitialiseMutex</span>(<span class="ident">queue</span>.<span class="ident">clone</span>());
+<span class="kw">pub</span> <span class="kw">fn</span>  <span class="ident">xQueueCreateMutex</span>(<span class="ident">ucQueueType</span>:<span class="ident">u8</span>)-&gt;<span class="ident">QueueDefinition</span>{
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">queue</span><span class="op">=</span><span class="ident">QueueDefinition::xQueueGenericCreate</span>(<span class="number">1</span>,<span class="number">0</span>,<span class="ident">ucQueueType</span>);
+    <span class="ident">prvInitialiseMutex</span>(<span class="kw-2">&amp;mut</span> <span class="ident">queue</span>);
     <span class="ident">queue</span>
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvInitialiseMutex</span>(<span class="ident">pxNewQueue</span>: <span class="ident">QueueHandle_t</span>) {
-    <span class="ident">pxNewQueue</span>.<span class="ident">write</span>().<span class="ident">xMutexHolder</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-    <span class="ident">pxNewQueue</span>.<span class="ident">write</span>().<span class="ident">uxRecursiveCallCount</span> <span class="op">=</span> <span class="number">0</span>;
-    <span class="ident">xQueueGenericSend</span>(<span class="ident">pxNewQueue</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="ident">queueSEND_TO_BACK</span>);
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prvInitialiseMutex</span>(<span class="ident">pxNewQueue</span>:<span class="kw-2">&amp;mut</span> <span class="ident">QueueDefinition</span>){
+    <span class="ident">pxNewQueue</span>.<span class="ident">xMutexHolder</span><span class="op">=</span><span class="prelude-val">None</span>;
+    <span class="ident">pxNewQueue</span>.<span class="ident">uxRecursiveCallCount</span><span class="op">=</span><span class="number">0</span>;
+    <span class="ident">xQueueGenericSend</span>(<span class="ident">pxNewQueue</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="ident">queueSEND_TO_BACK</span>);
 }
+
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (42e1761c7 2022-05-15)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (e6a4afc3a 2022-05-20)" ></div>
 </body></html>
