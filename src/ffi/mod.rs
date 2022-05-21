@@ -1,5 +1,5 @@
-mod ffi;
-mod queue;
-mod semphr;
+pub mod ffi;
+pub mod queue;
+pub mod semphr;
 #[macro_use]
-mod tasks;
+pub mod tasks;

@@ -5,8 +5,6 @@
 
 #define false 0
 #define true 1
-#define pdFALSE 0
-#define pdTRUE 1
 
 #define TEST_FAIL() rustAssert(0);
 

@@ -369,7 +369,6 @@ pub fn xQueueGenericSend(
             return errQUEUE_FULL;
         }
     }
-    pdFAIL as BaseType
 }
 
 pub fn prvCopyDataToQueue(

@@ -23,3 +23,8 @@ void vTaskResumeToC(TaskHandle_t xTaskToResume_);
 
 void taskENTER_CRITICAL_ToC();
 void taskEXIT_CRITICAL_ToC();
+
+void vTaskDelay(TickType_t xTicksToDelay);
+void xTaskDelayUntil(TickType_t *pxPreviousWakeTime, TickType_t xTimeIncrement);
+void vTaskSuspendAll();
+void vTaskResumeAll();

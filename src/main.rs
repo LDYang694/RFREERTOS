@@ -21,7 +21,7 @@ use kernel::{
     config::*, event_group::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*,
     riscv_virt::*, semphr::*, tasks::*, *,
 };
-use lazy_static::{__Deref, lazy_static};
+use lazy_static::lazy_static;
 use spin::RwLock;
 
 #[no_mangle]
@@ -95,7 +95,7 @@ pub fn main_new() {
     }
     let s = format!("{}", val);
     print(&s);
-    vTaskStartScheduler();
+    //vTaskStartScheduler();
     loop {}
     test_main_queue();
 }

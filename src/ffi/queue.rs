@@ -217,7 +217,6 @@ pub fn xQueueGenericSendToC(
             return errQUEUE_FULL;
         }
     }
-    pdFAIL as BaseType
 }
 
 #[no_mangle]

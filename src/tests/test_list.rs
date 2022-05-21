@@ -1,5 +1,3 @@
-#![no_std]
-
 use crate::kernel::config::*;
 use crate::kernel::linked_list::*;
 use crate::kernel::portable::*;

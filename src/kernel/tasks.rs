@@ -475,6 +475,8 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
     }
     //vTaskExitCritical();
 }
+
+#[no_mangle]
 /// Delay Task xTicksToDelay Relativly
 /// used in task function
 /// # Examples
@@ -485,7 +487,7 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
 ///     }
 /// }
 /// ```
-pub fn vTaskDelay(xTicksToDelay: TickType) {
+pub extern "C" fn vTaskDelay(xTicksToDelay: TickType) {
     vTaskEnterCritical();
     //todo
     prvAddCurrentTaskToDelayedList(xTicksToDelay, true);
@@ -494,6 +496,7 @@ pub fn vTaskDelay(xTicksToDelay: TickType) {
     taskYield();
 }
 
+#[no_mangle]
 //TODO: exampke
 /// Delay task until pxPreviousWakeTime+pxPreviousWakeTime
 /// used in task function
@@ -507,7 +510,7 @@ pub fn vTaskDelay(xTicksToDelay: TickType) {
 ///     }
 /// }
 /// ```
-pub fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrement: TickType) {
+pub extern "C" fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrement: TickType) {
     let mut xShouldDelay: bool = false;
 
     vTaskSuspendAll();
@@ -886,15 +889,17 @@ fn prvResetNextTaskUnblockTime() {
     }
 }
 
+#[no_mangle]
 /// suspend scheduler
-pub fn vTaskSuspendAll() {
+pub extern "C" fn vTaskSuspendAll() {
     unsafe {
         uxSchedulerSuspended += 1;
     }
 }
 
+#[no_mangle]
 /// resume scheduler
-pub fn vTaskResumeAll() -> bool {
+pub extern "C" fn vTaskResumeAll() -> bool {
     let mut xAlreadyYielded = false;
     let mut moved = false;
     unsafe {
