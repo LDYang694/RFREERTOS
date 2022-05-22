@@ -25,12 +25,23 @@ pub extern "C" fn td_task_getFakeTaskPriority() -> TickType {
 }
 
 #[no_mangle]
+pub extern "C" fn td_task_addFakeTaskWaitingToSendToQueue(xQueue: QueueHandle_c) {
+    ux_list_remove(Arc::downgrade(&get_current_tcb().unwrap().xEventListItem));
+    let xQueue_ = unsafe { Arc::from_raw(xQueue) };
+    v_list_insert(
+        &xQueue_.write().xTasksWaitingToSend,
+        &get_current_tcb().unwrap().xEventListItem,
+    );
+    let temp = Arc::into_raw(xQueue_);
+}
+
+#[no_mangle]
 pub extern "C" fn td_task_addFakeTaskWaitingToReceiveFromQueue(xQueue: QueueHandle_c) {
     ux_list_remove(Arc::downgrade(&get_current_tcb().unwrap().xEventListItem));
     let xQueue_ = unsafe { Arc::from_raw(xQueue) };
     v_list_insert(
         &xQueue_.write().xTasksWaitingToReceive,
-        get_current_tcb().unwrap().xEventListItem.clone(),
+        &get_current_tcb().unwrap().xEventListItem,
     );
     let temp = Arc::into_raw(xQueue_);
 }

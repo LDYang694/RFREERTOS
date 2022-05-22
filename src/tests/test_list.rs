@@ -8,7 +8,7 @@ use alloc::sync::{Arc, Weak};
 use core::ffi::c_void;
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
-
+/*
 pub fn validate_empty_list(pxList: ListRealLink) {
     assert!(list_current_list_length(&pxList) == 0);
     assert!(list_get_pxindex(&Arc::downgrade(&pxList)).ptr_eq(&list_get_end_marker(&pxList)));
@@ -147,4 +147,4 @@ pub fn test_main_list() {
     loop {
         panic! {"error in loop!!!!!"};
     }
-}
+}*/

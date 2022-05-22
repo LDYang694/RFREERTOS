@@ -351,10 +351,8 @@ impl ListT {
 //=====================对外接口=====================
 
 /// insert target item into end of list
-pub fn v_list_insert_end(px_list: &ListRealLink, px_new_list_item: ListItemLink) {
-    px_list
-        .write()
-        .insert_end(Arc::downgrade(&px_new_list_item));
+pub fn v_list_insert_end(px_list: &ListRealLink, px_new_list_item: &ListItemLink) {
+    px_list.write().insert_end(Arc::downgrade(px_new_list_item));
 
     px_new_list_item.write().px_container = Arc::downgrade(&px_list);
 }
@@ -362,8 +360,8 @@ pub fn v_list_insert_end(px_list: &ListRealLink, px_new_list_item: ListItemLink)
 /// insert target item into list in ascending order of value <br>
 /// if target item has value==PORT_MAX_DELAY, insert to list end <br>
 /// if list is not already in order, insert position is not guaranteed
-pub fn v_list_insert(px_list: &ListRealLink, px_new_list_item: ListItemLink) {
-    px_list.write().insert(Arc::downgrade(&px_new_list_item));
+pub fn v_list_insert(px_list: &ListRealLink, px_new_list_item: &ListItemLink) {
+    px_list.write().insert(Arc::downgrade(px_new_list_item));
 
     px_new_list_item.write().px_container = Arc::downgrade(&px_list);
 }

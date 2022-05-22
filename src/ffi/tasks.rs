@@ -43,7 +43,7 @@ pub extern "C" fn xTaskCreateStaticToC(
         ulStackDepth,
         Some(pvParameters),
         Some(puxStackBuffer),
-        unsafe { Some(Arc::from_raw(pxTaskBuffer)) },
+        unsafe { Some(&Arc::from_raw(pxTaskBuffer)) },
         uxPriority,
     )
     .unwrap();

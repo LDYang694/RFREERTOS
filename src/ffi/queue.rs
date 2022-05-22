@@ -167,7 +167,7 @@ pub fn xQueueGenericSendToC(
         vTaskSuspendAll();
         taskEXIT_CRITICAL!();
 
-        prvLockQueue!(xQueue_.clone());
+        prvLockQueue!(xQueue_);
         if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
             if prvIsQueueFull(&xQueue_) == true {
                 vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToSend, xTicksToWait);
@@ -373,7 +373,7 @@ pub extern "C" fn xQueuePeekToC(
         vTaskSuspendAll();
         taskEXIT_CRITICAL!();
 
-        prvLockQueue!(xQueue_.clone());
+        prvLockQueue!(xQueue_);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
             if (prvIsQueueEmpty(&xQueue_) != false) {
                 vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToReceive, xTicksToWait);
