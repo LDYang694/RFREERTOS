@@ -11,6 +11,7 @@
 #define taskENTER_CRITICAL taskENTER_CRITICAL_ToC
 #define taskEXIT_CRITICAL taskEXIT_CRITICAL_ToC
 #define xTaskGetTickCount xTaskGetTickCountToC
+#define vTaskDelayUntil xTaskDelayUntil
 
 void vTaskStartScheduler();
 void* get_task_handle();

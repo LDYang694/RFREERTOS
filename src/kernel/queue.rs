@@ -856,7 +856,7 @@ pub fn prvUnlockQueue(xQueue: &QueueHandle_t) {
 pub fn prvGetDisinheritPriorityAfterTimeout(xQueue: &QueueHandle_t) -> UBaseType {
     let uxHighestPriorityOfWaitingTasks: UBaseType;
     if list_current_list_length(&xQueue.write().xTasksWaitingToReceive) > 0 {
-        uxHighestPriorityOfWaitingTasks = configMAX_PRIORITIES
+        uxHighestPriorityOfWaitingTasks = *configMAX_PRIORITIES
             - list_get_value_of_head_entry(&xQueue.write().xTasksWaitingToReceive);
     } else {
         uxHighestPriorityOfWaitingTasks = tskIDLE_PRIORITY;

@@ -155,7 +155,7 @@ pub fn vTaskPrioritySet(pxTask: Option<&TaskHandle_t>, uxNewPriority: UBaseType)
             x.write().uxPriority = uxNewPriority;
             list_item_set_value(
                 &x.write().xEventListItem,
-                configMAX_PRIORITIES - uxNewPriority,
+                *configMAX_PRIORITIES - uxNewPriority,
             );
         }
         None => unsafe {
@@ -164,7 +164,7 @@ pub fn vTaskPrioritySet(pxTask: Option<&TaskHandle_t>, uxNewPriority: UBaseType)
                     ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
                     v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize], &x.xStateListItem);
                     x.uxPriority = uxNewPriority;
-                    list_item_set_value(&x.xEventListItem, configMAX_PRIORITIES - uxNewPriority);
+                    list_item_set_value(&x.xEventListItem, *configMAX_PRIORITIES - uxNewPriority);
                 }
                 None => {}
             }
@@ -302,7 +302,7 @@ pub fn prvInitialiseNewTask<'a>(
     list_item_set_owner(&pxNewTCB.write().xEventListItem, Arc::downgrade(&pxNewTCB));
     list_item_set_value(
         &pxNewTCB.write().xEventListItem,
-        configMAX_PRIORITIES - priority,
+        *configMAX_PRIORITIES - priority,
     );
     print("prvInitialiseNewTask 33333");
     //TODO: connect
@@ -459,10 +459,8 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
 
     let mut xTimeToWake: TickType;
     let mut xConstTickCount: TickType;
-    print("add begin");
 
     unsafe {
-        print(&format!("{} {}", xTickCount, xTicksToWait));
         xTimeToWake = xTicksToWait + xTickCount;
         xConstTickCount = xTickCount;
     }
@@ -476,7 +474,6 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
         }
     }*/
     let temp = get_current_tcb().unwrap();
-    print("test");
     let list_item = &temp.xStateListItem;
 
     list_item_set_value(&list_item, xTimeToWake);
@@ -491,7 +488,6 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
     } else {
         v_list_insert(&OVERFLOW_DELAYED_TASK_LIST, &list_item);
     }
-    print("add done");
     //vTaskExitCritical();
 }
 
@@ -600,6 +596,7 @@ pub extern "C" fn xTaskIncrementTick() {
 
             if xTickCount >= xNextTaskUnblockTime {
                 loop {
+                    print("unblocking");
                     if list_is_empty(&DELAYED_TASK_LIST) {
                         xNextTaskUnblockTime = PORT_MAX_DELAY;
                         break;
@@ -1086,7 +1083,7 @@ pub fn xTaskPriorityInherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType {
                 {
                     list_item_set_value(
                         &pxMutexHolderTCB.xEventListItem,
-                        configMAX_PRIORITIES - pxMutexHolderTCB.uxPriority,
+                        *configMAX_PRIORITIES - pxMutexHolderTCB.uxPriority,
                     );
                 }
 
@@ -1130,7 +1127,7 @@ pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType
                     pxMutexHolderTCB.uxPriority = pxMutexHolderTCB.uxBasePriority;
                     list_item_set_value(
                         &pxMutexHolderTCB.xEventListItem,
-                        configMAX_PRIORITIES - pxMutexHolderTCB.uxPriority,
+                        *configMAX_PRIORITIES - pxMutexHolderTCB.uxPriority,
                     );
                     prvAddTaskToReadyList(&pxMutexHolder_);
                     xReturn = pdTRUE;
@@ -1182,7 +1179,7 @@ pub fn vTaskPriorityDisinheritAfterTimeout(
                     pxMutexHolderTCB.uxPriority = uxPriorityToUse;
                     list_item_set_value(
                         &pxMutexHolderTCB.xEventListItem,
-                        configMAX_PRIORITIES - uxPriorityToUse,
+                        *configMAX_PRIORITIES - uxPriorityToUse,
                     );
 
                     if list_is_contained_within(
@@ -1248,7 +1245,7 @@ pub fn uxTaskResetEventItemValue() -> TickType {
     let uxReturn: TickType = list_item_get_value(&get_current_tcb().unwrap().xEventListItem);
     list_item_set_value(
         &get_current_tcb().unwrap().xEventListItem,
-        configMAX_PRIORITIES - &get_current_tcb().unwrap().uxPriority,
+        *configMAX_PRIORITIES - &get_current_tcb().unwrap().uxPriority,
     );
     uxReturn
 }

@@ -9,21 +9,18 @@ extern "C" {
     pub static CONFIG_TICK_RATE_HZ: TickType;
     pub static CONFIG_CPU_CLOCK_HZ: UBaseType;
     pub static CONFIG_ISR_STACK_SIZE_WORDS: usize;
+    pub static configMAX_PRIORITIES_: UBaseType;
 }
 
 lazy_static! {
     pub static ref CONFIG_MTIME_BASE_ADDRESS: UBaseType = unsafe { CLINT_ADDR_ + 0xbff8 };
     pub static ref CONFIG_MTIMECMP_BASE_ADDRESS: UBaseType = unsafe { CLINT_ADDR_ + 0x4000 };
     pub static ref portTICK_RATE_MS: TickType = 1000 / unsafe { CONFIG_TICK_RATE_HZ };
+    pub static ref configMAX_PRIORITIES: UBaseType = unsafe { configMAX_PRIORITIES_ };
 }
 
 pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 pub const USER_STACK_SIZE: usize = 0x10000;
-pub const PORT_ISR_STACK_FILL_BYTE: BaseType = 0xee;
-pub const PRIM_HART: usize = 0;
-pub const CLINT_MSIP: u32 = 0x0000;
-pub const CLINT_MTIMECMP: u32 = 0x4000;
-pub const CLINT_MTIME: u32 = 0xbff8;
 
 /* register definitions */
 pub const REG_RBR: usize = 0x00; /* Receiver buffer reg. */
@@ -48,5 +45,3 @@ pub const LSR_BI: u8 = 0x10; /* Break interrupt */
 pub const LSR_THRE: u8 = 0x20; /* Transmitter holding register empty */
 pub const LSR_TEMT: u8 = 0x40; /* Transmitter empty */
 pub const LSR_EIRF: u8 = 0x80; /* Error in RCVR FIFO */
-
-pub const configMAX_PRIORITIES: UBaseType = 16;

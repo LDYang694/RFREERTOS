@@ -62,8 +62,11 @@ pub extern "C" fn xTaskCreateToC(
     ulStackDepth: UBaseType,
     pvParameters: usize,
     uxPriority: UBaseType,
-    pxCreatedTask: TaskHandle_c,
+    mut pxCreatedTask: TaskHandle_c,
 ) -> BaseType {
+    if (pxCreatedTask as usize) == 0 {
+        pxCreatedTask = get_task_handle();
+    }
     let name = get_str_from_cchar(pcName);
     let temp = unsafe { Arc::from_raw(pxCreatedTask) };
 

@@ -134,7 +134,12 @@ pub fn xQueueGenericSendToC(
                 } else {
                     xYieldRequired =
                         prvCopyDataToQueue(&mut xQueue_.write(), pvItemToQueue, xCopyPosition);
+                    let temp = list_get_num_items(&Arc::downgrade(
+                        &xQueue_.write().xTasksWaitingToReceive,
+                    ));
+                    print(&format!("list size {}", temp));
                     if list_is_empty(&xQueue_.write().xTasksWaitingToReceive) == false {
+                        print("not empty");
                         if xTaskRemoveFromEventList(&xQueue_.write().xTasksWaitingToReceive) == true
                         {
                             queueYIELD_IF_USING_PREEMPTION!();
@@ -205,7 +210,6 @@ pub extern "C" fn xQueueReceiveToC(
     //let xQueue = &mut (*xq.write());
     loop {
         taskENTER_CRITICAL!();
-        print("in recv loop");
         let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
         {
             let uxMessagesWaiting = xQueue_.read().uxMessagesWaiting;
@@ -286,6 +290,7 @@ pub extern "C" fn xQueueReceiveToC(
 
                 prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
+                print("...");
                 if (vTaskResumeAll() == false) {
                     portYIELD_WITHIN_API!();
                 } else {

@@ -369,6 +369,7 @@ pub fn v_list_insert(px_list: &ListRealLink, px_new_list_item: &ListItemLink) {
 /// remove target item from its container
 /// return number of items after remove
 pub fn ux_list_remove(px_item_to_remove: ListItemWeakLink) -> UBaseType {
+    print("remove");
     let px_list = list_item_get_container(&px_item_to_remove);
     match px_list.upgrade() {
         Some(x) => {}

@@ -50,7 +50,7 @@ preempt the sending task and remove the queue items each time the sending task
 writes to the queue.  Therefore the queue will never have more than one item in
 it at any time, and even with a queue length of 1, the sending task will never
 find the queue full. */
-#define mainQUEUE_LENGTH					( 1 )
+#define mainQUEUE_LENGTH					( 10 )
 
 /*-----------------------------------------------------------*/
 
@@ -86,8 +86,7 @@ int f = 1;
 		f = !f;
 
 		/* Place this task in the blocked state until it is time to run again. */
-		//vTaskDelayUntil( &xNextWakeTime, mainQUEUE_SEND_FREQUENCY_MS );
-
+		vTaskDelayUntil( &xNextWakeTime, mainQUEUE_SEND_FREQUENCY_MS );
 		/* Send to the queue - causing the queue receive task to unblock and
 		toggle the LED.  0 is used as the block time so the sending operation
 		will not block - it shouldn't need to block as the queue should always
@@ -119,7 +118,7 @@ int f = 1;
 		/* Wait until something arrives in the queue - this task will block
 		indefinitely provided INCLUDE_vTaskSuspend is set to 1 in
 		FreeRTOSConfig.h. */
-		xQueueReceive( xQueue, &ulReceivedValue, portMAX_DELAY );
+		xQueueReceive( xQueue, &ulReceivedValue, 0 );
 
 		/*  To get here something must have been received from the queue, but
 		is it the expected value?  If it is, toggle the LED. */
@@ -154,9 +153,9 @@ int main_blinky( void )
 		/* Start the two tasks as described in the comments at the top of this
 		file. */
 		xTaskCreate( prvQueueReceiveTask, "Rx", configMINIMAL_STACK_SIZE * 2U, NULL,
-					mainQUEUE_RECEIVE_TASK_PRIORITY, get_task_handle() );
+					mainQUEUE_RECEIVE_TASK_PRIORITY, NULL );
 		xTaskCreate( prvQueueSendTask, "Tx", configMINIMAL_STACK_SIZE * 2U, NULL,
-					mainQUEUE_SEND_TASK_PRIORITY, get_task_handle() );
+					mainQUEUE_SEND_TASK_PRIORITY, NULL );
 	}
 
 	vTaskStartScheduler();
