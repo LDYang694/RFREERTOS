@@ -122,3 +122,13 @@ pub extern "C" fn taskEXIT_CRITICAL_ToC() {
 pub extern "C" fn xTaskGetTickCountToC() -> TickType {
     return unsafe { xTickCount };
 }
+/*
+#[no_mangle]
+pub extern "C" fn xTaskGetCurrentTaskHandle() -> TaskHandle_c {
+    get_current_tcb()
+}*/
+/*
+#[no_mangle]
+pub extern "C" fn pcTaskGetName() -> usize {
+    let name=
+}*/

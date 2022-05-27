@@ -30,7 +30,7 @@
 #include "tasks.h"
 #include "queue.h"
 
-//#include <stdio.h>
+#include <stdio.h>
 
 #include "riscv-virt.h"
 #include "ns16550.h"
@@ -61,7 +61,6 @@ static QueueHandle_t xQueue = NULL;
 
 static void prvQueueSendTask( void *pvParameters )
 {
-	vSendString("in send task");
 TickType_t xNextWakeTime;
 const unsigned long ulValueToSend = 100UL;
 const char * const pcMessage1 = "Transfer1";
@@ -76,7 +75,6 @@ int f = 1;
 
 	for( ;; )
 	{
-		vSendString("in send task loop");
 		char buf[40];
 
 		/*sprintf( buf, "%d: %s: %s", xGetCoreID(),
@@ -134,7 +132,7 @@ int f = 1;
 		}
 		else
 		{
-			//vSendString( pcFailMessage );
+			vSendString( pcFailMessage );
 		}
 	}
 }

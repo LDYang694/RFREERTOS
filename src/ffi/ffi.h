@@ -1,8 +1,9 @@
+#include "projdefs.h"
+
 #define BaseType_t int
 #define TickType_t int
 #define UBaseType_t unsigned int
-#define pdTRUE true
-#define pdFALSE false
+
 
 #define taskSCHEDULER_SUSPENDED      ( ( BaseType_t ) 0 )
 #define taskSCHEDULER_NOT_STARTED    ( ( BaseType_t ) 1 )

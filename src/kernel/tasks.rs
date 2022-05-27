@@ -1249,3 +1249,8 @@ pub fn uxTaskResetEventItemValue() -> TickType {
     );
     uxReturn
 }
+
+pub fn pcTaskGetName(xTaskToQuery: Option<&TaskHandle_t>) -> &str {
+    let temp = prvGetTCBFromHandle(xTaskToQuery).unwrap();
+    &temp.pcTaskName
+}
