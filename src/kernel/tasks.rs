@@ -13,6 +13,8 @@ use crate::portYIELD;
 use crate::portmacro::*;
 #[cfg(feature = "configUSE_IDLE_HOOK")]
 use crate::vApplicationIdleHook;
+use crate::CONFIG_ISR_STACK_SIZE_WORDS;
+use alloc::vec::Vec;
 
 use alloc::format;
 use alloc::string::ToString;
@@ -339,6 +341,9 @@ pub fn prvIdleTask(t: *mut c_void) {
 /// start scheduler
 #[no_mangle]
 pub extern "C" fn vTaskStartScheduler() {
+    X_ISRSTACK_
+        .write()
+        .resize(unsafe { CONFIG_ISR_STACK_SIZE_WORDS }, 0);
     unsafe {
         XSCHEDULERRUNNING = pdTRUE;
     }
@@ -451,13 +456,29 @@ pub fn taskYield() {
 pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinitely: bool) {
     //todo
     //vTaskEnterCritical();
+
     let mut xTimeToWake: TickType;
     let mut xConstTickCount: TickType;
+    print("add begin");
+
     unsafe {
+        print(&format!("{} {}", xTickCount, xTicksToWait));
         xTimeToWake = xTicksToWait + xTickCount;
         xConstTickCount = xTickCount;
     }
-    let list_item = &get_current_tcb().unwrap().xStateListItem;
+
+    /*match get_current_tcb() {
+        Some(x) => {
+            print("some");
+        }
+        None => {
+            print("None");
+        }
+    }*/
+    let temp = get_current_tcb().unwrap();
+    print("test");
+    let list_item = &temp.xStateListItem;
+
     list_item_set_value(&list_item, xTimeToWake);
     ux_list_remove(Arc::downgrade(&list_item));
     if xTimeToWake > xConstTickCount {
@@ -470,6 +491,7 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
     } else {
         v_list_insert(&OVERFLOW_DELAYED_TASK_LIST, &list_item);
     }
+    print("add done");
     //vTaskExitCritical();
 }
 
@@ -1180,6 +1202,7 @@ pub fn vTaskPriorityDisinheritAfterTimeout(
 ///place current task on event list and delay it
 pub fn vTaskPlaceOnEventList(pxEventList: &ListRealLink, xTicksToWait: TickType) {
     v_list_insert(pxEventList, &get_current_tcb().unwrap().xEventListItem);
+    print("add to delay list");
     prvAddCurrentTaskToDelayedList(xTicksToWait, true);
 }
 

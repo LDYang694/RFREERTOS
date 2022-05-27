@@ -1,7 +1,9 @@
 //! portable apis
 
 extern crate alloc;
+use super::projdefs::pdFALSE;
 use crate::config::*;
+use crate::kernel::allocator::DYNAMIC_ALLOCATOR;
 use crate::kernel::kernel::READY_TASK_LISTS;
 use crate::kernel::kernel::{TCB1_p, TCB2_p};
 use crate::linked_list::*;
@@ -10,12 +12,14 @@ use crate::portENABLE_INTERRUPTS;
 use crate::portmacro::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
+use alloc::alloc::Global;
 use alloc::format;
 use alloc::sync::{Arc, Weak};
+use alloc::vec::Vec;
 use core::arch::asm;
+use core::intrinsics::forget;
+use lazy_static::lazy_static;
 use spin::RwLock;
-
-use super::projdefs::pdFALSE;
 //use crate::pxCurrentTCB_;
 // use crate::pxCurrentTCB;
 extern "C" {
@@ -39,10 +43,16 @@ pub static mut pullMachineTimerCompareRegister: UBaseType = 0;
 
 pub static mut pxCurrentTCB_: Option<*const tskTaskControlBlock> = None;
 
-static mut X_ISRSTACK: [StackType; CONFIG_ISR_STACK_SIZE_WORDS] = [0; CONFIG_ISR_STACK_SIZE_WORDS];
-
 static mut ULL_NEXT_TIME: u64 = 0;
-pub const ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE: UBaseType = CONFIG_MTIMECMP_BASE_ADDRESS;
+
+lazy_static! {
+    pub static ref ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE: UBaseType =
+        *CONFIG_MTIMECMP_BASE_ADDRESS;
+    pub static ref X_ISRSTACK_: Arc<RwLock<Vec<StackType>>> =
+        Arc::new(RwLock::new(Vec::with_capacity(unsafe {
+            CONFIG_ISR_STACK_SIZE_WORDS
+        })));
+}
 
 /*
 extern "C" {
@@ -54,8 +64,8 @@ extern "C" {
 /// get current mtime
 fn get_mtime() -> u64 {
     let mut result: u64 = 0;
-    let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
-    let pul_time_low: *const UBaseType = CONFIG_MTIME_BASE_ADDRESS as *const UBaseType;
+    let pul_time_high: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
+    let pul_time_low: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS) as *const UBaseType;
     unsafe {
         let mut ul_current_time_low: UBaseType = *pul_time_high;
         let mut ul_current_time_high: UBaseType = *pul_time_low;
@@ -70,16 +80,16 @@ fn get_mtime() -> u64 {
 /// setup timer interrupt
 pub fn v_port_setup_timer_interrupt() {
     let mut ul_hart_id: UBaseType;
-    let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
-    let pul_time_low: *const UBaseType = CONFIG_MTIME_BASE_ADDRESS as *const UBaseType;
+    let pul_time_high: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
+    let pul_time_low: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS) as *const UBaseType;
     let mut ul_current_time_low: UBaseType;
     let mut ul_current_time_high: UBaseType;
 
     unsafe {
         pullNextTime = &ULL_NEXT_TIME as *const u64 as u32;
-        uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ;
+        uxTimerIncrementsForOneTick = unsafe { CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ };
         asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
-        pullMachineTimerCompareRegister = ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE + ul_hart_id * 4;
+        pullMachineTimerCompareRegister = *ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE + ul_hart_id * 4;
         loop {
             ul_current_time_high = *pul_time_high;
             ul_current_time_low = *pul_time_low;
@@ -110,12 +120,15 @@ pub fn auto_set_currentTcb() {
 
 /// start up scheduler
 pub fn x_port_start_scheduler() -> BaseType {
+    //X_ISRSTACK_.write().insert(0, 1);
+
     unsafe {
-        xISRStackTop = (&X_ISRSTACK[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const u32;
+        xISRStackTop =
+            &(X_ISRSTACK_.read()[unsafe { CONFIG_ISR_STACK_SIZE_WORDS } - 1]) as *const u32;
     }
     v_port_setup_timer_interrupt();
     let mut tmp: u32 = 0x800;
-    if CONFIG_MTIME_BASE_ADDRESS != 0 && CONFIG_MTIMECMP_BASE_ADDRESS != 0 {
+    if *CONFIG_MTIME_BASE_ADDRESS != 0 && *CONFIG_MTIMECMP_BASE_ADDRESS != 0 {
         tmp = 0x880;
     }
     print("start first task");
@@ -144,12 +157,14 @@ pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {
 
 /// get current tcb
 pub fn get_current_tcb() -> Option<&'static mut tskTaskControlBlock> {
+    let xReturn: Option<&'static mut tskTaskControlBlock>;
     unsafe {
-        match pxCurrentTCB_ {
+        xReturn = match pxCurrentTCB_ {
             Some(x) => Some(&mut *(x as *mut tskTaskControlBlock)),
             None => None,
         }
     }
+    xReturn
 }
 
 /// return if target tcb is current tcb

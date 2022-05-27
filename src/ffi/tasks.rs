@@ -114,3 +114,8 @@ pub extern "C" fn taskENTER_CRITICAL_ToC() {
 pub extern "C" fn taskEXIT_CRITICAL_ToC() {
     portEXIT_CRITICAL!();
 }
+
+#[no_mangle]
+pub extern "C" fn xTaskGetTickCountToC() -> TickType {
+    return unsafe { xTickCount };
+}

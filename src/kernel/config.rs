@@ -2,18 +2,24 @@
 //! equal to FreeRTOSConfig.h
 
 use crate::portmacro::*;
+use lazy_static::lazy_static;
 
-const CLINT_ADDR: UBaseType = 0x02000000;
+extern "C" {
+    pub static CLINT_ADDR_: UBaseType;
+    pub static CONFIG_TICK_RATE_HZ: TickType;
+    pub static CONFIG_CPU_CLOCK_HZ: UBaseType;
+    pub static CONFIG_ISR_STACK_SIZE_WORDS: usize;
+}
 
-pub const CONFIG_MTIME_BASE_ADDRESS: UBaseType = CLINT_ADDR + 0xbff8;
-pub const CONFIG_MTIMECMP_BASE_ADDRESS: UBaseType = CLINT_ADDR + 0x4000;
-pub const CONFIG_ISR_STACK_SIZE_WORDS: usize = 2048;
-pub const CONFIG_TICK_RATE_HZ: TickType = 1000;
-pub const CONFIG_CPU_CLOCK_HZ: UBaseType = 1000000;
+lazy_static! {
+    pub static ref CONFIG_MTIME_BASE_ADDRESS: UBaseType = unsafe { CLINT_ADDR_ + 0xbff8 };
+    pub static ref CONFIG_MTIMECMP_BASE_ADDRESS: UBaseType = unsafe { CLINT_ADDR_ + 0x4000 };
+    pub static ref portTICK_RATE_MS: TickType = 1000 / unsafe { CONFIG_TICK_RATE_HZ };
+}
+
 pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 pub const USER_STACK_SIZE: usize = 0x10000;
 pub const PORT_ISR_STACK_FILL_BYTE: BaseType = 0xee;
-pub const portTICK_RATE_MS: TickType = 1000 / CONFIG_TICK_RATE_HZ;
 pub const PRIM_HART: usize = 0;
 pub const CLINT_MSIP: u32 = 0x0000;
 pub const CLINT_MTIMECMP: u32 = 0x4000;

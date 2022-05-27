@@ -45,45 +45,8 @@ void task_func2(){
     }
 }
 
-void test_xQueuePeek_noop_waiting_higher_priority( void )
-{
-    /* Create a new queue */
-    QueueHandle_t xQueue = xQueueCreate( 1, sizeof( uint32_t ) );
-
-    /* Export for callback */
-    QueueHandle_t xQueueHandleStatic = xQueue;
-
-    /* Add a value to the queue */
-    uint32_t testVal = getNextMonotonicTestValue();
-
-    ( void ) xQueueSend( xQueue, &testVal, 0 );
-
-    /* Insert an item into the event list */
-    td_task_setFakeTaskPriority( DEFAULT_PRIORITY + 1 );
-    td_task_addFakeTaskWaitingToReceiveFromQueue( xQueue );
-
-    /* peek from the queue */
-    uint32_t checkVal = INVALID_UINT32;
-
-    TEST_ASSERT_EQUAL( 1, uxQueueMessagesWaiting( xQueue ) );
-
-    TEST_ASSERT_EQUAL( pdTRUE, xQueuePeek( xQueue, &checkVal, 0 ) );
-    TEST_ASSERT_EQUAL( testVal, checkVal );
-
-    TEST_ASSERT_EQUAL( 1, uxQueueMessagesWaiting( xQueue ) );
-
-    /* Veify that the task Yielded */
-    //TEST_ASSERT_EQUAL( 1, td_task_getYieldCount() );
-
-    /* Check that vTaskMissedYield was called */
-    //TEST_ASSERT_EQUAL( 1, td_task_getCount_vPortYieldWithinAPI() );
-
-    vQueueDelete( xQueue );
-}
-
 int queue_test_func()
 {
-    test_xQueuePeek_noop_waiting_higher_priority();
     rustPrint("success");
     while(true)
     {

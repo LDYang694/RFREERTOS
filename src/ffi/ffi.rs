@@ -33,6 +33,12 @@ pub extern "C" fn rustAssert(val: bool) {
 #[no_mangle]
 pub extern "C" fn rustPrint(val: usize) {
     let s = get_str_from_cchar(val);
+    print(&s);
+}
+
+#[no_mangle]
+pub extern "C" fn rustVSendString(val: usize) {
+    let s = get_str_from_cchar(val);
     vSendString(&s);
 }
 
@@ -40,7 +46,6 @@ pub extern "C" fn rustPrint(val: usize) {
 pub extern "C" fn rustMalloc(size_: usize) -> usize {
     use alloc::alloc::Layout;
 
-    use alloc::vec::Vec;
     let layout = Layout::from_size_align(size_ as usize, 4).ok().unwrap();
     let stack_ptr: *mut u8;
     unsafe {

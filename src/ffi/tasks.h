@@ -2,12 +2,15 @@
 
 #define TaskHandle_t void*
 
+#define tskIDLE_PRIORITY    ( ( UBaseType_t ) 0U )
+
 #define xTaskCreateStatic xTaskCreateStaticToC
 #define xTaskCreate xTaskCreateToC
 #define vTaskSuspend vTaskSuspendToC
 #define vTaskResume vTaskResumeToC
 #define taskENTER_CRITICAL taskENTER_CRITICAL_ToC
 #define taskEXIT_CRITICAL taskEXIT_CRITICAL_ToC
+#define xTaskGetTickCount xTaskGetTickCountToC
 
 void vTaskStartScheduler();
 void* get_task_handle();
@@ -28,3 +31,5 @@ void vTaskDelay(TickType_t xTicksToDelay);
 void xTaskDelayUntil(TickType_t *pxPreviousWakeTime, TickType_t xTimeIncrement);
 void vTaskSuspendAll();
 void vTaskResumeAll();
+
+int xTaskGetTickCountToC();

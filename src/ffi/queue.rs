@@ -205,6 +205,7 @@ pub extern "C" fn xQueueReceiveToC(
     //let xQueue = &mut (*xq.write());
     loop {
         taskENTER_CRITICAL!();
+        print("in recv loop");
         let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
         {
             let uxMessagesWaiting = xQueue_.read().uxMessagesWaiting;
@@ -253,14 +254,17 @@ pub extern "C" fn xQueueReceiveToC(
                 }
             }
         }
+        print("ready to suspend");
         vTaskSuspendAll();
         taskEXIT_CRITICAL!();
 
         prvLockQueue!(xQueue_.clone());
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
+            print("no timeout");
             if (prvIsQueueEmpty(&xQueue_) != false) {
+                print("place on");
                 vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToReceive, xTicksToWait);
-
+                print("place on complete");
                 // /* Unlocking the queue means queue events can effect the
                 //  * event list. It is possible that interrupts occurring now
                 //  * remove this task from the event list again - but as the
@@ -293,6 +297,7 @@ pub extern "C" fn xQueueReceiveToC(
                 vTaskResumeAll();
             }
         } else {
+            print("timeout");
             prvUnlockQueue(&xQueue_);
 
             if prvIsQueueEmpty(&xQueue_) != false {

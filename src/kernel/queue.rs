@@ -30,10 +30,10 @@ macro_rules! prvLockQueue {
     ($pxQueue: expr ) => {
         taskENTER_CRITICAL!();
         {
-            if $pxQueue.write().cRxLock == queueUNLOCKED {
+            if $pxQueue.read().cRxLock == queueUNLOCKED {
                 $pxQueue.write().cRxLock = queueLOCKED_UNMODIFIED;
             }
-            if $pxQueue.write().cTxLock == queueUNLOCKED {
+            if $pxQueue.read().cTxLock == queueUNLOCKED {
                 $pxQueue.write().cTxLock = queueLOCKED_UNMODIFIED;
             }
         }

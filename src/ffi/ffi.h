@@ -1,5 +1,6 @@
 #define BaseType_t int
 #define TickType_t int
+#define UBaseType_t unsigned int
 #define pdTRUE true
 #define pdFALSE false
 
@@ -11,3 +12,11 @@ void rustAssert(bool);
 void rustPrint(char*);
 void* rustMalloc(int size_);
 void rustYield();
+void rustVSendString(char*);
+
+#define vSendString rustVSendString
+
+#define portSTACK_TYPE	uint32_t
+#define portBASE_TYPE	int32_t
+#define portUBASE_TYPE	uint32_t
+#define portMAX_DELAY ( TickType_t ) 0xffffffUL

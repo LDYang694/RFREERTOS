@@ -2,26 +2,41 @@
 //! use buddy_system_allocator and wrap as SimpleAllocator
 use super::tasks::{vTaskEnterCritical, vTaskExitCritical};
 use crate::kernel::config::KERNEL_HEAP_SIZE;
+use alloc::format;
+use alloc::sync::{Arc, Weak};
+use alloc::vec::Vec;
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
 use core::arch::asm;
+use core::mem::forget;
+use lazy_static::lazy_static;
+use spin::RwLock;
 
 use super::riscv_virt::{print, vSendString};
-
+/*
+lazy_static! {
+    pub static ref HEAP_: Arc<RwLock<Vec<u8>>> =
+        Arc::new(RwLock::new(Vec::with_capacity(KERNEL_HEAP_SIZE)));
+}*/
 /// INITIAL Start should init_heap first
 pub fn init_heap() {
     static mut HEAP: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];
+
+    /*unsafe {
+        (*HEAP_).write().resize(KERNEL_HEAP_SIZE, 0);
+    }*/
     unsafe {
         DYNAMIC_ALLOCATOR
             .Buddy_System_Allocator
             .lock()
             .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);
+        print(&format!("addr:{:X}", HEAP.as_ptr() as usize));
     }
 }
 
 #[global_allocator]
 /// DYNAMIC_ALLOCATOR as global_allocator
-static DYNAMIC_ALLOCATOR: SimpleAllocator = SimpleAllocator::empty();
+pub static DYNAMIC_ALLOCATOR: SimpleAllocator = SimpleAllocator::empty();
 #[alloc_error_handler]
 /// alloc_error_handler function
 fn alloc_error_handler(_: core::alloc::Layout) -> ! {
@@ -29,7 +44,7 @@ fn alloc_error_handler(_: core::alloc::Layout) -> ! {
 }
 
 /// Critical Wrapped Buddy System Allocator
-struct SimpleAllocator {
+pub struct SimpleAllocator {
     Buddy_System_Allocator: LockedHeap<32>,
 }
 

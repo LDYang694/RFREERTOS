@@ -3,14 +3,17 @@
 #![feature(alloc_error_handler)]
 #![allow(non_snake_case)]
 #![feature(box_into_inner)]
+#![feature(allocator_api)]
+#![feature(core_intrinsics)]
 
 mod ffi;
 #[allow(dead_code)]
 mod kernel;
-mod tests;
+//mod tests;
 extern crate alloc;
 use alloc::format;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use core::arch::asm;
 use core::ffi::c_void;
 use kernel::projdefs::{pdFALSE, pdTRUE};
@@ -28,7 +31,7 @@ pub extern "C" fn main() -> ! {
 }
 
 extern "C" {
-    fn test_() -> BaseType;
+    fn main_blinky() -> BaseType;
 }
 
 fn delay(time: u32) {
@@ -85,13 +88,16 @@ fn task3(t: *mut c_void) {
     }
 }
 pub fn main_new() {
-    //main_new_1();
-    let val: BaseType;
     unsafe {
-        val = test_();
+        main_blinky();
+    }
+    //main_new_1();
+    /*let val: BaseType;
+    unsafe {
+        val = 0;
     }
     let s = format!("{}", val);
-    print(&s);
+    print(&s);*/
     //vTaskStartScheduler();
     loop {}
 }
