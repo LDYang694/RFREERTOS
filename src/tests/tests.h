@@ -8,8 +8,10 @@
 
 #define TEST_FAIL() rustAssert(0);
 
-#define fakeAssertExpectFail(); ;
+
 #define TEST_ASSERT_EQUAL( a , b ) rustAssert( a==b )
+#define TEST_ASSERT_NOT_EQUAL( a , b ) rustAssert( a!=b )
+#define TEST_ASSERT_TRUE( a ) rustAssert( a==true )
 
 #define CEXCEPTION_T         unsigned int
 typedef struct {
@@ -19,7 +21,5 @@ typedef struct {
 #define CEXCEPTION_NUM_ID    (1)
 
 
-int getNextMonotonicTestValue(){
-    return 0xff;
-}
+uint32_t getNextMonotonicTestValue();
  

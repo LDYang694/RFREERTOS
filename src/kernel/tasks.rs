@@ -14,7 +14,6 @@ use crate::portmacro::*;
 #[cfg(feature = "configUSE_IDLE_HOOK")]
 use crate::vApplicationIdleHook;
 use crate::CONFIG_ISR_STACK_SIZE_WORDS;
-use alloc::vec::Vec;
 
 use alloc::format;
 use alloc::string::ToString;
@@ -596,7 +595,6 @@ pub extern "C" fn xTaskIncrementTick() {
 
             if xTickCount >= xNextTaskUnblockTime {
                 loop {
-                    print("unblocking");
                     if list_is_empty(&DELAYED_TASK_LIST) {
                         xNextTaskUnblockTime = PORT_MAX_DELAY;
                         break;
@@ -1199,7 +1197,6 @@ pub fn vTaskPriorityDisinheritAfterTimeout(
 ///place current task on event list and delay it
 pub fn vTaskPlaceOnEventList(pxEventList: &ListRealLink, xTicksToWait: TickType) {
     v_list_insert(pxEventList, &get_current_tcb().unwrap().xEventListItem);
-    print("add to delay list");
     prvAddCurrentTaskToDelayedList(xTicksToWait, true);
 }
 

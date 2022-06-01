@@ -3,10 +3,7 @@ use super::projdefs::pdFALSE;
 use crate::kernel::linked_list::*;
 use crate::kernel::tasks::*;
 use crate::*;
-use alloc::boxed::Box;
 use alloc::sync::{Arc, Weak};
-use core::default;
-use core::{alloc::Layout, mem};
 use spin::RwLock;
 
 pub type EventBits = TickType;

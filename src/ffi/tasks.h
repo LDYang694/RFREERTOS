@@ -34,3 +34,9 @@ void vTaskSuspendAll();
 void vTaskResumeAll();
 
 int xTaskGetTickCountToC();
+
+typedef struct xTIME_OUT
+{
+    BaseType_t xOverflowCount;
+    TickType_t xTimeOnEntering;
+} TimeOut_t;

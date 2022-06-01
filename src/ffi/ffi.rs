@@ -1,6 +1,4 @@
-use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
-use crate::kernel::queue::*;
 use crate::kernel::riscv_virt::*;
 use crate::portYIELD;
 use alloc::string::String;

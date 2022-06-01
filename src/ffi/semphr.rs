@@ -36,7 +36,7 @@ pub extern "C" fn xSemaphoreCreateCountingToC(
 
 #[no_mangle]
 pub extern "C" fn vSemaphoreDeleteToC(xQueue: QueueHandle_c) {
-    vSemaphoreDelete!(unsafe { Arc::from_raw(xQueue) });
+    vQueueDeleteToC(xQueue);
 }
 
 #[no_mangle]

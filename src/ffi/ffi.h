@@ -1,4 +1,5 @@
 #include "projdefs.h"
+#include <stdbool.h>
 
 #define BaseType_t int
 #define TickType_t int

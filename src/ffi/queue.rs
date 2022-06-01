@@ -3,14 +3,12 @@ use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
 use crate::kernel::riscv_virt::*;
-use crate::kernel::tasks::vTaskExitCritical;
 use crate::kernel::tasks::*;
 use crate::projdefs::*;
-use crate::vTaskEnterCritical;
 use crate::{
     mtCOVERAGE_TEST_MARKER, portENTER_CRITICAL, portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,
     prvLockQueue, queueYIELD_IF_USING_PREEMPTION, taskENTER_CRITICAL, taskEXIT_CRITICAL,
-    taskYIELD_IF_USING_PREEMPTION,
+    taskYIELD_IF_USING_PREEMPTION, vTaskEnterCritical,
 };
 use alloc::sync::{Arc, Weak};
 use alloc::{fmt::format, format};
@@ -36,22 +34,76 @@ pub extern "C" fn xQueueCreateToC(
 
 #[no_mangle]
 pub extern "C" fn uxQueueMessagesWaiting(xQueue: QueueHandle_c) -> UBaseType {
-    let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-    let ret = temp.read().uxMessagesWaiting;
-    let xQueue_ = Arc::into_raw(temp);
+    let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
+    let ret = xQueue_.read().uxMessagesWaiting;
+    let temp = Arc::into_raw(xQueue_);
     ret
 }
 
 #[no_mangle]
-pub extern "C" fn cGetQueueRxLock(xQueue: QueueHandle_t) -> i8 {
-    //forget(&xQueue);
-    xQueue.read().cRxLock
+pub extern "C" fn uxQueueSpacesAvailable(xQueue: QueueHandle_c) -> UBaseType {
+    let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
+    let ret = xQueue_.read().uxLength - xQueue_.read().uxMessagesWaiting;
+    let temp = Arc::into_raw(xQueue_);
+    ret
 }
 
 #[no_mangle]
-pub extern "C" fn cGetQueueTxLock(xQueue: QueueHandle_t) -> i8 {
-    //forget(&xQueue);
-    xQueue.read().cTxLock
+pub extern "C" fn xQueueIsQueueEmptyFromISR(xQueue: QueueHandle_c) -> bool {
+    let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
+    let ret = xQueue_.read().uxMessagesWaiting == 0;
+    let temp = Arc::into_raw(xQueue_);
+    ret
+}
+
+#[no_mangle]
+pub extern "C" fn xQueueIsQueueFullFromISR(xQueue: QueueHandle_c) -> bool {
+    let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
+    let ret = xQueue_.read().uxMessagesWaiting == xQueue_.read().uxLength;
+    let temp = Arc::into_raw(xQueue_);
+    ret
+}
+
+#[no_mangle]
+pub extern "C" fn cGetQueueRxLock(xQueue: QueueHandle_c) -> i8 {
+    let xReturn: i8;
+    unsafe {
+        let xQueue_ = Arc::from_raw(xQueue);
+        xReturn = xQueue_.read().cRxLock;
+        let temp = Arc::into_raw(xQueue_);
+    }
+    //print(&format!("rxlock={}", xReturn));
+    return xReturn;
+}
+
+#[no_mangle]
+pub extern "C" fn cGetQueueTxLock(xQueue: QueueHandle_c) -> i8 {
+    let xReturn: i8;
+    unsafe {
+        let xQueue_ = Arc::from_raw(xQueue);
+        xReturn = xQueue_.read().cTxLock;
+        let temp = Arc::into_raw(xQueue_);
+    }
+    //print(&format!("txlock={}", xReturn));
+    return xReturn;
+}
+
+#[no_mangle]
+pub extern "C" fn vSetQueueRxLock(xQueue: QueueHandle_c, RxLock: i8) {
+    unsafe {
+        let xQueue_ = Arc::from_raw(xQueue);
+        xQueue_.write().cRxLock = RxLock;
+        let temp = Arc::into_raw(xQueue_);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vSetQueueTxLock(xQueue: QueueHandle_c, TxLock: i8) {
+    unsafe {
+        let xQueue_ = Arc::from_raw(xQueue);
+        xQueue_.write().cTxLock = TxLock;
+        let temp = Arc::into_raw(xQueue_);
+    }
 }
 
 #[no_mangle]
@@ -69,15 +121,15 @@ pub extern "C" fn vQueueDeleteToC(xQueue: QueueHandle_c) {
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
     //vQueueDelete(temp); todo:fix dealloc bug
 }
-/*
+
 #[no_mangle]
 pub extern "C" fn xQueueSendFromISRToC(
-    xQueue: *mut RwLock<QueueDefinition>,
+    xQueue: QueueHandle_c,
     pvItemToQueue: usize,
     pxHigherPriorityTaskWoken: *mut BaseType,
 ) -> BaseType {
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xQueueSendFromISR(temp.clone(), pvItemToQueue, unsafe {
+    let xReturn = xQueueSendFromISR(&temp, pvItemToQueue, unsafe {
         &mut *pxHigherPriorityTaskWoken
     });
     let xQueue_ = Arc::into_raw(temp);
@@ -86,28 +138,23 @@ pub extern "C" fn xQueueSendFromISRToC(
 
 #[no_mangle]
 pub extern "C" fn xQueueReceiveFromISRToC(
-    xQueue: *mut RwLock<QueueDefinition>,
+    xQueue: QueueHandle_c,
     pvBuffer: usize,
     pxHigherPriorityTaskWoken: *mut BaseType,
 ) -> BaseType {
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xQueueReceiveFromISR(temp.clone(), pvBuffer, unsafe {
-        &mut *pxHigherPriorityTaskWoken
-    });
+    let xReturn = xQueueReceiveFromISR(&temp, pvBuffer, unsafe { &mut *pxHigherPriorityTaskWoken });
     let xQueue_ = Arc::into_raw(temp);
     xReturn
 }
 
 #[no_mangle]
-pub extern "C" fn xQueuePeekFromISRToC(
-    xQueue: *mut RwLock<QueueDefinition>,
-    pvBuffer: usize,
-) -> BaseType {
+pub extern "C" fn xQueuePeekFromISRToC(xQueue: QueueHandle_c, pvBuffer: usize) -> BaseType {
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xQueuePeekFromISR(temp.clone(), pvBuffer);
+    let xReturn = xQueuePeekFromISR(&temp, pvBuffer);
     let xQueue_ = Arc::into_raw(temp);
     xReturn
-}*/
+}
 
 pub fn xQueueGenericSendToC(
     mut xQueue: QueueHandle_c,
@@ -134,12 +181,7 @@ pub fn xQueueGenericSendToC(
                 } else {
                     xYieldRequired =
                         prvCopyDataToQueue(&mut xQueue_.write(), pvItemToQueue, xCopyPosition);
-                    let temp = list_get_num_items(&Arc::downgrade(
-                        &xQueue_.write().xTasksWaitingToReceive,
-                    ));
-                    print(&format!("list size {}", temp));
                     if list_is_empty(&xQueue_.write().xTasksWaitingToReceive) == false {
-                        print("not empty");
                         if xTaskRemoveFromEventList(&xQueue_.write().xTasksWaitingToReceive) == true
                         {
                             queueYIELD_IF_USING_PREEMPTION!();
@@ -171,7 +213,6 @@ pub fn xQueueGenericSendToC(
 
         vTaskSuspendAll();
         taskEXIT_CRITICAL!();
-
         prvLockQueue!(xQueue_);
         if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
             if prvIsQueueFull(&xQueue_) == true {
@@ -258,17 +299,14 @@ pub extern "C" fn xQueueReceiveToC(
                 }
             }
         }
-        print("ready to suspend");
+
         vTaskSuspendAll();
         taskEXIT_CRITICAL!();
 
         prvLockQueue!(xQueue_.clone());
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
-            print("no timeout");
             if (prvIsQueueEmpty(&xQueue_) != false) {
-                print("place on");
                 vTaskPlaceOnEventList(&xQueue_.write().xTasksWaitingToReceive, xTicksToWait);
-                print("place on complete");
                 // /* Unlocking the queue means queue events can effect the
                 //  * event list. It is possible that interrupts occurring now
                 //  * remove this task from the event list again - but as the
@@ -290,7 +328,6 @@ pub extern "C" fn xQueueReceiveToC(
 
                 prvUnlockQueue(&xQueue_);
                 xQueue = Arc::into_raw(xQueue_);
-                print("...");
                 if (vTaskResumeAll() == false) {
                     portYIELD_WITHIN_API!();
                 } else {
@@ -302,7 +339,6 @@ pub extern "C" fn xQueueReceiveToC(
                 vTaskResumeAll();
             }
         } else {
-            print("timeout");
             prvUnlockQueue(&xQueue_);
 
             if prvIsQueueEmpty(&xQueue_) != false {
@@ -412,4 +448,17 @@ pub extern "C" fn xQueuePeekToC(
             }
         }
     }
+}
+
+#[no_mangle]
+pub extern "C" fn xQueueResetToC(xQueue: QueueHandle_c) -> BaseType {
+    let xReturn: BaseType;
+    taskENTER_CRITICAL!();
+    unsafe {
+        let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
+        xReturn = xQueue_.write().xQueueGenericReset(0);
+        let temp = Arc::into_raw(xQueue_);
+    }
+    taskEXIT_CRITICAL!();
+    xReturn
 }

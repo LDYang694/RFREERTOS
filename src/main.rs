@@ -9,17 +9,15 @@
 mod ffi;
 #[allow(dead_code)]
 mod kernel;
-//mod tests;
+mod tests;
 extern crate alloc;
-use alloc::format;
+//use alloc::format;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use core::arch::asm;
 use core::ffi::c_void;
 use kernel::projdefs::{pdFALSE, pdTRUE};
 use kernel::{
-    config::*, event_group::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*,
-    riscv_virt::*, semphr::*, tasks::*, *,
+    config::*, event_group::*, portmacro::*, queue::*, riscv_virt::*, semphr::*, tasks::*, *,
 };
 use lazy_static::lazy_static;
 use spin::RwLock;
@@ -32,6 +30,7 @@ pub extern "C" fn main() -> ! {
 
 extern "C" {
     fn main_blinky() -> BaseType;
+    fn test_() -> BaseType;
 }
 
 fn delay(time: u32) {
@@ -89,7 +88,8 @@ fn task3(t: *mut c_void) {
 }
 pub fn main_new() {
     unsafe {
-        main_blinky();
+        //main_blinky();
+        test_();
     }
     //main_new_1();
     /*let val: BaseType;

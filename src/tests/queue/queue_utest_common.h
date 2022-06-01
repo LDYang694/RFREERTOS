@@ -33,7 +33,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
-#include "../ffi/queue.h"
+#include "../../ffi/FreeRTOS.h"
+#include "../../ffi/queue.h"
+#include "../../ffi/semphr.h"
+#include "../../ffi/tasks.h"
+#include "../tests.h"
 
 /* Test includes. */
 //#include "unity.h"

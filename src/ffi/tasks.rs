@@ -1,17 +1,11 @@
 extern crate libc;
 
 use crate::ffi::ffi::get_str_from_cchar;
-use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
-use crate::kernel::riscv_virt::*;
 use crate::kernel::tasks::*;
 use crate::{portENTER_CRITICAL, portEXIT_CRITICAL};
-use alloc::string::String;
-use alloc::sync::{Arc, Weak};
-use alloc::{fmt::format, format};
+use alloc::sync::Arc;
 use core::ffi::c_void;
-use core::mem::forget;
-use core::mem::size_of;
 use spin::RwLock;
 
 pub type TaskHandle_c = *const RwLock<tskTaskControlBlock>;

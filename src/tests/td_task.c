@@ -25,8 +25,7 @@
  */
 /*! @file td_task.c */
 
-#include "queue_utest_common.h"
-#include "../ffi/ffi.h"
+#include "queue/queue_utest_common.h"
 
 /* Test includes. */
 //#include "unity.h"
@@ -354,4 +353,9 @@ BaseType_t td_task_getYieldPending( void )
 
     xYieldPending = pdFALSE;
     return xReturnValue;
+}
+
+void fakeAssertExpectFail( void )
+{
+    
 }

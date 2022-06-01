@@ -1,53 +1,37 @@
-#include "../ffi/queue.h"
-#include "../ffi/tasks.h"
-#include "../ffi/semphr.h"
-#include "tests.h"
-#include "test_queue.h"
+#include "queue/queue_utest_common.h"
 #include <setjmp.h>
 
 int shouldAbortOnAssertion = false;   
 volatile CEXCEPTION_FRAME_T CExceptionFrames[CEXCEPTION_NUM_ID] = {{ 0 }};
 
 QueueHandle_t qhandle;
-
-void task_func1()
-{
-    int result;
-    rustPrint("func1");
-    
-    while(true)
-    {
-        result=xQueueSend(qhandle,0,10);
-        //result=xSemaphoreGive(qhandle);
-        if(result==1){
-            rustPrint("send success!");
-        }
-        else{
-            rustPrint("send fail!");
-        }
-    }
+uint32_t test_value=0xff,last_value=0xff;
+uint32_t getNextMonotonicTestValue(){
+    last_value=test_value;
+    test_value++;
+    return last_value;
 }
 
-void task_func2(){
-    int result;
-    rustPrint("func2");
-    while(true){
-
-        result=xQueueReceive(qhandle,0,10);
-        //result=xSemaphoreTake(qhandle,10);
-        if(result==1){
-            rustPrint("recv success!");
-        }
-        else{
-            rustPrint("recv fail!");
-        }
-
-    }
+uint32_t getLastMonotonicTestValue(){
+    return last_value;
 }
 
-int queue_test_func()
+void testtask()
 {
-    rustPrint("success");
+    run_queue_send_blocking_utest();
+    run_queue_receive_blocking_utest();
+    run_queue_reset_utest();
+    run_queue_send_nonblocking_utest();
+    run_queue_status_utest();
+    run_queue_receive_nonblocking_utest();
+    run_queue_delete_dynamic_utest();
+    run_queue_delete_static_utest();
+    run_queue_create_dynamic_utest();
+    run_queue_create_static_utest();
+    run_binary_semaphore_utest();
+    run_counting_semaphore_utest();
+    run_semaphore_common_utest();
+    run_semaphore_create_utest();
     while(true)
     {
 
@@ -55,17 +39,9 @@ int queue_test_func()
 }
 
 int test_(){
-    int temp=0xff,recv=0;
-    char name1[20]="task_func1",*stack1=rustMalloc(0x10000);
-    char name2[20]="task_func2",*stack2=rustMalloc(0x10000);
-    TaskHandle_t buffer1=get_task_handle();
-    TaskHandle_t buffer2=get_task_handle();
-    TaskHandle_t handle1=xTaskCreateStatic(task_func1,name1,0x10000,0,stack1,buffer1,3);
-    TaskHandle_t handle2=xTaskCreateStatic(task_func2,name2,0x10000,0,stack2,buffer2,3);
-    qhandle=xQueueCreate(2,0);
-    //qhandle=xSemaphoreCreateBinary();
     
+    xTaskCreate( testtask, "test task", 0x10000, NULL,
+					3, NULL );
     vTaskStartScheduler();
-    
-    return recv;
+    return 0;
 }

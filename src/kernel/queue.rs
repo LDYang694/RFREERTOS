@@ -391,24 +391,24 @@ pub fn prvCopyDataToQueue(
         }
     } else if xPosition == queueSEND_TO_BACK {
         unsafe {
-            let x = *(pvItemToQueue as *mut i32);
+            /*let x = *(pvItemToQueue as *mut i32);
             let s_ = format!(
                 "Send  xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
                 xQueue.pcWriteTo, pvItemToQueue, x, xQueue.uxItemSize
             );
+            vSendString(&s_);*/
 
-            vSendString(&s_);
             memcpy(
                 xQueue.pcWriteTo as *mut c_void,
                 pvItemToQueue as *const c_void,
                 xQueue.uxItemSize as usize,
             );
-            let xx = *(xQueue.pcWriteTo as *mut i32);
+            /*let xx = *(xQueue.pcWriteTo as *mut i32);
             let ss_ = format!(
                 "Send over xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
                 xQueue.pcWriteTo, pvItemToQueue, xx, xQueue.uxItemSize
             );
-            vSendString(&ss_);
+            vSendString(&ss_);*/
         }
         xQueue.pcWriteTo += xQueue.uxItemSize as usize;
         if xQueue.pcWriteTo >= xQueue.pcTail {
@@ -506,23 +506,23 @@ pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
         }
 
         unsafe {
-            let xx = *(xQueue.pcReadFrom as *mut i32);
+            /*let xx = *(xQueue.pcReadFrom as *mut i32);
             let s = format!(
-                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}",
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
                 xQueue.pcReadFrom, pvBuffer, xx, xQueue.uxItemSize
             );
-            vSendString(&s);
+            vSendString(&s);*/
             memcpy(
                 pvBuffer as *mut c_void,
                 xQueue.pcReadFrom as *const c_void,
                 xQueue.uxItemSize as usize,
             );
-            let x = *(pvBuffer as *mut i32);
+            /*let x = *(pvBuffer as *mut i32);
             let s_ = format!(
-                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}",
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
                 xQueue.pcReadFrom, pvBuffer, x, xQueue.uxItemSize
             );
-            vSendString(&s_);
+            vSendString(&s_);*/
         }
     }
 }

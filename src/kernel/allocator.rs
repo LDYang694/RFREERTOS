@@ -3,16 +3,10 @@
 use super::tasks::{vTaskEnterCritical, vTaskExitCritical};
 use crate::kernel::config::KERNEL_HEAP_SIZE;
 use alloc::format;
-use alloc::sync::{Arc, Weak};
-use alloc::vec::Vec;
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
-use core::arch::asm;
-use core::mem::forget;
-use lazy_static::lazy_static;
-use spin::RwLock;
 
-use super::riscv_virt::{print, vSendString};
+use super::riscv_virt::print;
 /*
 lazy_static! {
     pub static ref HEAP_: Arc<RwLock<Vec<u8>>> =
