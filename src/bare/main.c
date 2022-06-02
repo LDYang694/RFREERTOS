@@ -23,26 +23,26 @@ int main_c(void)
     _putchar('i');
     _putchar('\n');
     _putchar('\r');
-    // all_interrupt_enable();
+    all_interrupt_enable();
     // _putchar('o');
     // _putchar('k');
     // _putchar('\n');
     // _putchar('\r');
-    // clint_timer_init();
+    clint_timer_init();
     // _putchar('\n');
     // _putchar('\r');
-    // while(1)
-    // {
-    //     _putchar('t');
-    //     // ch = sys_uart_getc(0);
-    //     // if(ch != 0xff)
-    //     // {
-    //     //     _putchar(ch);
-    //     //     _putchar('\n');
-    //     //     _putchar('\r');
-    //     //     // printf("%c\n\r", ch);
-    //     // }
-    //     sdelay(1000000);
-    // }
+    while(1)
+    {
+        // _putchar('t');
+        // ch = sys_uart_getc(0);
+        // if(ch != 0xff)
+        // {
+        //     _putchar(ch);
+        //     _putchar('\n');
+        //     _putchar('\r');
+        //     // printf("%c\n\r", ch);
+        // }
+        // sdelay(1000000);
+    }
     return 0;
 }

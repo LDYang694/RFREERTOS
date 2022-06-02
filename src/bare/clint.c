@@ -37,7 +37,7 @@ void clint_timer_init()
     _putchar('4');
     write32(CLINT + 0x4004, tick_h);
     _putchar('5');
-    csr_set(mie,  MIP_MTIP);
+    csr_set(mie,  MIP_MTIP | (1 << 11));
     _putchar('6');
 
     

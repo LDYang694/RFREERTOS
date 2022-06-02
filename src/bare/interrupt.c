@@ -38,7 +38,7 @@ void irq_handle_trap(uint64_t mcause, uint64_t epc)
 {
    uint32_t irq_cause = 0;
    all_interrupt_disable();
-   // _putchar('s');
+   _putchar('s');
    // printf("mcause:%llx,epc:%llx\n\r", mcause, epc);
    if(mcause >> 63)
    {
@@ -51,6 +51,7 @@ void irq_handle_trap(uint64_t mcause, uint64_t epc)
             break;
          //Machine timer interrupt
          case 7:
+            _putchar('d');
             clint_timer_cmp_set_val(1000);
             break;
          default:

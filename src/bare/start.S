@@ -26,8 +26,8 @@ _start:
 
     la sp, __stack_end
     jal clear_bss
-    jal  main_c
-    # jal kernel_init
+    # jal  main_c
+    jal kernel_init
     jal main_rust
     j .
 
