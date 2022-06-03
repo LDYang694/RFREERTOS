@@ -3,12 +3,26 @@
 #![feature(alloc_error_handler)]
 #![feature(core_intrinsics)]
 #![allow(non_snake_case)]
+#![feature(box_into_inner)]
+
+mod ffi;
+#[allow(dead_code)]
 mod kernel;
+// mod tests;
 extern crate alloc;
+// use crate::tests::test_list::*;
+// use crate::tests::test_queue::*;
 use alloc::sync::Arc;
-use core::{borrow::Borrow, ffi::c_void};
-use kernel::{config::*, kernel::*, linked_list::*, riscv_virt::*, tasks::*, *};
-use lazy_static::{__Deref, lazy_static};
+use alloc::{fmt::format, format};
+use core::arch::asm;
+use core::{borrow::Borrow, ffi::c_void, mem::size_of};
+use kernel::projdefs::{pdFAIL, pdFALSE, pdPASS, pdTRUE};
+use kernel::queue::QueueDefinition;
+use kernel::{
+    config::*, event_group::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*,
+    riscv_virt::*, semphr::*, tasks::*, *,
+};
+use lazy_static::lazy_static;
 use spin::RwLock;
 use alloc::string::String;
 
@@ -16,6 +30,10 @@ use alloc::string::String;
 pub extern "C" fn main() -> ! {
     main_new();
     loop {}
+}
+
+extern "C" {
+    fn test_() -> BaseType;
 }
 
 fn delay(time: u32) {
@@ -35,8 +53,8 @@ fn task1(t: *mut c_void) {
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
         vSendString("11111 gogogogo!!!(in loop)");
-        vTaskSuspend(task1handler.clone());
-        // vTaskDelay(10);
+        //vTaskSuspend(task1handler.clone());
+        //vTaskDelay(10);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
@@ -44,8 +62,8 @@ fn task1(t: *mut c_void) {
     }
 }
 fn task2(t: *mut c_void) {
-    let b = 0;
-    let a = b + 1;
+    let mut begin: TickType = 0;
+    let increment: TickType = 100;
     vSendString("22222 gogogogo!!!");
     //vTaskDelete(None);
     loop {
@@ -53,7 +71,9 @@ fn task2(t: *mut c_void) {
             vTaskPrioritySet(task2handler.clone(),1);
         }*/
         vSendString("22222 gogogogo!!!(in loop)");
-        vTaskResume(task1handler.clone());
+        //vTaskResume(task1handler.clone());
+        vTaskDelay(100);
+        // xTaskDelayUntil(&mut begin, increment);
         /*unsafe{
             vTaskPrioritySet(None,2);
         }*/
@@ -71,17 +91,86 @@ fn task3(t: *mut c_void) {
     }
 }
 pub fn main_new() {
-    main_new_1();
+main_new_1();
+}
+
+pub fn testfunc1() {
+    mtCOVERAGE_TEST_MARKER!();
+}
+
+pub fn testfunc2() {
+    mtCOVERAGE_TEST_MARKER!();
+}
+
+fn task_send(t: *mut c_void) {
+    let mut xNextWakeTime: TickType;
+    let ulValueToSend = 100;
+    let pcMessage1 = "Transfer1";
+    let pcMessage2 = "Transfer2";
+    let mut f = 1;
+    let mut result: BaseType = 0;
+    let s1 = "sending";
+
+    let mut cnt = 0;
+    loop {
+        // xTaskDelayUntil(&mut begin, increment);
+        //vSendString(&s1);
+        //xQueueGenericSend(temp, &ulValueToSend as *const _ as usize, 0,queueSEND_TO_BACK);
+        //result=xSemaphoreTake!(temp,0);
+
+        //xSemaphoreGive!(temp);
+        //let s=format!("send:{}",ulValueToSend);
+        //vSendString(&s);
+        vSendString(&s1);
+        unsafe {
+            let temp = xEvent.as_mut().unwrap().clone();
+            xEventGroupWaitBits(temp, 1, pdTRUE, pdFALSE, 100);
+        }
+    }
+}
+fn task_rec(t: *mut c_void) {
+    let mut xNextWakeTime: TickType;
+    let mut ulValueToSend = 99;
+    let ulExpectedValue = 100;
+    let pcMessage1 = "success";
+    let pcMessage2 = "fail";
+    let mut f = 1;
+    let mut result: BaseType = 0;
+    // vTaskDelay(1000);
+    vSendString("receiving");
+    let s = "taking";
+
+    let mut cnt = 0;
+    loop {
+        vSendString(&s);
+        unsafe {
+            let temp = xEvent.as_mut().unwrap().clone();
+            xEventGroupSetBits(temp, 1);
+        }
+    }
+}
+
+fn task_temp() {
+    let s = "temp gogogo";
+    loop {
+        vSendString(&s);
+        vTaskDelay(5000);
+    }
 }
 lazy_static! {
     pub static ref task1handler: Option<TaskHandle_t> =
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
     pub static ref task2handler: Option<TaskHandle_t> =
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
+    //pub static ref task3handler: Option<TaskHandle_t> =
+    //    Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
-
+static mut xQueue: Option<QueueHandle_t> = None;
+static mut xEvent: Option<EventGroupHandle> = None;
 pub fn main_new_1() {
+    // vSendString("111111");
     print("main new");
+    // vSendString("24234234234234");
     let param1: Param_link = 0;
     let param2: Param_link = 0;
     let param3: Param_link = 0;
@@ -120,9 +209,17 @@ pub fn main_new_1() {
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            2,
+            3,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
+        /*xTaskCreate(
+            task_temp as u32,
+            "task3",
+            USER_STACK_SIZE as u32,
+            Some(param3),
+            2,
+            Some(Arc::clone(&(task3handler.as_ref().unwrap()))),
+        );*/
     }
     //     // xTaskCreate(
     //     //     task2 as usize,
@@ -177,6 +274,19 @@ pub fn main_new_1() {
     // );
     // print("task insert");
     // v_list_insert_end(&READY_TASK_LISTS[2], (TCB3_p.read().xStateListItem).clone());
+    /*unsafe {
+        let s = format!(
+            "create2:{}",
+            xQueue
+                .clone()
+                .unwrap()
+                .read()
+                .xTasksWaitingToReceive
+                .read()
+                .ux_number_of_items
+        );
+        print(&s);
+    }*/
 
     print("start scheduler!!!!!!!!!");
     vTaskStartScheduler();

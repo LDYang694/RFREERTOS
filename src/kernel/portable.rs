@@ -1,22 +1,25 @@
+//! portable apis
+
 extern crate alloc;
-use alloc::sync::{Arc, Weak};
 use crate::config::*;
+use crate::kernel::kernel::READY_TASK_LISTS;
+use crate::kernel::kernel::{TCB1_p, TCB2_p};
 use crate::linked_list::*;
 use crate::portDISABLE_INTERRUPTS;
 use crate::portENABLE_INTERRUPTS;
 use crate::portmacro::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
-use crate::kernel::kernel::READY_TASK_LISTS;
-use crate::kernel::kernel::{TCB1_p, TCB2_p};
 use alloc::format;
+use alloc::sync::{Arc, Weak};
 use core::arch::asm;
 use spin::RwLock;
+
+use super::projdefs::pdFALSE;
 //use crate::pxCurrentTCB_;
 // use crate::pxCurrentTCB;
 extern "C" {
     fn xPortStartFirstTask();
-    fn testfunc(x: u32) -> u32;
 }
 
 #[no_mangle]
@@ -25,6 +28,15 @@ pub static mut uxTimerIncrementsForOneTick: UBaseType = 0;
 #[no_mangle]
 pub static mut pxCurrentTCB: UBaseType = 0;
 
+#[no_mangle]
+pub static mut pullNextTime: UBaseType = 0;
+
+#[no_mangle]
+pub static mut xISRStackTop: *const StackType = 0 as *const StackType;
+
+#[no_mangle]
+pub static mut pullMachineTimerCompareRegister: UBaseType = 0;
+
 pub static mut pxCurrentTCB_: Option<*const tskTaskControlBlock> = None;
 
 static mut X_ISRSTACK: [StackType; CONFIG_ISR_STACK_SIZE_WORDS] = [0; CONFIG_ISR_STACK_SIZE_WORDS];
@@ -32,28 +44,26 @@ static mut X_ISRSTACK: [StackType; CONFIG_ISR_STACK_SIZE_WORDS] = [0; CONFIG_ISR
 static mut ULL_NEXT_TIME: u64 = 0;
 pub const ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE: UBaseType = CONFIG_MTIMECMP_BASE_ADDRESS;
 
-extern "C" {
-    pub static mut pullMachineTimerCompareRegister: usize;
-    pub static mut pullNextTime: usize;
-    pub static mut xISRStackTop: *const StackType;
-}
+
 //todo:safe  global var and pointer
 
-fn get_mtime()->u64{
-    let mut result:u64=0;
+/// get current mtime
+fn get_mtime() -> u64 {
+    let mut result: u64 = 0;
     let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
     let pul_time_low: *const UBaseType = CONFIG_MTIME_BASE_ADDRESS as *const UBaseType;
-    unsafe{
-        let mut ul_current_time_low: UBaseType= *pul_time_high;
-        let mut ul_current_time_high: UBaseType= *pul_time_low;
-        result= ul_current_time_high as u64;
-        result=result<<32;
-        result+= (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
+    unsafe {
+        let mut ul_current_time_low: UBaseType = *pul_time_high;
+        let mut ul_current_time_high: UBaseType = *pul_time_low;
+        result = ul_current_time_high as u64;
+        result = result << 32;
+        result += (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
     }
-    
+
     result
 }
 
+/// setup timer interrupt
 pub fn v_port_setup_timer_interrupt() {
     let mut ul_hart_id: UBaseType;
     let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
@@ -84,6 +94,7 @@ pub fn v_port_setup_timer_interrupt() {
     //todo
 }
 
+/// copy current tcb to pxCurrentTCB for c interface
 pub fn auto_set_currentTcb() {
     unsafe {
         match get_current_tcb(){
@@ -92,7 +103,9 @@ pub fn auto_set_currentTcb() {
         }
     }
 }
-pub fn x_port_start_scheduler() -> bool {
+
+/// start up scheduler
+pub fn x_port_start_scheduler() -> BaseType {
     unsafe {
         xISRStackTop = (&X_ISRSTACK[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const usize;
     }
@@ -107,123 +120,71 @@ pub fn x_port_start_scheduler() -> bool {
         asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();
     }
-    false
+    pdFALSE
 }
 
+/// set current tcb <br>
+/// use with auto_set_currentTcb()
 pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {
     unsafe {
-        match tcb{
-            Some(x)=>{
-                pxCurrentTCB_=Some(&*(*x.into_raw()).read());
+        match tcb {
+            Some(x) => {
+                pxCurrentTCB_ = Some(&*(*x.into_raw()).read());
             }
-            None=>{
-                pxCurrentTCB_=None;
-            }
-        }
-    }
-}
-
-pub fn get_current_tcb()->Option<&'static mut tskTaskControlBlock>{
-    unsafe{
-        match pxCurrentTCB_{
-            Some(x)=>{
-                Some(&mut *(x as *mut tskTaskControlBlock))
-            }
-            None=>{
-                None
+            None => {
+                pxCurrentTCB_ = None;
             }
         }
     }
 }
 
-pub fn is_current_tcb(tcb: ListItemOwnerWeakLink)->bool{
-    unsafe{
-        match pxCurrentTCB_{
-            Some(x)=>{
-                let temp:*const tskTaskControlBlock=&*(*tcb.into_raw()).read();
-                temp==x
-            }
-            None=>false
+/// get current tcb
+pub fn get_current_tcb() -> Option<&'static mut tskTaskControlBlock> {
+    unsafe {
+        match pxCurrentTCB_ {
+            Some(x) => Some(&mut *(x as *mut tskTaskControlBlock)),
+            None => None,
         }
     }
 }
 
-
-
-
-
-pub fn vTaskPrioritySet(pxTask:Option<TaskHandle_t>,uxNewPriority:UBaseType) 
-{
-    vTaskEnterCritical();
-    match pxTask{
-        Some(x)=>{
-            ux_list_remove(Arc::downgrade(&x.read().xStateListItem));
-            v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&x.read().xStateListItem));
-            x.write().uxPriority=uxNewPriority;
-        }
-        None=>{
-            unsafe{
-                match get_current_tcb(){
-                    Some(x)=>{
-                        
-                        ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
-                        v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize],Arc::clone(&(*x).xStateListItem));
-                        x.uxPriority=uxNewPriority;
-                    }
-                    None=>{}
-                }
+/// return if target tcb is current tcb
+pub fn is_current_tcb(tcb: ListItemOwnerWeakLink) -> bool {
+    unsafe {
+        match pxCurrentTCB_ {
+            Some(x) => {
+                let temp: *const tskTaskControlBlock = &*(*tcb.into_raw()).read();
+                temp == x
             }
+            None => false,
         }
     }
-    vTaskExitCritical();
 }
 
-pub fn uxTaskPriorityGet(pxTask:Option<TaskHandle_t>)->UBaseType
-{
-    unsafe{
-        match get_current_tcb(){
-            Some(x)=>unsafe {
-                return (*x).uxPriority;
+pub fn is_current_tcb_raw(tcb: &mut tskTaskControlBlock) -> bool {
+    unsafe {
+        match pxCurrentTCB_ {
+            Some(x) => {
+                let temp: *const tskTaskControlBlock = tcb as *const tskTaskControlBlock;
+                temp == x
             }
-            None=>{return 0;}
+            None => false,
         }
     }
-    
 }
 
+/// switch context
 #[no_mangle]
 pub extern "C" fn vTaskSwitchContext() {
     //todo
     // // print("vTaskSwitchContext");
     //port_disable_interrupts!();
-    taskSELECT_HIGHEST_PRIORITY_TASK();
-    // let max_prio=taskSELECT_HIGHEST_PRIORITY();
-    // let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
-    // let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
-    // unsafe{
-    //     set_current_tcb(Some(&*(*owner.into_raw()).read()));
-    //     auto_set_currentTcb();
-    // }
-
-    // ux_list_remove(target.clone());
-    // let target_:ListItemLink=target.upgrade().unwrap();
-
-    // //let mut new_item:XListItem=XListItem::new(2);
-    // //new_item.pv_owner=(*target_).read().pv_owner.clone();
-    // v_list_insert_end(&READY_TASK_LISTS[max_prio],target_.clone());
-    
-    
-    //match target_
-    //&READY_TASK_LISTS[max_prio].write().insert_end(target);
-
-    /*unsafe {
-        if pxCurrentTCB_.unwrap() == &*TCB1_p.read() {
-            set_current_tcb(Some(&*TCB2_p.read()));
+    unsafe {
+        if uxSchedulerSuspended == 0 {
+            xYieldPending = false;
+            taskSELECT_HIGHEST_PRIORITY_TASK();
         } else {
-            if pxCurrentTCB_.unwrap() == &*TCB2_p.read() {
-                set_current_tcb(Some(&*TCB1_p.read()));
-            }
+            xYieldPending = true;
         }
-        auto_set_currentTcb();
-    }*/
+    }
 }

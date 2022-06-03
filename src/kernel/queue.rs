@@ -1,45 +1,862 @@
-// typedef struct QueueDefinition /* The old naming convention is used to prevent breaking kernel aware debuggers. */
-// {
-//     int8_t * pcHead;           /*< Points to the beginning of the queue storage area. */
-//     int8_t * pcWriteTo;        /*< Points to the free next place in the storage area. */
-//     union
-//     {
-//         QueuePointers_t xQueue;     /*< Data required exclusively when this structure is used as a queue. */
-//         SemaphoreData_t xSemaphore; /*< Data required exclusively when this structure is used as a semaphore. */
-//     } u;
+//! Queue Definition and api
+extern crate alloc;
+use crate::kernel::projdefs::*;
+use crate::kernel::riscv_virt::print;
+use crate::kernel::riscv_virt::*;
+use crate::kernel::tasks::*;
+use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
 
-//     List_t xTasksWaitingToSend;             /*< List of tasks that are blocked waiting to post onto this queue.  Stored in priority order. */
-//     List_t xTasksWaitingToReceive;          /*< List of tasks that are blocked waiting to read from this queue.  Stored in priority order. */
-//     volatile UBaseType_t uxMessagesWaiting; /*< The number of items currently in the queue. */
-//     UBaseType_t uxLength;                   /*< The length of the queue defined as the number of items it will hold, not the number of bytes. */
-//     UBaseType_t uxItemSize;                 /*< The size of each items that the queue will hold. */
-//     volatile int8_t cRxLock;                /*< Stores the number of items received from the queue (removed from the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
-//     volatile int8_t cTxLock;                /*< Stores the number of items transmitted to the queue (added to the queue) while the queue was locked.  Set to queueUNLOCKED when the queue is not locked. */
-//     #if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
-//         uint8_t ucStaticallyAllocated; /*< Set to pdTRUE if the memory used by the queue was statically allocated to ensure no attempt is made to free the memory. */
-//     #endif
+pub const queueSEND_TO_BACK: BaseType = 1;
+pub const queueOVERWRITE: BaseType = 2;
+pub const queueUNLOCKED: i8 = -1;
+pub const queueLOCKED_UNMODIFIED: i8 = 0;
+pub const queueINT8_MAX: i8 = 127;
+pub const pdPass: BaseType = 0;
 
-//     #if ( configUSE_QUEUE_SETS == 1 )
-//         struct QueueDefinition * pxQueueSetContainer;
-//     #endif
+use crate::kernel::projdefs::*;
+use crate::kernel::tasks::*;
 
-//     #if ( configUSE_TRACE_FACILITY == 1 )
-//         UBaseType_t uxQueueNumber;
-//         uint8_t ucQueueType;
-//     #endif
-// } xQUEUE;
+#[macro_export]
+macro_rules! queueYIELD_IF_USING_PREEMPTION {
+    () => {
+        taskYIELD_IF_USING_PREEMPTION!();
+    };
+}
 
-// /* The old xQUEUE name is maintained above then typedefed to the new Queue_t
-//  * name below to enable the use of older kernel aware debuggers. */
-// typedef xQUEUE Queue_t;
+/// lock queue <br>
+/// accept QueueHandle_t
+#[macro_export]
+macro_rules! prvLockQueue {
+    ($pxQueue: expr ) => {
+        taskENTER_CRITICAL!();
+        {
+            if $pxQueue.write().cRxLock == queueUNLOCKED {
+                $pxQueue.write().cRxLock = queueLOCKED_UNMODIFIED;
+            }
+            if $pxQueue.write().cTxLock == queueUNLOCKED {
+                $pxQueue.write().cTxLock = queueLOCKED_UNMODIFIED;
+            }
+        }
+        taskEXIT_CRITICAL!();
+    };
+}
 
+use super::{
+    linked_list::ListRealLink,
+    portmacro::{BaseType, UBaseType},
+};
+use crate::kernel::portmacro::*;
+use crate::{
+    kernel::{
+        linked_list::*,
+        tasks::{vTaskEnterCritical, vTaskExitCritical},
+    },
+    taskENTER_CRITICAL, taskEXIT_CRITICAL,
+};
+
+use crate::configMAX_PRIORITIES;
+use alloc::boxed::Box;
+use alloc::collections::VecDeque;
+use alloc::format;
+use alloc::sync::{Arc, Weak};
+use alloc::vec::Vec;
+use core::arch::asm;
+use core::ffi::c_void;
+use core::{alloc::Layout, mem};
+use libc::*;
+use spin::RwLock;
+pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
+pub const queueQUEUE_TYPE_BASE: u8 = 0;
+pub const queueQUEUE_TYPE_MUTEX: u8 = 1;
+pub const queueQUEUE_TYPE_COUNTING_SEMAPHORE: u8 = 2;
+pub const queueQUEUE_TYPE_BINARY_SEMAPHORE: u8 = 3;
+pub const queueQUEUE_TYPE_RECURSIVE_MUTEX: u8 = 4;
+pub type xQUEUE = QueueDefinition;
+pub type Queue_t = xQUEUE;
+
+#[derive(Default)]
 pub struct QueueDefinition {
+    pcMesQueue: Vec<u8>,
+    ///queue message space
     pcHead: usize,
+    /// queue header pointer
+    pcTail: usize,
+    /// queue tail pointer
     pcWriteTo: usize,
-    xTasksWaitingToSend: ListRealLink,
-    xTasksWaitingToReceive: ListRealLink,
-    uxMessagesWaiting: UBaseType,
-    uxLength: UBaseType,
-    cRxLock: i8,
-    cTxLock: i8,
+    ///
+    pub pcReadFrom: usize,
+    pub cRxLock: i8,
+    pub cTxLock: i8,
+    pub xTasksWaitingToSend: ListRealLink,
+    pub xTasksWaitingToReceive: ListRealLink,
+    pub uxMessagesWaiting: UBaseType,
+    pub uxLength: UBaseType,
+    pub uxItemSize: UBaseType,
+    pub xMutexHolder: Option<TaskHandle_t>,
+    pub uxRecursiveCallCount: UBaseType,
+    pub ucQueueType: u8,
+}
+impl QueueDefinition {
+    /// QueueCreate function
+    /// # Examples
+    /// ```
+    /// let xQueue = QueueDefinition::xQueueCreate(2,size_of::<u32>() as u32);
+    ///
+    /// ```
+    pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> Self {
+        QueueDefinition::xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
+    }
+    #[cfg(feature = "configSUPPORT_DYNAMIC_ALLOCATION")]
+    pub fn xQueueGenericCreate(
+        uxQueueLength: UBaseType,
+        uxItemSize: UBaseType,
+        ucQueueType: u8,
+    ) -> Self {
+        let mut queue: QueueDefinition = Default::default();
+        let mut xQueueSizeInBytes: isize;
+        if uxItemSize == 0 {
+            xQueueSizeInBytes = 0;
+        } else {
+            xQueueSizeInBytes = (uxQueueLength * uxItemSize) as isize;
+        }
+        queue.pcMesQueue = Vec::with_capacity(xQueueSizeInBytes as usize);
+        queue.prvInitialiseNewQueue(uxQueueLength, uxItemSize, ucQueueType);
+        queue
+    }
+    pub fn prvInitialiseNewQueue(
+        &mut self,
+        uxQueueLength: UBaseType,
+        uxItemSize: UBaseType,
+        ucQueueType: u8,
+    ) {
+        let pxNewQueue: usize = self as *mut QueueDefinition as usize;
+        let pucQueueStorage: usize = self.pcMesQueue.as_ptr() as usize;
+        // let pucQueueStorage:usize=self.pcMesQueue.
+        if (uxItemSize == 0) {
+            self.pcHead = pxNewQueue;
+        } else {
+            self.pcHead = pucQueueStorage;
+        }
+        self.uxLength = uxQueueLength;
+        self.uxItemSize = uxItemSize;
+        self.ucQueueType = ucQueueType;
+        self.xQueueGenericReset(1);
+    }
+    pub fn xQueueGenericReset(&mut self, xNewQueue: BaseType) -> BaseType {
+        vTaskEnterCritical();
+        {
+            self.pcTail = self.pcHead + (self.uxLength * self.uxItemSize) as usize;
+            self.uxMessagesWaiting = 0;
+            self.pcWriteTo = self.pcHead;
+            //TODO: union
+            self.pcReadFrom = self.pcHead + ((self.uxLength - 1) * self.uxItemSize) as usize;
+            self.cRxLock = queueUNLOCKED;
+            self.cTxLock = queueUNLOCKED;
+            //TODO:lock
+
+            if (xNewQueue == 0) {
+                //TODO:
+            } else {
+                //initial in Default::default()
+            }
+        }
+        vTaskExitCritical();
+        1
+    }
+}
+
+/// create queue <br>
+/// interface for user
+pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> QueueHandle_t {
+    xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
+}
+
+/// create queue
+pub fn xQueueGenericCreate(
+    uxQueueLength: UBaseType,
+    uxItemSize: UBaseType,
+    ucQueueType: u8,
+) -> QueueHandle_t {
+    assert!(uxQueueLength > 0);
+    let mut xQueueSizeInBytes: isize;
+    if uxItemSize == 0 {
+        xQueueSizeInBytes = 0;
+    } else {
+        xQueueSizeInBytes = (uxQueueLength * uxItemSize) as isize;
+    }
+    let alloc_size = mem::size_of::<Queue_t>() + xQueueSizeInBytes as usize;
+    let layout = Layout::from_size_align(alloc_size as usize, 4)
+        .ok()
+        .unwrap();
+    let pxNewQueue_ptr: *mut u8;
+    unsafe {
+        pxNewQueue_ptr = alloc::alloc::alloc(layout);
+    }
+    print("queue create 22222");
+    //TODO:
+    // if pxNewQueue_ptr!=NULL
+    let pucQueueStorage: usize = pxNewQueue_ptr as usize + mem::size_of::<Queue_t>();
+    // #if( configSUPPORT_STATIC_ALLOCATION == 1 )
+    // 29 {
+    // 30
+    // 31 pxNewQueue->ucStaticallyAllocated = pdFALSE;
+    // 32 }
+    // 33 #endif
+    print("queue create 3333");
+    prvInitialiseNewQueue(
+        uxQueueLength,
+        uxItemSize,
+        pucQueueStorage,
+        ucQueueType,
+        pxNewQueue_ptr as usize,
+    );
+    print("queue create 4444");
+    let pxNewQueue = unsafe { Box::from_raw((pxNewQueue_ptr as *mut Queue_t)) };
+
+    // unsafe {
+    //     pxNewQueue = &*(pxNewQueue_ptr as *mut Queue_t );
+    // }
+    Arc::new(RwLock::new(Box::<QueueDefinition>::into_inner(pxNewQueue)))
+}
+
+/// initialise new queue
+pub fn prvInitialiseNewQueue(
+    uxQueueLength: UBaseType,
+    uxItemSize: UBaseType,
+    pucQueueStorage: usize,
+    ucQueueType: u8,
+    pxNewQueue: usize,
+) {
+    print("prvInitialiseNewQueue 11111");
+    let pxNewQueue_ =
+        unsafe { mem::transmute::<*mut Queue_t, &mut QueueDefinition>(pxNewQueue as *mut Queue_t) };
+
+    // let pxNewQueueBox = unsafe { Box::from_raw((pxNewQueue as *mut Queue_t)) };
+    // let mut pxNewQueue_ = Box::<QueueDefinition>::into_inner(pxNewQueueBox);
+    if (uxItemSize == 0) {
+        pxNewQueue_.pcHead = pxNewQueue;
+    } else {
+        pxNewQueue_.pcHead = pucQueueStorage;
+    }
+    pxNewQueue_.uxLength = uxQueueLength;
+    pxNewQueue_.uxItemSize = uxItemSize;
+
+    print("prvInitialiseNewQueue 2222");
+    xQueueGenericReset(pxNewQueue_, 1);
+    let x = pxNewQueue_.xTasksWaitingToReceive.read().ux_number_of_items;
+    print("prvInitialiseNewQueue 3333");
+    let s = format!(
+        "pchead:{:X},pcreadfrom:{:X}",
+        pxNewQueue_.pcHead, pxNewQueue_.pcReadFrom
+    );
+    print(&s)
+}
+
+/// reset target queue
+pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType {
+    // taskENTER_CRITICAL!();
+    vTaskEnterCritical();
+
+    {
+        xQueue.pcTail = xQueue.pcHead + (xQueue.uxLength * xQueue.uxItemSize) as usize;
+        xQueue.uxMessagesWaiting = 0;
+        xQueue.pcWriteTo = xQueue.pcHead;
+        //TODO: union
+        xQueue.pcReadFrom = xQueue.pcHead + ((xQueue.uxLength - 1) * xQueue.uxItemSize) as usize;
+        //TODO:lock
+        if (xNewQueue == 0) {
+            //TODO:
+        } else {
+            let mut rec = Arc::new(RwLock::new(XList::default()));
+            let mut send = Arc::new(RwLock::new(XList::default()));
+
+            unsafe {
+                Arc::increment_strong_count(Arc::into_raw(rec.clone()));
+                Arc::increment_strong_count(Arc::into_raw(send.clone()));
+                memcpy(
+                    &mut xQueue.xTasksWaitingToReceive as *mut Arc<RwLock<XList>> as *mut c_void,
+                    &mut rec as *mut Arc<RwLock<XList>> as *mut c_void,
+                    4,
+                );
+                memcpy(
+                    &mut xQueue.xTasksWaitingToSend as *mut Arc<RwLock<XList>> as *mut c_void,
+                    &mut send as *mut Arc<RwLock<XList>> as *mut c_void,
+                    4,
+                );
+            }
+            // *xQueue.xTasksWaitingToReceive.write() = XList::default();
+            // mem::take(&mut (xQueue.xTasksWaitingToReceive));
+            // xQueue.xTasksWaitingToSend = Arc::new(RwLock::new(XList::default()));
+            // xQueue.xTasksWaitingToReceive = Arc::new(RwLock::new(XList::default()));
+            mem::forget(&rec);
+            mem::forget(&send);
+        }
+    }
+    //TODO: tmp remove
+    // vTaskExitCritical();
+    1
+}
+
+extern "C" {
+    fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void;
+}
+
+pub fn xQueueGenericSend(
+    xQueue: QueueHandle_t,
+    pvItemToQueue: usize,
+    mut xTicksToWait: TickType,
+    xCopyPosition: BaseType,
+) -> BaseType {
+    let mut xYieldRequired: bool = false;
+    let mut xEntryTimeSet: bool = false;
+    let mut xTimeout: TimeOut = Default::default();
+    loop {
+        taskENTER_CRITICAL!();
+        {
+            let mut xQueue_ = xQueue.write();
+            if xQueue_.uxMessagesWaiting < xQueue_.uxLength || xCopyPosition == queueOVERWRITE {
+                if cfg!(feature = "configUSE_QUEUE_SETS") {
+                    let uxPreviousMessagesWaiting = xQueue_.uxMessagesWaiting;
+                    xYieldRequired = prvCopyDataToQueue(&mut xQueue_, pvItemToQueue, xCopyPosition);
+                    //todo
+                } else {
+                    xYieldRequired = prvCopyDataToQueue(&mut xQueue_, pvItemToQueue, xCopyPosition);
+                    if list_is_empty(&xQueue_.xTasksWaitingToReceive) == false {
+                        if xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToReceive) == true {
+                            queueYIELD_IF_USING_PREEMPTION!();
+                        } else {
+                            mtCOVERAGE_TEST_MARKER!();
+                        }
+                    } else if xYieldRequired == true {
+                        queueYIELD_IF_USING_PREEMPTION!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                }
+                taskEXIT_CRITICAL!();
+                return pdPASS as BaseType;
+            } else {
+                if xTicksToWait == 0 {
+                    taskEXIT_CRITICAL!();
+                    return errQUEUE_FULL;
+                } else if xEntryTimeSet == false {
+                    vTaskInternalSetTimeOutState(&mut xTimeout);
+                    xEntryTimeSet = true;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            }
+        }
+        taskEXIT_CRITICAL!();
+
+        vTaskSuspendAll();
+
+        prvLockQueue!(xQueue.clone());
+        if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
+            if prvIsQueueFull(xQueue.clone()) == true {
+                vTaskPlaceOnEventList(&xQueue.write().xTasksWaitingToSend, xTicksToWait);
+                prvUnlockQueue(xQueue.clone());
+                if vTaskResumeAll() == false {
+                    portYIELD_WITHIN_API!();
+                }
+            } else {
+                prvUnlockQueue(xQueue.clone());
+                vTaskResumeAll();
+            }
+        } else {
+            prvUnlockQueue(xQueue.clone());
+            vTaskResumeAll();
+            return errQUEUE_FULL;
+        }
+    }
+}
+
+pub fn prvCopyDataToQueue(
+    xQueue: &mut QueueDefinition,
+    pvItemToQueue: usize,
+    xPosition: BaseType,
+) -> bool {
+    let mut uxMessagesWaiting = xQueue.uxMessagesWaiting;
+    let mut xReturn: bool = false;
+    if xQueue.uxItemSize == 0 {
+        if cfg!(feature = "configUSE_MUTEXES") {
+            if xQueue.ucQueueType == queueQUEUE_TYPE_MUTEX
+                || xQueue.ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
+            {
+                xReturn = xTaskPriorityDisinherit(xQueue.xMutexHolder.clone()) == pdTRUE;
+                xQueue.xMutexHolder = None;
+            }
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+    } else if xPosition == queueSEND_TO_BACK {
+        unsafe {
+            let x = *(pvItemToQueue as *mut i32);
+            let s_ = format!(
+                "Send  xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                xQueue.pcWriteTo, pvItemToQueue, x, xQueue.uxItemSize
+            );
+
+            vSendString(&s_);
+            memcpy(
+                xQueue.pcWriteTo as *mut c_void,
+                pvItemToQueue as *const c_void,
+                xQueue.uxItemSize as usize,
+            );
+            let xx = *(xQueue.pcWriteTo as *mut i32);
+            let ss_ = format!(
+                "Send over xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
+                xQueue.pcWriteTo, pvItemToQueue, xx, xQueue.uxItemSize
+            );
+            vSendString(&ss_);
+        }
+        xQueue.pcWriteTo += xQueue.uxItemSize as usize;
+        if xQueue.pcWriteTo >= xQueue.pcTail {
+            xQueue.pcWriteTo = xQueue.pcHead;
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+    } else {
+        unsafe {
+            memcpy(
+                xQueue.pcReadFrom as *mut c_void,
+                pvItemToQueue as *const c_void,
+                xQueue.uxItemSize as usize,
+            );
+        }
+        xQueue.pcReadFrom -= xQueue.uxItemSize as usize;
+        if xQueue.pcReadFrom < xQueue.pcHead {
+            xQueue.pcReadFrom = xQueue.pcTail - xQueue.uxItemSize as usize;
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+
+        if xPosition == queueOVERWRITE {
+            if uxMessagesWaiting > 0 {
+                uxMessagesWaiting -= 1;
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+    }
+
+    xQueue.uxMessagesWaiting = uxMessagesWaiting + 1;
+
+    xReturn
+}
+
+pub fn prvIsQueueFull(xQueue: QueueHandle_t) -> bool {
+    let xReturn: bool;
+    taskENTER_CRITICAL!();
+    {
+        if xQueue.read().uxMessagesWaiting == xQueue.read().uxLength {
+            xReturn = true;
+        } else {
+            xReturn = false;
+        }
+    }
+    taskEXIT_CRITICAL!();
+    xReturn
+}
+pub fn prvIsQueueEmpty(xQueue: QueueHandle_t) -> bool {
+    let xReturn: bool;
+    taskENTER_CRITICAL!();
+    {
+        if xQueue.read().uxMessagesWaiting == 0 {
+            xReturn = true;
+        } else {
+            xReturn = false;
+        }
+    }
+    taskEXIT_CRITICAL!();
+    xReturn
+}
+
+#[no_mangle]
+pub extern "C" fn vQueueDelete(xQueue: QueueHandle_t) {
+    let alloc_size: usize =
+        mem::size_of::<xQUEUE>() + (xQueue.read().uxLength * xQueue.read().uxItemSize) as usize;
+    let pxQueue = &*xQueue.write();
+
+    let layout = Layout::from_size_align(alloc_size as usize, 4)
+        .ok()
+        .unwrap();
+    unsafe {
+        alloc::alloc::dealloc(pxQueue as *const Queue_t as *mut u8, layout);
+    }
+}
+//消息队列发送
+pub fn xQueueSend(xQueue: QueueHandle_t, pvItemToQueue: usize, xTicksToWait: TickType) -> BaseType {
+    xQueueGenericSend(xQueue, pvItemToQueue, xTicksToWait, queueSEND_TO_BACK)
+}
+//消息队列读取
+pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
+    if xQueue.uxItemSize != 0 {
+        xQueue.pcReadFrom += xQueue.uxItemSize as usize;
+        if xQueue.pcReadFrom >= xQueue.pcTail {
+            xQueue.pcReadFrom = xQueue.pcHead;
+        } else {
+            mtCOVERAGE_TEST_MARKER!();
+        }
+
+        unsafe {
+            let xx = *(xQueue.pcReadFrom as *mut i32);
+            let s = format!(
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}",
+                xQueue.pcReadFrom, pvBuffer, xx, xQueue.uxItemSize
+            );
+            vSendString(&s);
+            memcpy(
+                pvBuffer as *mut c_void,
+                xQueue.pcReadFrom as *const c_void,
+                xQueue.uxItemSize as usize,
+            );
+            let x = *(pvBuffer as *mut i32);
+            let s_ = format!(
+                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{:X},xQueue.uxItemSize{:X}",
+                xQueue.pcReadFrom, pvBuffer, x, xQueue.uxItemSize
+            );
+            vSendString(&s_);
+        }
+    }
+}
+
+pub fn xQueueReceive(
+    xQueue: QueueHandle_t,
+    pvBuffer: usize,
+    mut xTicksToWait: TickType,
+) -> BaseType {
+    // xQueueGenericReceive(xQueue, pvBuffer, xTicksToWait, pdFALSE as i32)
+    let mut xEntryTimeSet: BaseType = pdFALSE;
+    let mut xTimeOut: TimeOut = Default::default();
+    let mut pcOriginalReadPosition: usize = 0;
+    let mut xInheritanceOccurred: BaseType = pdFALSE;
+    //let xq = xQueue.unwrap();
+    //let xQueue = &mut (*xq.write());
+    loop {
+        taskENTER_CRITICAL!();
+        {
+            let mut xQueue_ = xQueue.write();
+            let uxMessagesWaiting = xQueue_.uxMessagesWaiting;
+            if uxMessagesWaiting > 0 {
+                //TODO:
+                pcOriginalReadPosition = xQueue_.pcReadFrom;
+                if xQueue_.uxItemSize > 0 {
+                    prvCopyDataFromQueue(&mut xQueue_, pvBuffer);
+                }
+
+                xQueue_.uxMessagesWaiting = uxMessagesWaiting - 1;
+
+                if cfg!(feature = "configUSE_MUTEXES") {
+                    if xQueue_.ucQueueType == queueQUEUE_TYPE_MUTEX
+                        || xQueue_.ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
+                    {
+                        xQueue_.xMutexHolder = pvTaskIncrementMutexHeldCount();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                }
+
+                if list_is_empty(&xQueue_.xTasksWaitingToSend) == false {
+                    if (xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToSend) != false) {
+                        queueYIELD_IF_USING_PREEMPTION!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                } else {
+                    //list empty
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+                taskEXIT_CRITICAL!();
+                return pdPASS;
+            } else {
+                if xTicksToWait == 0 {
+                    taskEXIT_CRITICAL!();
+                    return errQUEUE_EMPTY;
+                } else if xEntryTimeSet == pdFALSE {
+                    vTaskInternalSetTimeOutState(&mut xTimeOut);
+                    xEntryTimeSet = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            }
+        }
+        // {if xQueue.uxMessagesWaiting<xQueue.uxLength||xC}
+        taskEXIT_CRITICAL!();
+        vTaskSuspendAll();
+        prvLockQueue!(xQueue.clone());
+        if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
+            if (prvIsQueueEmpty(xQueue.clone()) != false) {
+                vTaskPlaceOnEventList(&xQueue.write().xTasksWaitingToReceive, xTicksToWait);
+
+                // /* Unlocking the queue means queue events can effect the
+                //  * event list. It is possible that interrupts occurring now
+                //  * remove this task from the event list again - but as the
+                //  * scheduler is suspended the task will go onto the pending
+                //  * ready list instead of the actual ready list. */
+                print("inheriting!");
+                if cfg!(feature = "configUSE_MUTEXES") {
+                    print("inheriting?");
+                    if xQueue.read().ucQueueType == queueQUEUE_TYPE_MUTEX
+                        || xQueue.read().ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
+                    {
+                        taskENTER_CRITICAL!();
+                        print("inheriting");
+                        xInheritanceOccurred =
+                            xTaskPriorityInherit(xQueue.write().xMutexHolder.clone());
+                        taskEXIT_CRITICAL!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                }
+
+                prvUnlockQueue(xQueue.clone());
+                if (vTaskResumeAll() == false) {
+                    portYIELD_WITHIN_API!();
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                prvUnlockQueue(xQueue.clone());
+                vTaskResumeAll();
+            }
+        } else {
+            prvUnlockQueue(xQueue.clone());
+            vTaskResumeAll();
+
+            if prvIsQueueEmpty(xQueue.clone()) != false {
+                if cfg!(feature = "configUSE_MUTEXES") {
+                    if xInheritanceOccurred != pdFALSE {
+                        taskENTER_CRITICAL!();
+                        let uxHighestWaitingPriority =
+                            prvGetDisinheritPriorityAfterTimeout(xQueue.clone());
+                        vTaskPriorityDisinheritAfterTimeout(
+                            xQueue.write().xMutexHolder.clone(),
+                            uxHighestWaitingPriority,
+                        );
+                        taskEXIT_CRITICAL!();
+                    }
+                }
+                return errQUEUE_EMPTY;
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        }
+    }
+}
+
+pub fn xQueueReceiveFromISR(
+    xQueue: QueueHandle_t,
+    pvBuffer: usize,
+    pxHigherPriorityTaskWoken: &mut BaseType,
+) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    //todo:portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
+    if xQueue.read().uxMessagesWaiting > 0 {
+        let cRxLock: i8 = xQueue.read().cRxLock;
+        prvCopyDataFromQueue(&mut xQueue.write(), pvBuffer);
+        xQueue.write().uxMessagesWaiting -= 1;
+        if cRxLock == queueUNLOCKED {
+            if list_is_empty(&xQueue.write().xTasksWaitingToSend) == false {
+                if xTaskRemoveFromEventList(&xQueue.write().xTasksWaitingToSend) == true {
+                    *pxHigherPriorityTaskWoken = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        } else {
+            xQueue.write().cRxLock = cRxLock + 1;
+        }
+        xReturn = pdTRUE;
+    }
+    xReturn
+}
+
+pub fn xQueueSendFromISR(
+    xQueue: QueueHandle_t,
+    pvBuffer: usize,
+    pxHigherPriorityTaskWoken: &mut BaseType,
+) -> BaseType {
+    xQueueGenericSendFromISR(
+        xQueue,
+        pvBuffer,
+        pxHigherPriorityTaskWoken,
+        queueSEND_TO_BACK,
+    )
+}
+
+pub fn xQueueGenericSendFromISR(
+    xQueue: QueueHandle_t,
+    pvBuffer: usize,
+    pxHigherPriorityTaskWoken: &mut BaseType,
+    xCopyPosition: BaseType,
+) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    if xQueue.read().uxMessagesWaiting < xQueue.read().uxLength || xCopyPosition == queueOVERWRITE {
+        let cTxLock: i8 = xQueue.write().cTxLock;
+
+        prvCopyDataToQueue(&mut xQueue.write(), pvBuffer, xCopyPosition);
+        if cTxLock == queueUNLOCKED {
+            //todo:configUSE_QUEUE_SETS
+            if list_is_empty(&xQueue.write().xTasksWaitingToReceive) == false {
+                if xTaskRemoveFromEventList(&xQueue.write().xTasksWaitingToReceive) == true {
+                    *pxHigherPriorityTaskWoken = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        } else {
+            xQueue.write().cTxLock = cTxLock + 1;
+        }
+        xReturn = pdTRUE;
+    }
+    xReturn
+}
+
+pub fn xQueuePeek(xQueue: QueueHandle_t, pvBuffer: usize, mut xTicksToWait: TickType) -> BaseType {
+    let mut xEntryTimeSet: BaseType = pdFALSE;
+    let mut xTimeOut: TimeOut = Default::default();
+    let mut pcOriginalReadPosition: usize = 0;
+
+    loop {
+        taskENTER_CRITICAL!();
+        {
+            let mut xQueue_ = &mut *xQueue.write();
+            let uxMessagesWaiting = xQueue_.uxMessagesWaiting;
+            if uxMessagesWaiting > 0 {
+                //TODO:
+                pcOriginalReadPosition = xQueue_.pcReadFrom;
+                prvCopyDataFromQueue(&mut xQueue_, pvBuffer);
+                //different from queuereceive
+                // xQueue.uxMessagesWaiting = uxMessagesWaiting - 1;
+                /* The data is not being removed, so reset the read pointer. */
+                xQueue_.pcReadFrom = pcOriginalReadPosition;
+                if list_is_empty(&xQueue_.xTasksWaitingToReceive) == false {
+                    if (xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToReceive) != false) {
+                        queueYIELD_IF_USING_PREEMPTION!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                } else {
+                    //list empty
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+                taskEXIT_CRITICAL!();
+                return pdPASS;
+            } else {
+                if xTicksToWait == 0 {
+                    taskEXIT_CRITICAL!();
+                    return errQUEUE_EMPTY;
+                } else if xEntryTimeSet == pdFALSE {
+                    vTaskInternalSetTimeOutState(&mut xTimeOut);
+                    xEntryTimeSet = pdTRUE;
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            }
+        }
+        // {if xQueue.uxMessagesWaiting<xQueue.uxLength||xC}
+        taskEXIT_CRITICAL!();
+        vTaskSuspendAll();
+        prvLockQueue!(xQueue.clone());
+        if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
+            if (prvIsQueueEmpty(xQueue.clone()) != false) {
+                vTaskPlaceOnEventList(&xQueue.write().xTasksWaitingToReceive, xTicksToWait);
+
+                prvUnlockQueue(xQueue.clone());
+                if (vTaskResumeAll() == false) {
+                    portYIELD_WITHIN_API!();
+                } else {
+                    mtCOVERAGE_TEST_MARKER!();
+                }
+            } else {
+                prvUnlockQueue(xQueue.clone());
+                vTaskResumeAll();
+            }
+        } else {
+            prvUnlockQueue(xQueue.clone());
+            vTaskResumeAll();
+            if prvIsQueueEmpty(xQueue.clone()) != false {
+                return errQUEUE_EMPTY;
+            } else {
+                mtCOVERAGE_TEST_MARKER!();
+            }
+        }
+    }
+}
+
+pub fn xQueuePeekFromISR(xQueue: QueueHandle_t, pvBuffer: usize) -> BaseType {
+    let mut xReturn: BaseType = pdFALSE;
+    if xQueue.read().uxMessagesWaiting > 0 {
+        let pcOriginalReadPosition = xQueue.read().pcReadFrom;
+        prvCopyDataFromQueue(&mut xQueue.write(), pvBuffer);
+        xQueue.write().pcReadFrom = pcOriginalReadPosition;
+        xReturn = pdTRUE;
+    }
+    xReturn
+}
+
+pub fn prvUnlockQueue(xQueue: QueueHandle_t) {
+    taskENTER_CRITICAL!();
+    {
+        let mut cTxLock: i8 = xQueue.read().cTxLock;
+        while cTxLock > queueUNLOCKED {
+            if cfg!(feature = "configUSE_QUEUE_SETS") {
+                //todo
+            } else {
+                if list_is_empty(&xQueue.write().xTasksWaitingToReceive) == false {
+                    if xTaskRemoveFromEventList(&xQueue.write().xTasksWaitingToReceive) != false {
+                        vTaskMissedYield!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                } else {
+                    break;
+                }
+            }
+            cTxLock -= 1;
+        }
+        xQueue.write().cTxLock = queueUNLOCKED;
+    }
+    taskEXIT_CRITICAL!();
+
+    taskENTER_CRITICAL!();
+    {
+        let mut cRxLock: i8 = xQueue.read().cTxLock;
+        while cRxLock > queueUNLOCKED {
+            if cfg!(feature = "configUSE_QUEUE_SETS") {
+                //todo
+            } else {
+                if list_is_empty(&xQueue.write().xTasksWaitingToReceive) == false {
+                    if xTaskRemoveFromEventList(&xQueue.write().xTasksWaitingToReceive) != false {
+                        vTaskMissedYield!();
+                    } else {
+                        mtCOVERAGE_TEST_MARKER!();
+                    }
+                } else {
+                    break;
+                }
+            }
+            cRxLock -= 1;
+        }
+        xQueue.write().cRxLock = queueUNLOCKED;
+    }
+    taskEXIT_CRITICAL!();
+}
+
+pub fn prvGetDisinheritPriorityAfterTimeout(xQueue: QueueHandle_t) -> UBaseType {
+    let uxHighestPriorityOfWaitingTasks: UBaseType;
+    if list_current_list_length(&xQueue.write().xTasksWaitingToReceive) > 0 {
+        uxHighestPriorityOfWaitingTasks = configMAX_PRIORITIES
+            - list_get_value_of_head_entry(&xQueue.write().xTasksWaitingToReceive);
+    } else {
+        uxHighestPriorityOfWaitingTasks = tskIDLE_PRIORITY;
+    }
+    uxHighestPriorityOfWaitingTasks
 }

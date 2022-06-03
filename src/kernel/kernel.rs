@@ -1,15 +1,12 @@
-#![no_std]
-// #![feature(alloc_error_handler)]
-// #![no_main]
+
+//! lazy static globals and kernel macros
 
 extern crate alloc;
-
-
-
 use crate::allocator::init_heap;
 use crate::config::*;
 use crate::linked_list::*;
 use crate::portable::*;
+use crate::projdefs::*;
 use crate::riscv_virt::*;
 use crate::tasks::*;
 use alloc::sync::Arc;
@@ -19,7 +16,7 @@ use core::include_str;
 use core::panic::PanicInfo;
 use lazy_static::*;
 use spin::RwLock;
-use core::intrinsics;
+use super::portmacro::BaseType;
 
 global_asm!(include_str!("start.S"));
 
@@ -29,6 +26,7 @@ lazy_static! {
     pub static ref DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref OVERFLOW_DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref SUSPENDED_TASK_LIST: ListRealLink = Default::default();
+    pub static ref PENDING_READY_LIST: ListRealLink = Default::default();
     //TODO:tmp use
     pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     //todo: overflow task list
@@ -45,12 +43,7 @@ lazy_static! {
 #[macro_export]
 macro_rules! get_current_task_handle {
     () => {
-        crate::CURRENT_TCB
-            .read()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .clone()
+        crate::CURRENT_TCB.read().unwrap().as_ref().unwrap().clone()
     };
 }
 pub enum SchedulerState {
@@ -58,16 +51,13 @@ pub enum SchedulerState {
     Suspended,
     Running,
 }
-
 #[no_mangle]
 pub extern "C" fn kernel_init() {
-    print("enter kernel init.");
     init_heap();
 }
-
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    print(info.payload().downcast_ref::<&str>().unwrap());
     print("R_FreeRTOS paniced!");
     loop {}
 }
+

@@ -1,16 +1,19 @@
+//! Application specific definitions. <br>
+//! equal to FreeRTOSConfig.h
+
 use crate::portmacro::*;
 
-const CLINT_ADDR:UBaseType = 0x02000000;
+const CLINT_ADDR: UBaseType = 0x02000000;
 
-pub const CONFIG_MTIME_BASE_ADDRESS:UBaseType = CLINT_ADDR+0xbff8;
-pub const CONFIG_MTIMECMP_BASE_ADDRESS:UBaseType = CLINT_ADDR+0x4000;
-pub const CONFIG_ISR_STACK_SIZE_WORDS:usize = 2048;
-pub const CONFIG_TICK_RATE_HZ:TickType = 1000;
-pub const CONFIG_CPU_CLOCK_HZ:UBaseType = 1000000;
+pub const CONFIG_MTIME_BASE_ADDRESS: UBaseType = CLINT_ADDR + 0xbff8;
+pub const CONFIG_MTIMECMP_BASE_ADDRESS: UBaseType = CLINT_ADDR + 0x4000;
+pub const CONFIG_ISR_STACK_SIZE_WORDS: usize = 2048;
+pub const CONFIG_TICK_RATE_HZ: TickType = 1000;
+pub const CONFIG_CPU_CLOCK_HZ: UBaseType = 1000000;
 pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 pub const USER_STACK_SIZE: usize = 0x10000;
 pub const PORT_ISR_STACK_FILL_BYTE: BaseType = 0xee;
-
+pub const portTICK_RATE_MS: TickType = 1000 / CONFIG_TICK_RATE_HZ;
 pub const PRIM_HART: usize = 0;
 pub const CLINT_MSIP: usize = 0x0000;
 pub const CLINT_MTIMECMP: usize = 0x4000;
@@ -31,11 +34,13 @@ pub const REG_BRDL: usize = 0x00; /* Divisor latch (LSB) */
 pub const REG_BRDH: usize = 0x01; /* Divisor latch (MSB) */
 
 /* Line status */
-pub const LSR_DR: u8 = 	0x01; /* Data ready */
-pub const LSR_OE: u8 = 	0x02; /* Overrun error */
-pub const LSR_PE: u8 = 	0x04; /* Parity error */
-pub const LSR_FE: u8 = 	0x08; /* Framing error */
-pub const LSR_BI: u8 = 	0x10; /* Break interrupt */
+pub const LSR_DR: u8 = 0x01; /* Data ready */
+pub const LSR_OE: u8 = 0x02; /* Overrun error */
+pub const LSR_PE: u8 = 0x04; /* Parity error */
+pub const LSR_FE: u8 = 0x08; /* Framing error */
+pub const LSR_BI: u8 = 0x10; /* Break interrupt */
 pub const LSR_THRE: u8 = 0x20; /* Transmitter holding register empty */
 pub const LSR_TEMT: u8 = 0x40; /* Transmitter empty */
 pub const LSR_EIRF: u8 = 0x80; /* Error in RCVR FIFO */
+
+pub const configMAX_PRIORITIES: UBaseType = 16;
