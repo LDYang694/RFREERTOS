@@ -6,8 +6,6 @@ use alloc::format;
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
 
-use super::riscv_virt::print;
-
 /// INITIAL Start should init_heap first
 pub fn init_heap() {
     static mut HEAP: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];
@@ -20,7 +18,6 @@ pub fn init_heap() {
             .Buddy_System_Allocator
             .lock()
             .init(HEAP.as_ptr() as usize, KERNEL_HEAP_SIZE);
-        print(&format!("addr:{:X}", HEAP.as_ptr() as usize));
     }
 }
 

@@ -39,6 +39,8 @@ lazy_static! {
     pub static ref TCB3_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
     pub static ref IDLE_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
 }
+
+/// get current task handle as Arc
 #[macro_export]
 macro_rules! get_current_task_handle {
     () => {

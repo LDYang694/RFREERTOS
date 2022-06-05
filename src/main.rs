@@ -87,27 +87,8 @@ fn task3(t: *mut c_void) {
     }
 }
 pub fn main_new() {
-    unsafe {
-        //main_blinky();
-        test_();
-    }
-    //main_new_1();
-    /*let val: BaseType;
-    unsafe {
-        val = 0;
-    }
-    let s = format!("{}", val);
-    print(&s);*/
-    //vTaskStartScheduler();
+    main_new_1();
     loop {}
-}
-
-pub fn testfunc1() {
-    mtCOVERAGE_TEST_MARKER!();
-}
-
-pub fn testfunc2() {
-    mtCOVERAGE_TEST_MARKER!();
 }
 
 fn task_send(t: *mut c_void) {
@@ -182,19 +163,7 @@ pub fn main_new_1() {
     let param1: Param_link = 0;
     let param2: Param_link = 0;
     let param3: Param_link = 0;
-    // let param3: Param_link = 0;
-    // let stack1ptr: StackType_t_link =
-    //     &*TASK1_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
-    //         - 4;
-    // let stack2ptr: StackType_t_link =
-    //     &*TASK2_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
-    //         - 4;
-    // let stack3ptr: StackType_t_link =
-    //     &*TASK3_STACK as *const [u32; USER_STACK_SIZE] as *const u32 as usize + USER_STACK_SIZE * 4
-    //         - 4;
-    // unsafe {
-    //     xQueue = Some(xQueueCreate(1, size_of::<u32>() as u32));
-    // }
+
     unsafe {
         /*xQueue = Some(QueueDefinition::xQueueCreate(
             2,

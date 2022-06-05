@@ -2,33 +2,24 @@
 //! Bidirectional linked list Definition and API
 
 use spin::RwLock;
-// use std::collections::LinkedList;
-// use std::rc::Rc;
 extern crate alloc;
-use crate::tasks::*;
-// use std::rc::Weak;
-//use std::boxed::Box;
 use crate::kernel::riscv_virt::*;
 use crate::portable::*;
 use crate::portmacro::*;
+use crate::tasks::*;
 use alloc::format;
 use alloc::sync::{Arc, Weak};
 use core::clone::Clone;
 use core::default::Default;
-// type Link<T> = Option<Box<Node<T>>>;
 pub type ListItemWeakLink = Weak<RwLock<XListItem>>;
 pub type ListWeakLink = Weak<RwLock<XList>>;
 pub type ListRealLink = Arc<RwLock<XList>>;
 pub type ListItemLink = Arc<RwLock<XListItem>>;
 pub type ListItemOwnerWeakLink = Weak<RwLock<TCB_t>>;
 
-//TODO: tmp define tcv_t
-// pub type TCB = u32;
 use alloc::string;
 use core::option::Option;
 
-use super::riscv_virt::vSendString;
-//define list types here
 #[derive(Debug)]
 pub struct XListItem {
     /// Used to help arrange nodes in order.
@@ -243,23 +234,15 @@ impl ListT {
     /// If list is not already in order, insert position is not guaranteed.
     pub fn insert(&mut self, px_new_list_item: ListItemWeakLink) {
         let x_value_of_insertion = list_item_get_value(&Weak::upgrade(&px_new_list_item).unwrap());
-        //println!("{}", x_value_of_insertion);
+
         let px_iterator = if x_value_of_insertion == PORT_MAX_DELAY {
             list_item_get_pre(&(Arc::downgrade(&self.x_list_end)))
         } else {
             let mut iterator = Arc::downgrade(&self.x_list_end);
             loop {
-                /*if iterator.ptr_eq(&Arc::downgrade(&self.x_list_end)) {
-                    print("end!");
-                } else {
-                    print("not end");
-                }*/
                 iterator = list_item_get_next(&iterator);
                 let value = list_item_get_value(&Weak::upgrade(&iterator).unwrap());
-                /*print(&format!(
-                    "val:{}/{} {}",
-                    value, x_value_of_insertion, &self.ux_number_of_items
-                ));*/
+
                 if value >= x_value_of_insertion {
                     break;
                 }

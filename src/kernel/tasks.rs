@@ -197,35 +197,14 @@ pub fn xTaskCreateStatic(
     pxTaskBuffer: Option<&TCB_t_link>,
     uxPriority: UBaseType,
 ) -> Option<TaskHandle_t> {
-    print("xTaskCreateStatic 1111");
     assert!(puxStackBuffer.is_some());
     assert!(pxTaskBuffer.is_some());
-    //TODO: C:
-    //     #if ( configASSERT_DEFINED == 1 )
-    //     {
-    //         /* Sanity check that the size of the structure used to declare a
-    //          * variable of type StaticTask_t equals the size of the real task
-    //          * structure. */
-    //         volatile size_t xSize = sizeof( StaticTask_t );
-    //         configASSERT( xSize == sizeof( TCB_t ) );
-    //         ( void ) xSize; /* Prevent lint warning when configASSERT() is not used. */
-    //     }
-    // #endif /* configASSERT_DEFINED */
-    //TODO: fix xReturn
+
     let xReturn = Arc::new(RwLock::new(tskTaskControlBlock::default()));
 
     let pxNewTCB: &TCB_t_link = pxTaskBuffer.unwrap();
     TCB_set_pxStack(pxNewTCB, puxStackBuffer.unwrap());
-    //TODO: C:
-    //     #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
-    //     {
-    //         /* Tasks can be created statically or dynamically, so note this
-    //          * task was created statically in case the task is later deleted. */
-    //         pxNewTCB->ucStaticallyAllocated = tskSTATICALLY_ALLOCATED_STACK_AND_TCB;
-    //     }
-    // #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
-    let s_ = format!("top of stack{:X}", pxNewTCB.read().pxTopOfStack);
-    print(&s_);
+
     prvInitialiseNewTask(
         pxTaskCode,
         pcName,
@@ -235,7 +214,7 @@ pub fn xTaskCreateStatic(
         uxPriority,
         pxNewTCB,
     );
-    print("xTaskCreateStatic 3333");
+
     prvAddNewTaskToReadyList(pxNewTCB);
 
     Some(xReturn)
@@ -254,11 +233,6 @@ pub fn prvAddNewTaskToReadyList(pxNewTCB: &TCB_t_link) {
 /// Add target task to ready list.
 pub fn prvAddTaskToReadyList(pxNewTCB: &TCB_t_link) {
     let uxPriority = pxNewTCB.read().uxPriority;
-    let s = format!(
-        "add to readylist{:X}",
-        pxNewTCB.read().xStateListItem.read().x_item_value
-    );
-    print(&s);
 
     taskRECORD_READY_PRIORITY(uxPriority);
     v_list_insert_end(
@@ -287,7 +261,7 @@ pub fn prvInitialiseNewTask<'a>(
 
     let mut x: UBaseType = 0;
     //TODO: name length
-    print("prvInitialiseNewTask 1111");
+
     pxNewTCB.write().pcTaskName = pcName.to_string();
     pxNewTCB.write().uxPriority = priority;
     if cfg!(feature = "configUSE_MUTEXES") {
@@ -295,25 +269,20 @@ pub fn prvInitialiseNewTask<'a>(
         pxNewTCB.write().uxMutexesHeld = 0;
     }
     //TODO:auto init
-    print("prvInitialiseNewTask 2222");
+
     list_item_set_owner(&pxNewTCB.write().xStateListItem, Arc::downgrade(&pxNewTCB));
     list_item_set_owner(&pxNewTCB.write().xEventListItem, Arc::downgrade(&pxNewTCB));
     list_item_set_value(
         &pxNewTCB.write().xEventListItem,
         *configMAX_PRIORITIES - priority,
     );
-    print("prvInitialiseNewTask 33333");
-    //TODO: connect
-    let s_ = format!("top of stack{:X}", pxTopOfStack);
-    print(&s_);
+
     unsafe {
         pxNewTCB.write().pxTopOfStack =
             pxPortInitialiseStack(pxTopOfStack as *mut _, pxTaskCode, 0 as *mut _) as usize;
         pxNewTCB.write().uxCriticalNesting = 0;
     }
-    let s_ = format!("top of stack{:X}", pxNewTCB.read().pxTopOfStack);
-    print(&s_);
-    print("prvInitialiseNewTask 4444");
+
     //TODO: return
     *pxCreatedTask.write() = (*(pxNewTCB.write())).clone();
     pxNewTCB
@@ -362,7 +331,6 @@ pub extern "C" fn vTaskStartScheduler() {
         );
     }
     set_current_tcb(Some(Arc::downgrade(&IDLE_p)));
-    print("set tcb success");
     if x_port_start_scheduler() != pdFALSE {
         panic!("error scheduler!!!!!!");
     }
@@ -522,8 +490,6 @@ pub extern "C" fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrem
         }
 
         let xTimeToWake: TickType = *pxPreviousWakeTime + xTimeIncrement;
-        //let s=format!("xConstTickCount:{} pxPreviousWakeTime:{} xTimeToWake:{}",xConstTickCount,*pxPreviousWakeTime,xTimeToWake);
-        //vSendString(&s);
         if xConstTickCount < *pxPreviousWakeTime {
             if (xTimeToWake < *pxPreviousWakeTime) && (xTimeToWake > xConstTickCount) {
                 xShouldDelay = true;
@@ -543,7 +509,6 @@ pub extern "C" fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrem
         if xShouldDelay == true {
             prvAddCurrentTaskToDelayedList(xTimeToWake - xConstTickCount, true);
         } else {
-            //vSendString("no delay!");
             mtCOVERAGE_TEST_MARKER!();
         }
     }
@@ -670,8 +635,7 @@ pub fn xTaskCreate(
 ) -> BaseType {
     let xReturn: BaseType = 0;
     let mut pxStack: StackType_t_link = 0;
-    // let stack:[u32;ulStackDepth]= [0;ulStackDepth];
-    print("xTaskCreate 11111111");
+
     use core::mem;
 
     use alloc::alloc::Layout;
@@ -689,8 +653,7 @@ pub fn xTaskCreate(
 
     let pxNewTCB: TCB_t_link = Arc::new(RwLock::new(tskTaskControlBlock::default()));
     TCB_set_pxStack(&pxNewTCB, pxStack);
-    let s_ = format!("top of stack{:X}", pxNewTCB.read().pxTopOfStack);
-    print(&s_);
+
     prvInitialiseNewTask(
         pxTaskCode,
         pcName,
@@ -772,10 +735,7 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
 
     if is_current_tcb_raw(xTaskToSuspend) {
         if get_scheduler_running!() {
-            /* The current task has just been suspended. */
-            // assert!(get_scheduler_suspended!() == 0);
-            // portYIELD_WITHIN_API!();
-            print("R_FreeRTOS paniced! portYIELD_WITHIN_API");
+            portYIELD_WITHIN_API!();
         } else {
             if list_current_list_length(&SUSPENDED_TASK_LIST) != get_uxCurrentNumberOfTasks!() {
             } else {
@@ -817,7 +777,13 @@ pub fn vTaskResume(xTaskToResume_: Option<TaskHandle_t>) {
 /// Return if target task is suspended.
 pub fn prvTaskIsTaskSuspended(xTaskToResume: &TaskHandle_t) -> bool {
     //todo!
-    true
+    let mut xReturn: bool = false;
+    if list_is_contained_within(&*SUSPENDED_TASK_LIST, &xTaskToResume.read().xStateListItem) {
+        if !list_is_contained_within(&*PENDING_READY_LIST, &xTaskToResume.read().xEventListItem) {
+            xReturn = true;
+        }
+    }
+    xReturn
 }
 
 /// Get tcb from handle, return current tcb if handle is None.

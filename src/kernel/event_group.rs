@@ -73,7 +73,6 @@ pub fn xEventGroupSetBits(xEventGroup: EventGroupHandle, uxBitsToSet: EventBits)
             list_get_head_entry(&xEventGroup.read().xTasksWaitingForBits);
         let pxListEnd = list_get_end_marker(&xEventGroup.read().xTasksWaitingForBits);
         while !pxListItem.ptr_eq(&pxListEnd) {
-            vSendString("matching");
             let mut xMatchFound: BaseType = pdFALSE;
             let mut uxBitsWaitedFor = list_item_get_value(&Weak::upgrade(&pxListItem).unwrap());
             let uxControlBits = uxBitsWaitedFor & eventEVENT_BITS_CONTROL_BYTES;
@@ -88,7 +87,6 @@ pub fn xEventGroupSetBits(xEventGroup: EventGroupHandle, uxBitsToSet: EventBits)
                 }
             }
             if xMatchFound != pdFALSE {
-                vSendString("match found");
                 if uxControlBits & eventCLEAR_EVENTS_ON_EXIT_BIT != 0 {
                     uxBitsToClear |= uxBitsWaitedFor;
                 }

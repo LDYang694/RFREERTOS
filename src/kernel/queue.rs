@@ -1,7 +1,6 @@
 //! Queue Definition and api
 extern crate alloc;
 use crate::kernel::projdefs::*;
-use crate::kernel::riscv_virt::print;
 use crate::kernel::tasks::*;
 use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
 
@@ -186,17 +185,9 @@ pub fn xQueueGenericCreate(
     unsafe {
         pxNewQueue_ptr = alloc::alloc::alloc(layout);
     }
-    print("queue create 22222");
-    //TODO:
-    // if pxNewQueue_ptr!=NULL
+
     let pucQueueStorage: usize = pxNewQueue_ptr as usize + mem::size_of::<Queue_t>();
-    // #if( configSUPPORT_STATIC_ALLOCATION == 1 )
-    // 29 {
-    // 30
-    // 31 pxNewQueue->ucStaticallyAllocated = pdFALSE;
-    // 32 }
-    // 33 #endif
-    print("queue create 3333");
+
     prvInitialiseNewQueue(
         uxQueueLength,
         uxItemSize,
@@ -204,12 +195,9 @@ pub fn xQueueGenericCreate(
         ucQueueType,
         pxNewQueue_ptr as usize,
     );
-    print("queue create 4444");
+
     let pxNewQueue = unsafe { Box::from_raw(pxNewQueue_ptr as *mut Queue_t) };
 
-    // unsafe {
-    //     pxNewQueue = &*(pxNewQueue_ptr as *mut Queue_t );
-    // }
     Arc::new(RwLock::new(Box::<QueueDefinition>::into_inner(pxNewQueue)))
 }
 
@@ -221,7 +209,6 @@ pub fn prvInitialiseNewQueue(
     ucQueueType: u8,
     pxNewQueue: usize,
 ) {
-    print("prvInitialiseNewQueue 11111");
     let pxNewQueue_ =
         unsafe { mem::transmute::<*mut Queue_t, &mut QueueDefinition>(pxNewQueue as *mut Queue_t) };
 
@@ -235,15 +222,8 @@ pub fn prvInitialiseNewQueue(
     pxNewQueue_.uxLength = uxQueueLength;
     pxNewQueue_.uxItemSize = uxItemSize;
 
-    print("prvInitialiseNewQueue 2222");
     xQueueGenericReset(pxNewQueue_, 1);
     let x = pxNewQueue_.xTasksWaitingToReceive.read().ux_number_of_items;
-    print("prvInitialiseNewQueue 3333");
-    let s = format!(
-        "pchead:{:X},pcreadfrom:{:X}",
-        pxNewQueue_.pcHead, pxNewQueue_.pcReadFrom
-    );
-    print(&s)
 }
 
 /// Reset target queue.
@@ -386,24 +366,11 @@ pub fn prvCopyDataToQueue(
         }
     } else if xPosition == queueSEND_TO_BACK {
         unsafe {
-            /*let x = *(pvItemToQueue as *mut i32);
-            let s_ = format!(
-                "Send  xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
-                xQueue.pcWriteTo, pvItemToQueue, x, xQueue.uxItemSize
-            );
-            vSendString(&s_);*/
-
             memcpy(
                 xQueue.pcWriteTo as *mut c_void,
                 pvItemToQueue as *const c_void,
                 xQueue.uxItemSize as usize,
             );
-            /*let xx = *(xQueue.pcWriteTo as *mut i32);
-            let ss_ = format!(
-                "Send over xQueue.pcWriteTo{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
-                xQueue.pcWriteTo, pvItemToQueue, xx, xQueue.uxItemSize
-            );
-            vSendString(&ss_);*/
         }
         xQueue.pcWriteTo += xQueue.uxItemSize as usize;
         if xQueue.pcWriteTo >= xQueue.pcTail {
@@ -506,23 +473,11 @@ pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
         }
 
         unsafe {
-            /*let xx = *(xQueue.pcReadFrom as *mut i32);
-            let s = format!(
-                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
-                xQueue.pcReadFrom, pvBuffer, xx, xQueue.uxItemSize
-            );
-            vSendString(&s);*/
             memcpy(
                 pvBuffer as *mut c_void,
                 xQueue.pcReadFrom as *const c_void,
                 xQueue.uxItemSize as usize,
             );
-            /*let x = *(pvBuffer as *mut i32);
-            let s_ = format!(
-                "Read     xQueue.pcReadFrom{:X},pvItemToQueue{:X},value{},xQueue.uxItemSize{:X}",
-                xQueue.pcReadFrom, pvBuffer, x, xQueue.uxItemSize
-            );
-            vSendString(&s_);*/
         }
     }
 }
@@ -602,14 +557,11 @@ pub fn xQueueReceive(
                 //  * remove this task from the event list again - but as the
                 //  * scheduler is suspended the task will go onto the pending
                 //  * ready list instead of the actual ready list. */
-                print("inheriting!");
                 if cfg!(feature = "configUSE_MUTEXES") {
-                    print("inheriting?");
                     if xQueue.read().ucQueueType == queueQUEUE_TYPE_MUTEX
                         || xQueue.read().ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
                     {
                         taskENTER_CRITICAL!();
-                        print("inheriting");
                         xInheritanceOccurred =
                             xTaskPriorityInherit(xQueue.write().xMutexHolder.as_ref());
                         taskEXIT_CRITICAL!();
