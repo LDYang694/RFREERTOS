@@ -73,124 +73,26 @@ static void vTaskMissedYieldStub( int cmock_num_calls )
     xYieldPending = pdTRUE;
 }
 
-/*
-BaseType_t td_task_xTaskResumeAllStub( int cmock_num_calls )
-{
-    BaseType_t xDidYield = pdFALSE;
-
-    TEST_ASSERT_EQUAL_MESSAGE( taskSCHEDULER_SUSPENDED, xSchedulerState, "xTaskResumeAll called with scheduler running." );
-
-    xSchedulerState = taskSCHEDULER_RUNNING;
-
-    if( ( td_task_getFakeTaskPriority() >= DEFAULT_PRIORITY ) &&
-        ( listLIST_ITEM_CONTAINER( &fakeTaskListItem ) != NULL ) )
-    {
-        xYieldPending = pdTRUE;
-    }
-
-    if( xYieldPending )
-    {
-        #if ( configUSE_PREEMPTION == 1 )
-            xDidYield = pdTRUE;
-            xYieldCount++;
-            xYieldFromTaskResumeAllCount++;
-            xYieldPending = pdFALSE;
-        #endif
-    }
-
-    /* Remove task from blocked list */
-    /*if( listLIST_ITEM_CONTAINER( &taskListItem ) )
-    {
-        uxListRemove( &taskListItem );
-    }
-
-    return xDidYield;
-}*/
-
-static void vPortYieldStub( int cmock_num_calls )
+static void vPortYieldStub()
 {
     xYieldCount++;
     xPortYieldCount++;
     xYieldPending = pdFALSE;
 }
 
-static void vPortYieldFromISRStub( int cmock_num_calls )
+static void vPortYieldFromISRStub()
 {
     xYieldCount++;
     xPortYieldFromISRCount++;
     xYieldPending = pdFALSE;
 }
 
-void td_task_vPortYieldWithinAPIStub( int cmock_num_calls )
+void td_task_vPortYieldWithinAPIStub()
 {
     xYieldCount++;
     xPortYieldWithinAPICount++;
     xYieldPending = pdFALSE;
 }
-
-/* Timeout handling callbacks */
-/*
-static void vTaskInternalSetTimeOutStateStub( TimeOut_t * const pxTimeOut,
-                                              int cmock_num_calls )
-{
-    pxTimeOut->xOverflowCount = 0;
-    pxTimeOut->xTimeOnEntering = xTickCount;
-}*/
-/*
-BaseType_t td_task_xTaskCheckForTimeOutStub( TimeOut_t * const pxTimeOut,
-                                             TickType_t * const pxTicksToWait,
-                                             int cmock_num_calls )
-{
-    BaseType_t xReturnValue = pdFALSE;
-
-    xTickCount++;
-
-    if( ( xTickCount - pxTimeOut->xTimeOnEntering ) > *pxTicksToWait )
-    {
-        xReturnValue = pdTRUE;
-    }
-
-    return xReturnValue;
-}*/
-
-/* Sorted Event list related */
-/*
-static BaseType_t xTaskRemoveFromEventListStub( const List_t * const pxEventList,
-                                                int cmock_num_calls )
-{
-    BaseType_t xReturnValue = pdFALSE;
-
-    // check that xTaskRemoveFromEventList was called from within a critical section 
-    TEST_ASSERT_TRUE_MESSAGE( td_port_isInCriticalSection(), "xTaskRemoveFromEventList was called outside of a critical section." );
-
-    ListItem_t * pxItem = listGET_HEAD_ENTRY( pxEventList );
-
-    TickType_t xItemPriority = ( configMAX_PRIORITIES - listGET_LIST_ITEM_VALUE( pxItem ) );
-
-    ( void ) uxListRemove( pxItem );
-
-    xReturnValue = ( xItemPriority > DEFAULT_PRIORITY );
-
-    xYieldPending |= xReturnValue;
-
-    return( xReturnValue );
-}*/
-
-
-/*
-static void vTaskPlaceOnEventListStub( List_t * const pxEventList,
-                                       const TickType_t xTicksToWait,
-                                       int cmock_num_calls )
-{
-    if( listLIST_ITEM_CONTAINER( &taskListItem ) )
-    {
-        uxListRemove( &taskListItem );
-    }
-
-    listSET_LIST_ITEM_VALUE( &taskListItem, ( configMAX_PRIORITIES - DEFAULT_PRIORITY ) );
-
-    vListInsert( pxEventList, &taskListItem );
-}*/
 
 /* ============================= Unity Fixtures ============================= */
 
@@ -250,54 +152,6 @@ void td_task_teardown_check( void )
     TEST_ASSERT_EQUAL_MESSAGE( 0, xTaskMissedYieldCount, "Test case ended with xTaskMissedYieldCount > 0" );
     TEST_ASSERT_EQUAL_MESSAGE( pdFALSE, xYieldPending, "Test case ended with xYieldPending != pdFALSE" );
 }
-
-/*
-void td_task_setFakeTaskPriority( TickType_t priority )
-{
-    fakeTaskListItem.xItemValue = ( configMAX_PRIORITIES - priority );
-    List_t * pxContainer = listLIST_ITEM_CONTAINER( &fakeTaskListItem );
-
-    if( pxContainer != NULL )
-    {
-        uxListRemove( &fakeTaskListItem );
-        vListInsert( pxContainer, &fakeTaskListItem );
-    }
-}*/
-
-/*void td_task_addFakeTaskWaitingToSendToQueue( QueueHandle_t xQueue )
-{
-    StaticQueue_t * pxQueue = ( StaticQueue_t * ) xQueue;
-    List_t * pxTasksWaitingToSend = ( List_t * ) &( pxQueue->xDummy3[ 0 ] );
-
-    if( listLIST_ITEM_CONTAINER( &fakeTaskListItem ) )
-    {
-        uxListRemove( &fakeTaskListItem );
-    }
-
-    fakeTaskListItem.pvOwner = NULL;
-
-    vListInsert( pxTasksWaitingToSend, &fakeTaskListItem );
-}*/
-
-/*void td_task_addFakeTaskWaitingToReceiveFromQueue( QueueHandle_t xQueue )
-{
-    StaticQueue_t * pxQueue = ( StaticQueue_t * ) xQueue;
-    List_t * pxTasksWaitingToReceive = ( List_t * ) &( pxQueue->xDummy3[ 1 ] );
-
-    if( listLIST_ITEM_CONTAINER( &fakeTaskListItem ) )
-    {
-        uxListRemove( &fakeTaskListItem );
-    }
-
-    fakeTaskListItem.pvOwner = NULL;
-
-    vListInsert( pxTasksWaitingToReceive, &fakeTaskListItem );
-}*/
-
-/*TickType_t td_task_getFakeTaskPriority( void )
-{
-    return( configMAX_PRIORITIES - fakeTaskListItem.xItemValue );
-}*/
 
 BaseType_t td_task_getYieldCount( void )
 {

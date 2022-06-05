@@ -304,6 +304,7 @@ void test_vQueueWaitForMessageRestricted_locked( void )
 
 void run_queue_status_utest()
 {
+    //success:5 not impleted:8 failed:0
     //test_uxQueueMessagesWaiting_invalid_handle(); not impleted
     test_uxQueueMessagesWaiting_empty_occupied();
     //test_uxQueueMessagesWaitingFromISR_invalid_handle(); not impleted

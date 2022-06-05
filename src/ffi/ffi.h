@@ -14,7 +14,7 @@ void rustAssert(bool);
 void rustPrint(char*);
 void* rustMalloc(int size_);
 void rustYield();
-void rustVSendString(char*);
+void rustVSendString(const char*);
 
 #define vSendString rustVSendString
 

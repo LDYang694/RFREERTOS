@@ -321,17 +321,17 @@ BaseType_t td_task_xTaskCheckForTimeOutStub( TimeOut_t * const pxTimeOut,
 /**
  * @brief Test double for xTaskResumeAll
  */
-BaseType_t td_task_xTaskResumeAllStub( int cmock_num_calls );
+BaseType_t td_task_xTaskResumeAllStub();
 
 /**
  * @brief Test double for vTaskSuspendAll which does not check the scheduler state when called.
  */
-void td_task_vTaskSuspendAllStubNoCheck( int cmock_num_calls );
+void td_task_vTaskSuspendAllStubNoCheck();
 
 /**
  * @brief Test double for vPortYieldWithinAPI
  */
-void td_task_vPortYieldWithinAPIStub( int cmock_num_calls );
+void td_task_vPortYieldWithinAPIStub();
 
 /**
  * @brief Get the number of calls to all yield related functions.

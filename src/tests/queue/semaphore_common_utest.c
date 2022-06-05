@@ -145,6 +145,7 @@ void test_macro_xSemaphoreGiveFromISR_queue_handle( void )
 
 void run_semaphore_common_utest()
 {
+    //success:0 not impleted:7 failed:1
     //test_macro_xSemaphoreTake_invalid_handle(); not impleted
     //test_macro_xSemaphoreTake_queue_handle(); failed
     //test_macro_xSemaphoreGive_invalid_handle(); not impleted

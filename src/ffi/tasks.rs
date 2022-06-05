@@ -1,3 +1,5 @@
+//! Task ffi for C
+
 extern crate libc;
 
 use crate::ffi::ffi::get_str_from_cchar;
@@ -14,12 +16,15 @@ extern "C" {
     fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void;
 }
 
+/// Malloc new task handle from Rust and return to C.<br>
 #[no_mangle]
 pub fn get_task_handle() -> TaskHandle_c {
     let temp = Arc::new(RwLock::new(tskTaskControlBlock::default()));
     Arc::into_raw(temp)
 }
 
+/// The C version of xTaskCreateStatic.<br>
+/// pxTaskBuffer must be initialized with get_task_handle() unless it's NULL.
 #[no_mangle]
 pub extern "C" fn xTaskCreateStaticToC(
     pxTaskCode: UBaseType,
@@ -27,9 +32,12 @@ pub extern "C" fn xTaskCreateStaticToC(
     ulStackDepth: UBaseType,
     pvParameters: usize,
     puxStackBuffer: usize,
-    pxTaskBuffer: TaskHandle_c,
+    mut pxTaskBuffer: TaskHandle_c,
     uxPriority: UBaseType,
 ) -> TaskHandle_c {
+    if (pxTaskBuffer as usize) == 0 {
+        pxTaskBuffer = get_task_handle();
+    }
     let name = get_str_from_cchar(pcName);
     let handle: TaskHandle_t = xTaskCreateStatic(
         pxTaskCode,
@@ -49,6 +57,8 @@ pub extern "C" fn xTaskCreateStaticToC(
     xReturn
 }
 
+/// The C version of xTaskCreate.<br>
+/// pxCreatedTask must be initialized with get_task_handle() unless it's NULL.
 #[no_mangle]
 pub extern "C" fn xTaskCreateToC(
     pxTaskCode: UBaseType,
@@ -80,6 +90,7 @@ pub extern "C" fn xTaskCreateToC(
     xReturn
 }
 
+/// The C version of vTaskSuspend.
 #[no_mangle]
 pub extern "C" fn vTaskSuspendToC(xTaskToSuspend_: TaskHandle_c) {
     if xTaskToSuspend_ as usize == 0 {
@@ -91,6 +102,7 @@ pub extern "C" fn vTaskSuspendToC(xTaskToSuspend_: TaskHandle_c) {
     }
 }
 
+/// The C version of vTaskResume.
 #[no_mangle]
 pub extern "C" fn vTaskResumeToC(xTaskToResume_: TaskHandle_c) {
     if xTaskToResume_ as usize == 0 {
@@ -102,27 +114,20 @@ pub extern "C" fn vTaskResumeToC(xTaskToResume_: TaskHandle_c) {
     }
 }
 
+/// The C version of taskENTER_CRITICAL.
 #[no_mangle]
 pub extern "C" fn taskENTER_CRITICAL_ToC() {
     portENTER_CRITICAL!();
 }
 
+/// The C version of taskEXIT_CRITICAL.
 #[no_mangle]
 pub extern "C" fn taskEXIT_CRITICAL_ToC() {
     portEXIT_CRITICAL!();
 }
 
+/// Return xTickCount to C program.
 #[no_mangle]
 pub extern "C" fn xTaskGetTickCountToC() -> TickType {
     return unsafe { xTickCount };
 }
-/*
-#[no_mangle]
-pub extern "C" fn xTaskGetCurrentTaskHandle() -> TaskHandle_c {
-    get_current_tcb()
-}*/
-/*
-#[no_mangle]
-pub extern "C" fn pcTaskGetName() -> usize {
-    let name=
-}*/

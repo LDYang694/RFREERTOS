@@ -54,14 +54,9 @@ lazy_static! {
         })));
 }
 
-/*
-extern "C" {
-    pub static mut : u32;
-
-}*/
 //todo:safe  global var and pointer
 
-/// get current mtime
+/// Get current mtime.
 fn get_mtime() -> u64 {
     let mut result: u64 = 0;
     let pul_time_high: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
@@ -77,7 +72,7 @@ fn get_mtime() -> u64 {
     result
 }
 
-/// setup timer interrupt
+/// Setup timer interrupt during startup.
 pub fn v_port_setup_timer_interrupt() {
     let mut ul_hart_id: UBaseType;
     let pul_time_high: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
@@ -108,7 +103,7 @@ pub fn v_port_setup_timer_interrupt() {
     //todo
 }
 
-/// copy current tcb to pxCurrentTCB for c interface
+/// Copy current tcb to pxCurrentTCB for C interface.
 pub fn auto_set_currentTcb() {
     unsafe {
         match get_current_tcb() {
@@ -118,7 +113,7 @@ pub fn auto_set_currentTcb() {
     }
 }
 
-/// start up scheduler
+/// Start up scheduler.
 pub fn x_port_start_scheduler() -> BaseType {
     //X_ISRSTACK_.write().insert(0, 1);
 
@@ -140,8 +135,8 @@ pub fn x_port_start_scheduler() -> BaseType {
     pdFALSE
 }
 
-/// set current tcb <br>
-/// use with auto_set_currentTcb()
+/// Set current tcb. <br>
+/// Use with auto_set_currentTcb().
 pub fn set_current_tcb(tcb: Option<ListItemOwnerWeakLink>) {
     unsafe {
         match tcb {

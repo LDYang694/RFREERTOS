@@ -105,6 +105,7 @@ void test_vQueueDelete_full_dynamic( void )
 
 void run_queue_delete_dynamic_utest()
 {
+    //success:0 not impleted:4 failed:0
     //test_vQueueDelete_invalid_handle_dynamic(); not impleted
     //test_vQueueDelete_empty_dynamic(); not impleted
     //test_vQueueDelete_half_full_dynamic(); not impleted

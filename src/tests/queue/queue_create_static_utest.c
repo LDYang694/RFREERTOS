@@ -186,6 +186,7 @@ void test_macro_xQueueCreateStatic_large( void )
 
 void run_queue_create_static_utest()
 {
+    //success: 0 not impleted:6 failed:0
     //test_macro_xQueueCreateStatic_null_QueueStorage_fail(); ffi not impleted
     //test_macro_xQueueCreateStatic_null_queueBuffer_fail(); ffi not impleted
     //test_macro_xQueueCreateStatic_nullQueueStorage_oneItem_zeroLength(); ffi not impleted

@@ -284,6 +284,7 @@ void test_macro_xQueueCreate_addiiton_overflow( void )
 
 void run_queue_create_dynamic_utest()
 {
+    //success: 3 not impleted:7 failed:0
     //test_long_queue(); not impleted
     //test_macro_xQueueCreate_malloc_fail(); not impleted
     //test_macro_xQueueCreate_zeroQueueLength_zeroItemSize(); not impleted

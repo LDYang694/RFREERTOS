@@ -19,6 +19,7 @@ lazy_static! {
     pub static ref configMAX_PRIORITIES: UBaseType = unsafe { configMAX_PRIORITIES_ };
 }
 
+// Cannot copy from config.h. Must manually set.
 pub const KERNEL_HEAP_SIZE: usize = 0x400000;
 pub const USER_STACK_SIZE: usize = 0x10000;
 

@@ -130,7 +130,7 @@ impl Default for tskTaskControlBlock {
     }
 }
 
-/// set pxStack of target tcb
+/// Set pxStack of target tcb.
 pub fn TCB_set_pxStack(tcb: &TCB_t_link, item: StackType_t_link) {
     //TODO: item owner
     tcb.write().pxStack = item;
@@ -141,7 +141,7 @@ pub type TCB_t = tskTCB;
 //TaskHandle_t=tskTaskControlBlock*
 pub type TaskHandle_t = Arc<RwLock<tskTaskControlBlock>>;
 
-/// set priority of target task
+/// Set priority of target task.
 pub fn vTaskPrioritySet(pxTask: Option<&TaskHandle_t>, uxNewPriority: UBaseType) {
     vTaskEnterCritical();
     match pxTask {
@@ -172,7 +172,7 @@ pub fn vTaskPrioritySet(pxTask: Option<&TaskHandle_t>, uxNewPriority: UBaseType)
     vTaskExitCritical();
 }
 
-/// get priority of target task
+/// Get priority of target task.
 pub fn uxTaskPriorityGet(pxTask: Option<TaskHandle_t>) -> UBaseType {
     unsafe {
         match get_current_tcb() {
@@ -186,9 +186,7 @@ pub fn uxTaskPriorityGet(pxTask: Option<TaskHandle_t>) -> UBaseType {
     }
 }
 
-/// Create tasks static
-///
-///
+/// Create task (static).
 #[cfg(feature = "configSUPPORT_STATIC_ALLOCATION")]
 pub fn xTaskCreateStatic(
     pxTaskCode: u32,
@@ -243,7 +241,7 @@ pub fn xTaskCreateStatic(
     Some(xReturn)
 }
 
-/// add new task to ready list
+/// Add new task to ready list.
 pub fn prvAddNewTaskToReadyList(pxNewTCB: &TCB_t_link) {
     // taskENTER_CRITICAL!();
     {
@@ -253,7 +251,7 @@ pub fn prvAddNewTaskToReadyList(pxNewTCB: &TCB_t_link) {
     // taskEXIT_CRITICAL!();
 }
 
-/// add task to ready list
+/// Add target task to ready list.
 pub fn prvAddTaskToReadyList(pxNewTCB: &TCB_t_link) {
     let uxPriority = pxNewTCB.read().uxPriority;
     let s = format!(
@@ -268,12 +266,13 @@ pub fn prvAddTaskToReadyList(pxNewTCB: &TCB_t_link) {
         &pxNewTCB.read().xStateListItem,
     );
 }
-///set max uxTopReadyPriority
+/// Set max uxTopReadyPriority.<br>
+/// Deprecated in current implement.
 pub fn taskRECORD_READY_PRIORITY(uxPriority: UBaseType) {
     //TODO: set max uxTopReadyPriority
 }
 
-/// initialise new task
+/// Initialise new task.
 pub fn prvInitialiseNewTask<'a>(
     pxTaskCode: u32,
     pcName: &'a str,
@@ -320,7 +319,7 @@ pub fn prvInitialiseNewTask<'a>(
     pxNewTCB
 }
 
-/// idle task function
+/// Idle task function.
 pub fn prvIdleTask(t: *mut c_void) {
     vSendString("idle gogogogo");
     loop {
@@ -337,7 +336,7 @@ pub fn prvIdleTask(t: *mut c_void) {
     }
 }
 
-/// start scheduler
+/// Start scheduler.
 #[no_mangle]
 pub extern "C" fn vTaskStartScheduler() {
     X_ISRSTACK_
@@ -369,10 +368,7 @@ pub extern "C" fn vTaskStartScheduler() {
     }
 }
 
-// fn prvInitialiseTaskLists() {
-//     //initial in list impl
-// }
-/// Enter task critical area
+/// Enter task critical area.
 pub fn vTaskEnterCritical() {
     portDISABLE_INTERRUPTS!();
     unsafe {
@@ -395,7 +391,7 @@ pub fn vTaskEnterCritical() {
         }
     }
 }
-/// Exit task critical area
+/// Exit task critical area.
 pub fn vTaskExitCritical() {
     unsafe {
         if XSCHEDULERRUNNING != pdFALSE {
@@ -420,8 +416,7 @@ pub fn vTaskExitCritical() {
     }
 }
 
-/// set current tcb to task with highest priority
-/// when want to start highest priority task call taskSELECT_HIGHEST_PRIORITY_TASK
+/// Set current tcb to task with highest priority.
 pub fn taskSELECT_HIGHEST_PRIORITY_TASK() {
     //TODO: uxTopReadyPriority全局变量设置和更新
     //TODO: 函数规范化
@@ -435,7 +430,7 @@ pub fn taskSELECT_HIGHEST_PRIORITY_TASK() {
     }
 }
 
-/// find highest priority with valid task
+/// Find highest priority with valid task.
 pub fn taskSELECT_HIGHEST_PRIORITY() -> usize {
     for i in 1..16 {
         let j = 16 - i;
@@ -446,12 +441,12 @@ pub fn taskSELECT_HIGHEST_PRIORITY() -> usize {
     return 0;
 }
 
-/// yield in task
+/// Yield in task.
 pub fn taskYield() {
     portYIELD!();
 }
 
-/// add current task to delayed list
+/// Add current task to delayed list.
 pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinitely: bool) {
     //todo
     //vTaskEnterCritical();
@@ -464,14 +459,6 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
         xConstTickCount = xTickCount;
     }
 
-    /*match get_current_tcb() {
-        Some(x) => {
-            print("some");
-        }
-        None => {
-            print("None");
-        }
-    }*/
     let temp = get_current_tcb().unwrap();
     let list_item = &temp.xStateListItem;
 
@@ -491,8 +478,8 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
 }
 
 #[no_mangle]
-/// Delay Task xTicksToDelay Relativly
-/// used in task function
+/// Delay Task xTicksToDelay Relativly.
+/// Used in task function.
 /// # Examples
 /// ```
 /// fn task_example(t: *mut c_void){
@@ -512,8 +499,8 @@ pub extern "C" fn vTaskDelay(xTicksToDelay: TickType) {
 
 #[no_mangle]
 //TODO: exampke
-/// Delay task until pxPreviousWakeTime+pxPreviousWakeTime
-/// used in task function
+/// Delay task until pxPreviousWakeTime+pxPreviousWakeTime.
+/// Used in task function.
 /// # Examples
 /// ```
 /// fn task_example(t: *mut c_void){
@@ -570,7 +557,7 @@ pub extern "C" fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrem
     xShouldDelay;
 }
 
-/// in case of mtime overflow, swap delayed list and overflow list
+/// In case of mtime overflow, swap delayed list and overflow list.
 fn taskSWITCH_DELAYED_LISTS() {
     let mut delayed = DELAYED_TASK_LIST.write();
     let mut overflowed = OVERFLOW_DELAYED_TASK_LIST.write();
@@ -582,7 +569,7 @@ fn taskSWITCH_DELAYED_LISTS() {
     }
 }
 
-/// tick increment, free delayed task
+/// Increase tick and free delayed task.
 #[no_mangle]
 pub extern "C" fn xTaskIncrementTick() {
     //todo
@@ -636,6 +623,7 @@ pub extern "C" fn xTaskIncrementTick() {
     }
 }
 
+/// Manually force tick increment outside ISR.
 pub fn xPortSysTickHandler() {
     vTaskEnterCritical();
     xTaskIncrementTick();
@@ -643,7 +631,7 @@ pub fn xPortSysTickHandler() {
 }
 #[cfg(feature = "configSUPPORT_DYNAMIC_ALLOCATION")]
 
-/// create task dynamic
+/// Create task (dynamic).
 ///
 /// # Examples
 ///
@@ -716,12 +704,8 @@ pub fn xTaskCreate(
     mem::forget(pxNewTCB);
     1
 }
-// macro_rules! taskENTER_CRITICAL_FROM_ISR {
-//     () => {
-//         portSET_INTERRUPT_MASK_FROM_ISR();
-//     };
-// }
 
+/// Enumerate states of task.
 pub enum eTaskState {
     eRunning = 0,
     eReady = 1,
@@ -749,8 +733,8 @@ macro_rules! get_uxCurrentNumberOfTasks {
     };
 }
 
-/// suspend task until resumed
-/// assert params is not Option::None
+/// Suspend task until resumed.
+/// Assert params is not Option::None.
 #[cfg(feature = "INCLUDE_vTaskSuspend")]
 pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
     /*
@@ -793,26 +777,8 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
             // portYIELD_WITHIN_API!();
             print("R_FreeRTOS paniced! portYIELD_WITHIN_API");
         } else {
-            //             if ( listCURRENT_LIST_LENGTH( &xSuspendedTaskList )
-            // 71 == uxCurrentNumberOfTasks ) { (10)
-            // 72 /* 没有其他任务准备就绪，因此将 pxCurrentTCB 设置回 NULL，
-            // 73 以便在创建下一个任务时 pxCurrentTCB 将被设置为指向它，
-            // 74 实际上并不会执行到这里 */
-            // 75
-            // 76 pxCurrentTCB = NULL; (11)
-            // 77 } else {
-            // 78 /* 有其他任务，则切换到其他任务 */
-            // 79
-            // 80 vTaskSwitchContext(); (12)
-            // 81 }
-            // 82
             if list_current_list_length(&SUSPENDED_TASK_LIST) != get_uxCurrentNumberOfTasks!() {
-                /* 没有其他任务准备就绪，因此将 pxCurrentTCB 设置回 NULL，
-                以便在创建下一个任务时 pxCurrentTCB 将被设置为指向它，
-                实际上并不会执行到这里 */
-                // pxCurrentTCB = NULL
             } else {
-                /* 有其他任务，则切换到其他任务 */
                 vTaskSwitchContext();
             }
         }
@@ -822,12 +788,7 @@ pub fn vTaskSuspend(xTaskToSuspend_: Option<TaskHandle_t>) {
 }
 pub static mut xSchedulerRunning: bool = false;
 
-// pub fn prvGetTCBFromHandle(xTaskToSuspend: TaskHandle_t) -> RwLock<TCB_t> {
-//     let x=xTaskToSuspend.read();
-//     x
-// }
-
-/// resume target task
+/// Resume target task.
 #[cfg(feature = "INCLUDE_vTaskSuspend")]
 pub fn vTaskResume(xTaskToResume_: Option<TaskHandle_t>) {
     //TODO: 检查要恢复的任务是否被挂起
@@ -841,9 +802,6 @@ pub fn vTaskResume(xTaskToResume_: Option<TaskHandle_t>) {
                 ux_list_remove(Arc::downgrade(&pxTCB.xStateListItem));
                 prvAddNewTaskToReadyList(&xTaskToResume);
                 if (pxTCB.uxPriority >= get_current_tcb().unwrap().uxPriority) {
-                    /* 因为恢复的任务在当前情况下的优先级最高
-                    36 调用 taskYIELD_IF_USING_PREEMPTION()进行一次任务切换*/
-                    // 37 taskYIELD_IF_USING_PREEMPTION();
                     taskYIELD_IF_USING_PREEMPTION!();
                 } else {
                     mtCOVERAGE_TEST_MARKER!();
@@ -856,11 +814,13 @@ pub fn vTaskResume(xTaskToResume_: Option<TaskHandle_t>) {
     }
 }
 
+/// Return if target task is suspended.
 pub fn prvTaskIsTaskSuspended(xTaskToResume: &TaskHandle_t) -> bool {
+    //todo!
     true
 }
 
-/// get tcb from handle, return current tcb if handle is None
+/// Get tcb from handle, return current tcb if handle is None.
 pub fn prvGetTCBFromHandle(
     handle: Option<&TaskHandle_t>,
 ) -> Option<&'static mut tskTaskControlBlock> {
@@ -873,7 +833,7 @@ pub fn prvGetTCBFromHandle(
     }
 }
 
-/// delete target task
+/// Delete target task.
 pub fn vTaskDelete(xTaskToDelete: Option<&TaskHandle_t>) {
     taskENTER_CRITICAL!();
     let pxTCB = prvGetTCBFromHandle(xTaskToDelete);
@@ -891,7 +851,7 @@ pub fn vTaskDelete(xTaskToDelete: Option<&TaskHandle_t>) {
     }
 }
 
-/// reset NextTaskUnblockTime
+/// Reset NextTaskUnblockTime.
 fn prvResetNextTaskUnblockTime() {
     unsafe {
         if list_is_empty(&DELAYED_TASK_LIST) {
@@ -904,7 +864,7 @@ fn prvResetNextTaskUnblockTime() {
 }
 
 #[no_mangle]
-/// suspend scheduler
+/// Suspend scheduler.
 pub extern "C" fn vTaskSuspendAll() {
     unsafe {
         uxSchedulerSuspended += 1;
@@ -912,7 +872,7 @@ pub extern "C" fn vTaskSuspendAll() {
 }
 
 #[no_mangle]
-/// resume scheduler
+/// Resume scheduler.
 pub extern "C" fn vTaskResumeAll() -> bool {
     let mut xAlreadyYielded = false;
     let mut moved = false;
@@ -961,7 +921,7 @@ pub extern "C" fn vTaskResumeAll() -> bool {
     xAlreadyYielded
 }
 
-/// remove first task from event list, and insert the task to ready list
+/// Remove first task from event list, and insert the task to ready list.
 pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
     let pxUnblockedTCB: TaskHandle_t;
     let from_c: bool;
@@ -984,14 +944,12 @@ pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
     }
     ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xEventListItem));
     if uxSchedulerSuspended_ == 0 {
-        //vSendString("no suspend");
         ux_list_remove(Arc::downgrade(&pxUnblockedTCB.read().xStateListItem));
         prvAddTaskToReadyList(&pxUnblockedTCB);
         if cfg!(feature = "configUSE_TICKLESS_IDLE") {
             prvResetNextTaskUnblockTime();
         }
     } else {
-        //vSendString("suspend");
         v_list_insert_end(&PENDING_READY_LIST, &pxUnblockedTCB.read().xEventListItem);
     }
     if pxUnblockedTCB.read().uxPriority > get_current_tcb().unwrap().uxPriority {
@@ -1008,7 +966,7 @@ pub fn xTaskRemoveFromEventList(pxEventList: &ListRealLink) -> bool {
     xReturn
 }
 
-/// set pxTimeOut to current time (in kernel)
+/// Set pxTimeOut to current time in ISR.
 pub fn vTaskInternalSetTimeOutState(pxTimeOut: &mut TimeOut) {
     unsafe {
         pxTimeOut.xOverflowCount = xNumOfOverflows;
@@ -1016,7 +974,7 @@ pub fn vTaskInternalSetTimeOutState(pxTimeOut: &mut TimeOut) {
     }
 }
 
-/// set pxTimeOut to current time (in task)
+/// Set pxTimeOut to current time in task.
 pub fn vTaskSetTimeOutState(pxTimeOut: &mut TimeOut) {
     taskENTER_CRITICAL!();
     unsafe {
@@ -1026,7 +984,7 @@ pub fn vTaskSetTimeOutState(pxTimeOut: &mut TimeOut) {
     taskEXIT_CRITICAL!();
 }
 
-/// return if timeout has been reached
+/// Return if timeout has been reached.
 pub fn xTaskCheckForTimeOut(pxTimeOut: &mut TimeOut, pxTicksToWait: &mut TickType) -> BaseType {
     let xReturn: BaseType;
     taskENTER_CRITICAL!();
@@ -1067,8 +1025,8 @@ pub fn xTaskCheckForTimeOut(pxTimeOut: &mut TimeOut, pxTicksToWait: &mut TickTyp
     xReturn
 }
 
-/// inherit mutex holder task's priority to current task's priority <br>
-/// return if the inherit was successful
+/// Inherit mutex holder task's priority to current task's priority. <br>
+/// Return if the inherit was successful.
 pub fn xTaskPriorityInherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType {
     let mut xReturn: BaseType = pdFALSE;
     match pxMutexHolder {
@@ -1109,10 +1067,10 @@ pub fn xTaskPriorityInherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType {
     xReturn
 }
 
-/// disinherit and recover original priority for mutex holder task <br>
-/// disinherit priority only when no other mutex are held <br>
-/// do not change mutex held number
-/// return if disinherit was successful
+/// Disinherit and recover original priority for mutex holder task <br>
+/// Disinherit priority only when no other mutex are held <br>
+/// Does not change mutex held number.<br>
+/// Return if disinherit was successful.
 pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType {
     let mut xReturn: BaseType = pdFALSE;
     match pxMutexHolder {
@@ -1143,8 +1101,8 @@ pub fn xTaskPriorityDisinherit(pxMutexHolder: Option<&TaskHandle_t>) -> BaseType
     xReturn
 }
 
-/// increase current task's mutex count <br>
-/// return handle of current task
+/// Increase current task's mutex count. <br>
+/// Return handle of current task.
 pub fn pvTaskIncrementMutexHeldCount() -> Option<TaskHandle_t> {
     match &*CURRENT_TCB.write() {
         Some(x) => {
@@ -1155,9 +1113,9 @@ pub fn pvTaskIncrementMutexHeldCount() -> Option<TaskHandle_t> {
     }
 }
 
-/// disinherit and recover original priority for mutex holder task after timeout<br>
-/// disinherit priority only when no other mutex are held <br>
-/// do not change mutex held number
+/// Disinherit and recover original priority for mutex holder task after timeout. <br>
+/// Disinherit priority only when no other mutex are held. <br>
+/// Doed not change mutex held number.
 pub fn vTaskPriorityDisinheritAfterTimeout(
     pxMutexHolder: Option<&TaskHandle_t>,
     uxHighestPriorityWaitingTask: UBaseType,
@@ -1194,14 +1152,14 @@ pub fn vTaskPriorityDisinheritAfterTimeout(
     }
 }
 
-///place current task on event list and delay it
+/// Place current task on event list and delay it.
 pub fn vTaskPlaceOnEventList(pxEventList: &ListRealLink, xTicksToWait: TickType) {
     v_list_insert(pxEventList, &get_current_tcb().unwrap().xEventListItem);
     prvAddCurrentTaskToDelayedList(xTicksToWait, true);
 }
 
-/// remove target task from unordered event list
-/// used in event groups
+/// Remove target task from unordered event list.<br>
+/// Used in event group.
 pub fn vTaskRemoveFromUnorderedEventList(pxEventListItem: &ListItemLink, xItemValue: TickType) {
     list_item_set_value(
         pxEventListItem,
@@ -1219,8 +1177,8 @@ pub fn vTaskRemoveFromUnorderedEventList(pxEventListItem: &ListItemLink, xItemVa
     }
 }
 
-/// place target task on unordered event list
-/// used in event groups
+/// Place target task on unordered event list.<br>
+/// Used in event group.
 pub fn vTaskPlaceOnUnorderedEventList(
     pxEventList: &ListRealLink,
     xItemValue: TickType,
@@ -1236,8 +1194,8 @@ pub fn vTaskPlaceOnUnorderedEventList(
     taskEXIT_CRITICAL!();
 }
 
-/// reset event item value
-/// return original item value
+/// Reset event item value.
+/// Return original item value.
 pub fn uxTaskResetEventItemValue() -> TickType {
     let uxReturn: TickType = list_item_get_value(&get_current_tcb().unwrap().xEventListItem);
     list_item_set_value(
@@ -1247,6 +1205,7 @@ pub fn uxTaskResetEventItemValue() -> TickType {
     uxReturn
 }
 
+/// Get name of target task.
 pub fn pcTaskGetName(xTaskToQuery: Option<&TaskHandle_t>) -> &str {
     let temp = prvGetTCBFromHandle(xTaskToQuery).unwrap();
     &temp.pcTaskName

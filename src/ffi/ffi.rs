@@ -1,3 +1,5 @@
+//! ffi general utils
+
 use crate::kernel::portmacro::*;
 use crate::kernel::riscv_virt::*;
 use crate::portYIELD;
@@ -10,6 +12,7 @@ use core::mem::forget;
 use core::mem::size_of;
 use spin::RwLock;
 
+/// Transform C char into rust string
 pub fn get_str_from_cchar(mut pcName: usize) -> String {
     let mut name = String::new();
     loop {
@@ -23,23 +26,29 @@ pub fn get_str_from_cchar(mut pcName: usize) -> String {
     }
 }
 
+/// Assert from C
 #[no_mangle]
 pub extern "C" fn rustAssert(val: bool) {
     assert!(val);
 }
 
+/// Print from C.<br>
+/// Does not support formatting.
 #[no_mangle]
 pub extern "C" fn rustPrint(val: usize) {
     let s = get_str_from_cchar(val);
     print(&s);
 }
 
+/// vSendString from C.<br>
+/// Does not support formatting.
 #[no_mangle]
 pub extern "C" fn rustVSendString(val: usize) {
     let s = get_str_from_cchar(val);
     vSendString(&s);
 }
 
+/// Malloc memory from C
 #[no_mangle]
 pub extern "C" fn rustMalloc(size_: usize) -> usize {
     use alloc::alloc::Layout;
@@ -52,6 +61,7 @@ pub extern "C" fn rustMalloc(size_: usize) -> usize {
     stack_ptr as usize
 }
 
+/// Yield from C
 #[no_mangle]
 pub extern "C" fn rustYield() {
     portYIELD!();

@@ -188,7 +188,7 @@ void test_macro_xSemaphoreTake_CountingSemaphore_100_50( void )
  */
 void test_size_of_UBaseType_is_64_bits( void )
 {
-    if( TEST_PROTECT() )
+    //if( TEST_PROTECT() )
     {
         /* Check that UBaseType_t is 64 bits on this platform */
         TEST_ASSERT_EQUAL( sizeof( uint64_t ), sizeof( UBaseType_t ) );
@@ -628,6 +628,7 @@ void test_xSemaphoreTake_blocking_success_locked_low_prio_pending_( void )
 
 void run_counting_semaphore_utest()
 {
+    //success: 17 not impleted:1 failed:0
     test_macro_xSemaphoreTake_CountingSemaphore_one_zero_fail();
     test_macro_xSemaphoreGive_CountingSemaphore_one_zero_success();
     test_macro_xSemaphoreGive_xSemaphoreTake_CountingSemaphore_one_zero_success();

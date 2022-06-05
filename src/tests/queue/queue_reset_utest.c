@@ -175,6 +175,7 @@ void test_macro_xQueueReset_tasks_waiting_lower_priority( void )
 
 void run_queue_reset_utest()
 {
+    //success:5 not impleted:1 failed:0
     //test_macro_xQueueReset_invalid_handle() not impleted
     test_macro_xQueueReset_empty();
     test_macro_xQueueReset_half_full();

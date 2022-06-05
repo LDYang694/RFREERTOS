@@ -125,6 +125,7 @@ void test_vQueueDelete_full( void )
 
 void run_queue_delete_static_utest()
 {
+    //success:0 not impleted:3 failed:0
     //test_vQueueDelete_invalid_handle(); not impleted
     //test_vQueueDelete_empty(); not impleted
     //test_vQueueDelete_full(); not impleted

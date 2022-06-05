@@ -1,7 +1,6 @@
-use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
-use alloc::sync::{Arc, Weak};
+use alloc::sync::Arc;
 use spin::RwLock;
 
 pub type SemaphoreHandle_t = QueueHandle_t;
@@ -15,10 +14,11 @@ macro_rules! xSemaphoreCreateBinary {
             1,
             semSEMAPHORE_QUEUE_ITEM_LENGTH,
             queueQUEUE_TYPE_BINARY_SEMAPHORE,
-        );
+        )
     };
 }
 
+/// Create counting Semaphore.
 pub fn xSemaphoreCreateCounting(
     uxMaxCount: UBaseType,
     uxInitialCount: UBaseType,
@@ -41,6 +41,7 @@ macro_rules! vSemaphoreDelete {
         vQueueDelete($xSemaphore);
     };
 }
+
 #[macro_export]
 macro_rules! xSemaphoreGive {
     ($xSemaphore:expr) => {
@@ -55,6 +56,7 @@ macro_rules! xSemaphoreTake {
     };
 }
 
+/// Create mutex.
 pub fn xQueueCreateMutex(ucQueueType: u8) -> QueueHandle_t {
     let queue = Arc::new(RwLock::new(QueueDefinition::xQueueGenericCreate(
         1,
@@ -65,6 +67,7 @@ pub fn xQueueCreateMutex(ucQueueType: u8) -> QueueHandle_t {
     queue
 }
 
+/// Initialise mutex.
 pub fn prvInitialiseMutex(pxNewQueue: &QueueHandle_t) {
     pxNewQueue.write().xMutexHolder = None;
     pxNewQueue.write().uxRecursiveCallCount = 0;

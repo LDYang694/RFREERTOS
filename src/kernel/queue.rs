@@ -2,7 +2,6 @@
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::riscv_virt::print;
-use crate::kernel::riscv_virt::*;
 use crate::kernel::tasks::*;
 use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
 
@@ -12,9 +11,6 @@ pub const queueUNLOCKED: i8 = -1;
 pub const queueLOCKED_UNMODIFIED: i8 = 0;
 pub const queueINT8_MAX: i8 = 127;
 pub const pdPass: BaseType = 0;
-
-use crate::kernel::projdefs::*;
-use crate::kernel::tasks::*;
 
 #[macro_export]
 macro_rules! queueYIELD_IF_USING_PREEMPTION {
@@ -56,14 +52,12 @@ use crate::{
 
 use crate::configMAX_PRIORITIES;
 use alloc::boxed::Box;
-use alloc::collections::VecDeque;
 use alloc::format;
-use alloc::sync::{Arc, Weak};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::arch::asm;
 use core::ffi::c_void;
 use core::{alloc::Layout, mem};
-use libc::*;
 use spin::RwLock;
 pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
@@ -76,14 +70,15 @@ pub type Queue_t = xQUEUE;
 
 #[derive(Default)]
 pub struct QueueDefinition {
-    pcMesQueue: Vec<u8>,
     ///queue message space
-    pcHead: usize,
+    pcMesQueue: Vec<u8>,
     /// queue header pointer
-    pcTail: usize,
+    pcHead: usize,
     /// queue tail pointer
+    pcTail: usize,
+    /// position to write data
     pcWriteTo: usize,
-    ///
+    /// position to read data
     pub pcReadFrom: usize,
     pub cRxLock: i8,
     pub cTxLock: i8,
@@ -132,7 +127,7 @@ impl QueueDefinition {
         let pxNewQueue: usize = self as *mut QueueDefinition as usize;
         let pucQueueStorage: usize = self.pcMesQueue.as_ptr() as usize;
         // let pucQueueStorage:usize=self.pcMesQueue.
-        if (uxItemSize == 0) {
+        if uxItemSize == 0 {
             self.pcHead = pxNewQueue;
         } else {
             self.pcHead = pucQueueStorage;
@@ -154,7 +149,7 @@ impl QueueDefinition {
             self.cTxLock = queueUNLOCKED;
             //TODO:lock
 
-            if (xNewQueue == 0) {
+            if xNewQueue == 0 {
                 //TODO:
             } else {
                 //initial in Default::default()
@@ -165,13 +160,12 @@ impl QueueDefinition {
     }
 }
 
-/// create queue <br>
-/// interface for user
+/// Create queue (user interface).
 pub fn xQueueCreate(uxQueueLength: UBaseType, uxItemSize: UBaseType) -> QueueHandle_t {
     xQueueGenericCreate(uxQueueLength, uxItemSize, queueQUEUE_TYPE_BASE)
 }
 
-/// create queue
+/// Create queue.
 pub fn xQueueGenericCreate(
     uxQueueLength: UBaseType,
     uxItemSize: UBaseType,
@@ -211,7 +205,7 @@ pub fn xQueueGenericCreate(
         pxNewQueue_ptr as usize,
     );
     print("queue create 4444");
-    let pxNewQueue = unsafe { Box::from_raw((pxNewQueue_ptr as *mut Queue_t)) };
+    let pxNewQueue = unsafe { Box::from_raw(pxNewQueue_ptr as *mut Queue_t) };
 
     // unsafe {
     //     pxNewQueue = &*(pxNewQueue_ptr as *mut Queue_t );
@@ -219,7 +213,7 @@ pub fn xQueueGenericCreate(
     Arc::new(RwLock::new(Box::<QueueDefinition>::into_inner(pxNewQueue)))
 }
 
-/// initialise new queue
+/// Initialise new queue.
 pub fn prvInitialiseNewQueue(
     uxQueueLength: UBaseType,
     uxItemSize: UBaseType,
@@ -233,7 +227,7 @@ pub fn prvInitialiseNewQueue(
 
     // let pxNewQueueBox = unsafe { Box::from_raw((pxNewQueue as *mut Queue_t)) };
     // let mut pxNewQueue_ = Box::<QueueDefinition>::into_inner(pxNewQueueBox);
-    if (uxItemSize == 0) {
+    if uxItemSize == 0 {
         pxNewQueue_.pcHead = pxNewQueue;
     } else {
         pxNewQueue_.pcHead = pucQueueStorage;
@@ -252,9 +246,8 @@ pub fn prvInitialiseNewQueue(
     print(&s)
 }
 
-/// reset target queue
+/// Reset target queue.
 pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType {
-    // taskENTER_CRITICAL!();
     vTaskEnterCritical();
 
     {
@@ -264,7 +257,7 @@ pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType
         //TODO: union
         xQueue.pcReadFrom = xQueue.pcHead + ((xQueue.uxLength - 1) * xQueue.uxItemSize) as usize;
         //TODO:lock
-        if (xNewQueue == 0) {
+        if xNewQueue == 0 {
             //TODO:
         } else {
             let mut rec = Arc::new(RwLock::new(XList::default()));
@@ -293,14 +286,15 @@ pub fn xQueueGenericReset(xQueue: &mut Queue_t, xNewQueue: BaseType) -> BaseType
         }
     }
     //TODO: tmp remove
-    // vTaskExitCritical();
-    1
+    vTaskExitCritical();
+    pdTRUE
 }
 
 extern "C" {
     fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void;
 }
 
+/// Send data to queue.
 pub fn xQueueGenericSend(
     xQueue: &QueueHandle_t,
     pvItemToQueue: usize,
@@ -371,6 +365,7 @@ pub fn xQueueGenericSend(
     }
 }
 
+/// Copy data from target address to queue.
 pub fn prvCopyDataToQueue(
     xQueue: &mut QueueDefinition,
     pvItemToQueue: usize,
@@ -447,6 +442,7 @@ pub fn prvCopyDataToQueue(
     xReturn
 }
 
+/// Return if queue is full.
 pub fn prvIsQueueFull(xQueue: &QueueHandle_t) -> bool {
     let xReturn: bool;
     taskENTER_CRITICAL!();
@@ -460,6 +456,8 @@ pub fn prvIsQueueFull(xQueue: &QueueHandle_t) -> bool {
     taskEXIT_CRITICAL!();
     xReturn
 }
+
+/// Return if queue is empty.
 pub fn prvIsQueueEmpty(xQueue: &QueueHandle_t) -> bool {
     let xReturn: bool;
     taskENTER_CRITICAL!();
@@ -474,6 +472,7 @@ pub fn prvIsQueueEmpty(xQueue: &QueueHandle_t) -> bool {
     xReturn
 }
 
+/// Delete target queue.
 #[no_mangle]
 pub extern "C" fn vQueueDelete(xQueue: QueueHandle_t) {
     let alloc_size: usize =
@@ -487,7 +486,7 @@ pub extern "C" fn vQueueDelete(xQueue: QueueHandle_t) {
         alloc::alloc::dealloc(pxQueue as *const Queue_t as *mut u8, layout);
     }
 }
-//消息队列发送
+/// Send data to queue (user interface).
 pub fn xQueueSend(
     xQueue: &QueueHandle_t,
     pvItemToQueue: usize,
@@ -495,7 +494,8 @@ pub fn xQueueSend(
 ) -> BaseType {
     xQueueGenericSend(xQueue, pvItemToQueue, xTicksToWait, queueSEND_TO_BACK)
 }
-//消息队列读取
+
+/// Copy data from queue to target address.
 pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
     if xQueue.uxItemSize != 0 {
         xQueue.pcReadFrom += xQueue.uxItemSize as usize;
@@ -527,6 +527,8 @@ pub fn prvCopyDataFromQueue(xQueue: &mut QueueDefinition, pvBuffer: usize) {
     }
 }
 
+/// Receive data from queue.<br>
+/// Received data is removed from queue.
 pub fn xQueueReceive(
     xQueue: &QueueHandle_t,
     pvBuffer: usize,
@@ -564,7 +566,7 @@ pub fn xQueueReceive(
                 }
 
                 if list_is_empty(&xQueue_.xTasksWaitingToSend) == false {
-                    if (xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToSend) != false) {
+                    if xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToSend) != false {
                         queueYIELD_IF_USING_PREEMPTION!();
                     } else {
                         mtCOVERAGE_TEST_MARKER!();
@@ -592,7 +594,7 @@ pub fn xQueueReceive(
         vTaskSuspendAll();
         prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
-            if (prvIsQueueEmpty(xQueue) != false) {
+            if prvIsQueueEmpty(xQueue) != false {
                 vTaskPlaceOnEventList(&xQueue.write().xTasksWaitingToReceive, xTicksToWait);
 
                 // /* Unlocking the queue means queue events can effect the
@@ -617,7 +619,7 @@ pub fn xQueueReceive(
                 }
 
                 prvUnlockQueue(xQueue);
-                if (vTaskResumeAll() == false) {
+                if vTaskResumeAll() == false {
                     portYIELD_WITHIN_API!();
                 } else {
                     mtCOVERAGE_TEST_MARKER!();
@@ -650,6 +652,8 @@ pub fn xQueueReceive(
     }
 }
 
+/// Receive data from queue in ISR. <br>
+/// Received data is removed from queue.
 pub fn xQueueReceiveFromISR(
     xQueue: &QueueHandle_t,
     pvBuffer: usize,
@@ -679,6 +683,7 @@ pub fn xQueueReceiveFromISR(
     xReturn
 }
 
+/// Send data to queue in ISR (user interface).
 pub fn xQueueSendFromISR(
     xQueue: &QueueHandle_t,
     pvBuffer: usize,
@@ -692,6 +697,7 @@ pub fn xQueueSendFromISR(
     )
 }
 
+/// Send data to queue in ISR.
 pub fn xQueueGenericSendFromISR(
     xQueue: &QueueHandle_t,
     pvBuffer: usize,
@@ -722,6 +728,7 @@ pub fn xQueueGenericSendFromISR(
     xReturn
 }
 
+/// Get data from queue without removing it from queue.
 pub fn xQueuePeek(xQueue: &QueueHandle_t, pvBuffer: usize, mut xTicksToWait: TickType) -> BaseType {
     let mut xEntryTimeSet: BaseType = pdFALSE;
     let mut xTimeOut: TimeOut = Default::default();
@@ -741,7 +748,7 @@ pub fn xQueuePeek(xQueue: &QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tic
                 /* The data is not being removed, so reset the read pointer. */
                 xQueue_.pcReadFrom = pcOriginalReadPosition;
                 if list_is_empty(&xQueue_.xTasksWaitingToReceive) == false {
-                    if (xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToReceive) != false) {
+                    if xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToReceive) != false {
                         queueYIELD_IF_USING_PREEMPTION!();
                     } else {
                         mtCOVERAGE_TEST_MARKER!();
@@ -769,11 +776,11 @@ pub fn xQueuePeek(xQueue: &QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tic
         vTaskSuspendAll();
         prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
-            if (prvIsQueueEmpty(xQueue) != false) {
+            if prvIsQueueEmpty(xQueue) != false {
                 vTaskPlaceOnEventList(&xQueue.write().xTasksWaitingToReceive, xTicksToWait);
 
                 prvUnlockQueue(xQueue);
-                if (vTaskResumeAll() == false) {
+                if vTaskResumeAll() == false {
                     portYIELD_WITHIN_API!();
                 } else {
                     mtCOVERAGE_TEST_MARKER!();
@@ -794,6 +801,7 @@ pub fn xQueuePeek(xQueue: &QueueHandle_t, pvBuffer: usize, mut xTicksToWait: Tic
     }
 }
 
+/// Get data from queue in ISR without removing it from queue.
 pub fn xQueuePeekFromISR(xQueue: &QueueHandle_t, pvBuffer: usize) -> BaseType {
     let mut xReturn: BaseType = pdFALSE;
     if xQueue.read().uxMessagesWaiting > 0 {
@@ -805,6 +813,7 @@ pub fn xQueuePeekFromISR(xQueue: &QueueHandle_t, pvBuffer: usize) -> BaseType {
     xReturn
 }
 
+/// Unlock queue and deal with operations during lock.
 pub fn prvUnlockQueue(xQueue: &QueueHandle_t) {
     taskENTER_CRITICAL!();
     {
@@ -853,6 +862,7 @@ pub fn prvUnlockQueue(xQueue: &QueueHandle_t) {
     taskEXIT_CRITICAL!();
 }
 
+/// Get disinherit priority for mutex.
 pub fn prvGetDisinheritPriorityAfterTimeout(xQueue: &QueueHandle_t) -> UBaseType {
     let uxHighestPriorityOfWaitingTasks: UBaseType;
     if list_current_list_length(&xQueue.write().xTasksWaitingToReceive) > 0 {

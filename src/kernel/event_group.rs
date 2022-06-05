@@ -14,6 +14,7 @@ pub const eventUNBLOCKED_DUE_TO_BIT_SET: TickType = 0x02000000;
 pub const eventWAIT_FOR_ALL_BITS: TickType = 0x04000000;
 pub const eventEVENT_BITS_CONTROL_BYTES: TickType = 0xff000000;
 
+/// Definition of event group.
 #[derive(Clone)]
 pub struct EventGroupDefinition {
     uxEventBits: EventBits,
@@ -34,6 +35,7 @@ impl Default for EventGroupDefinition {
 }
 
 impl EventGroupDefinition {
+    /// Create event group.
     pub fn xEventGroupCreate() -> Self {
         let mut pxEventBits: EventGroupDefinition = Default::default();
 
@@ -44,6 +46,7 @@ impl EventGroupDefinition {
     }
 }
 
+/// Delete event group.
 pub fn vEventGroupDelete(xEventGroup: EventGroupHandle) {
     vTaskSuspendAll();
     {
@@ -59,6 +62,7 @@ pub fn vEventGroupDelete(xEventGroup: EventGroupHandle) {
     vTaskResumeAll();
 }
 
+/// Set target bits to 1.
 pub fn xEventGroupSetBits(xEventGroup: EventGroupHandle, uxBitsToSet: EventBits) -> EventBits {
     let uxReturn: EventBits;
     vTaskSuspendAll();
@@ -102,6 +106,7 @@ pub fn xEventGroupSetBits(xEventGroup: EventGroupHandle, uxBitsToSet: EventBits)
     uxReturn
 }
 
+/// Wait until bit condition is satisfied.
 pub fn xEventGroupWaitBits(
     xEventGroup: EventGroupHandle,
     uxBitsToWaitFor: EventBits,
@@ -167,6 +172,7 @@ pub fn xEventGroupWaitBits(
     uxReturn
 }
 
+/// Return if bit condition is satisfied.
 pub fn prvTestWaitCondition(
     uxCurrentEventBits: EventBits,
     uxBitsToWaitFor: EventBits,
@@ -184,6 +190,7 @@ pub fn prvTestWaitCondition(
     pdFALSE
 }
 
+/// Clear target bits.
 pub fn xEventGroupClearBits(xEventGroup: EventGroupHandle, uxBitsToClear: EventBits) -> EventBits {
     let uxReturn: EventBits;
     taskENTER_CRITICAL!();

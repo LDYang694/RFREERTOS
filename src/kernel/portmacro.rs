@@ -23,6 +23,13 @@ macro_rules! portYIELD {
 }
 
 #[macro_export]
+macro_rules! portYIELD_WITHIN_API {
+    () => {
+        portYIELD!();
+    };
+}
+
+#[macro_export]
 macro_rules! portEND_SWITCHING_ISR {
     ($x:expr) => {
         if $x {

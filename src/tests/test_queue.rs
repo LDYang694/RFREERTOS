@@ -8,7 +8,7 @@ use crate::{
     portENTER_CRITICAL, portEXIT_CRITICAL, taskENTER_CRITICAL, taskEXIT_CRITICAL,
     vTaskEnterCritical,
 };
-use alloc::sync::{Arc, Weak};
+use alloc::sync::Arc;
 //use alloc::{fmt::format, format};
 
 #[no_mangle]

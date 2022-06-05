@@ -1,3 +1,5 @@
+//! Queue ffi for C
+
 use crate::kernel::linked_list::*;
 use crate::kernel::portable::*;
 use crate::kernel::portmacro::*;
@@ -20,6 +22,7 @@ use spin::RwLock;
 
 pub type QueueHandle_c = *const RwLock<QueueDefinition>;
 
+/// The C version of xQueueCreate.
 #[no_mangle]
 pub extern "C" fn xQueueCreateToC(
     uxQueueLength: UBaseType,
@@ -32,6 +35,7 @@ pub extern "C" fn xQueueCreateToC(
     Arc::into_raw(temp)
 }
 
+/// Get uxMessagesWaiting of target queue handle.
 #[no_mangle]
 pub extern "C" fn uxQueueMessagesWaiting(xQueue: QueueHandle_c) -> UBaseType {
     let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
@@ -40,6 +44,7 @@ pub extern "C" fn uxQueueMessagesWaiting(xQueue: QueueHandle_c) -> UBaseType {
     ret
 }
 
+/// Get available space of target queue handle.
 #[no_mangle]
 pub extern "C" fn uxQueueSpacesAvailable(xQueue: QueueHandle_c) -> UBaseType {
     let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
@@ -48,6 +53,8 @@ pub extern "C" fn uxQueueSpacesAvailable(xQueue: QueueHandle_c) -> UBaseType {
     ret
 }
 
+/// The ISR version of prvIsQueueEmpty for C.<br>
+/// Not impleted in rust.
 #[no_mangle]
 pub extern "C" fn xQueueIsQueueEmptyFromISR(xQueue: QueueHandle_c) -> bool {
     let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
@@ -56,6 +63,8 @@ pub extern "C" fn xQueueIsQueueEmptyFromISR(xQueue: QueueHandle_c) -> bool {
     ret
 }
 
+/// The ISR version of prvIsQueueFull for C.<br>
+/// Not impleted in rust.
 #[no_mangle]
 pub extern "C" fn xQueueIsQueueFullFromISR(xQueue: QueueHandle_c) -> bool {
     let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
@@ -64,6 +73,7 @@ pub extern "C" fn xQueueIsQueueFullFromISR(xQueue: QueueHandle_c) -> bool {
     ret
 }
 
+/// Get RxLock of target queue handle.
 #[no_mangle]
 pub extern "C" fn cGetQueueRxLock(xQueue: QueueHandle_c) -> i8 {
     let xReturn: i8;
@@ -76,6 +86,7 @@ pub extern "C" fn cGetQueueRxLock(xQueue: QueueHandle_c) -> i8 {
     return xReturn;
 }
 
+/// Get TxLock of target queue handle.
 #[no_mangle]
 pub extern "C" fn cGetQueueTxLock(xQueue: QueueHandle_c) -> i8 {
     let xReturn: i8;
@@ -88,6 +99,7 @@ pub extern "C" fn cGetQueueTxLock(xQueue: QueueHandle_c) -> i8 {
     return xReturn;
 }
 
+/// Set RxLock of target queue handle.
 #[no_mangle]
 pub extern "C" fn vSetQueueRxLock(xQueue: QueueHandle_c, RxLock: i8) {
     unsafe {
@@ -97,6 +109,7 @@ pub extern "C" fn vSetQueueRxLock(xQueue: QueueHandle_c, RxLock: i8) {
     }
 }
 
+/// Set TxLock of target queue handle.
 #[no_mangle]
 pub extern "C" fn vSetQueueTxLock(xQueue: QueueHandle_c, TxLock: i8) {
     unsafe {
@@ -106,6 +119,7 @@ pub extern "C" fn vSetQueueTxLock(xQueue: QueueHandle_c, TxLock: i8) {
     }
 }
 
+/// The C version of xQueueSend.
 #[no_mangle]
 pub extern "C" fn xQueueSendToC(
     xQueue: *mut RwLock<QueueDefinition>,
@@ -116,12 +130,14 @@ pub extern "C" fn xQueueSendToC(
     xReturn
 }
 
+/// The C version of vQueueDelete.<br>
 #[no_mangle]
 pub extern "C" fn vQueueDeleteToC(xQueue: QueueHandle_c) {
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
     //vQueueDelete(temp); todo:fix dealloc bug
 }
 
+/// The C version of xQueueSendFromISR.
 #[no_mangle]
 pub extern "C" fn xQueueSendFromISRToC(
     xQueue: QueueHandle_c,
@@ -136,6 +152,7 @@ pub extern "C" fn xQueueSendFromISRToC(
     xReturn
 }
 
+/// The C version of xQueueReceiveFromISR.
 #[no_mangle]
 pub extern "C" fn xQueueReceiveFromISRToC(
     xQueue: QueueHandle_c,
@@ -148,6 +165,7 @@ pub extern "C" fn xQueueReceiveFromISRToC(
     xReturn
 }
 
+/// The C version of xQueuePeekFromISR.
 #[no_mangle]
 pub extern "C" fn xQueuePeekFromISRToC(xQueue: QueueHandle_c, pvBuffer: usize) -> BaseType {
     let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
@@ -156,6 +174,8 @@ pub extern "C" fn xQueuePeekFromISRToC(xQueue: QueueHandle_c, pvBuffer: usize) -
     xReturn
 }
 
+/// The C version of xQueueGenericSend.<br>
+/// The implement is slightly different from rust version while the function is same.
 pub fn xQueueGenericSendToC(
     mut xQueue: QueueHandle_c,
     pvItemToQueue: usize,
@@ -236,6 +256,8 @@ pub fn xQueueGenericSendToC(
     }
 }
 
+/// The C version of xQueueReceive.<br>
+/// The implement is slightly different from rust version while the function is same.
 #[no_mangle]
 pub extern "C" fn xQueueReceiveToC(
     mut xQueue: QueueHandle_c,
@@ -365,6 +387,8 @@ pub extern "C" fn xQueueReceiveToC(
     }
 }
 
+/// The C version of xQueueReceive.<br>
+/// The implement is slightly different from rust version while the function is same.
 #[no_mangle]
 pub extern "C" fn xQueuePeekToC(
     mut xQueue: QueueHandle_c,
@@ -450,6 +474,7 @@ pub extern "C" fn xQueuePeekToC(
     }
 }
 
+/// The C version of xQueueReset.
 #[no_mangle]
 pub extern "C" fn xQueueResetToC(xQueue: QueueHandle_c) -> BaseType {
     let xReturn: BaseType;

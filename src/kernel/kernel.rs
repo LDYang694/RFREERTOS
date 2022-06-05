@@ -51,11 +51,14 @@ pub enum SchedulerState {
     Running,
 }
 
+/// Init kernel during start.
 #[no_mangle]
 pub extern "C" fn kernel_init() {
     init_heap();
 }
 
+/// Handle panic.<br>
+/// Will loop when panic.
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     print("R_FreeRTOS paniced!");

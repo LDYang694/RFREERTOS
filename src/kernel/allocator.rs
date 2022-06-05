@@ -7,11 +7,7 @@ use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
 
 use super::riscv_virt::print;
-/*
-lazy_static! {
-    pub static ref HEAP_: Arc<RwLock<Vec<u8>>> =
-        Arc::new(RwLock::new(Vec::with_capacity(KERNEL_HEAP_SIZE)));
-}*/
+
 /// INITIAL Start should init_heap first
 pub fn init_heap() {
     static mut HEAP: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];

@@ -63,8 +63,8 @@ static void prvQueueSendTask( void *pvParameters )
 {
 TickType_t xNextWakeTime;
 const unsigned long ulValueToSend = 100UL;
-const char * const pcMessage1 = "Transfer1";
-const char * const pcMessage2 = "Transfer2";
+//const char * const pcMessage1 = "Transfer1";
+//const char * const pcMessage2 = "Transfer2";
 int f = 1;
 
 	/* Remove compiler warning about unused parameter. */
@@ -75,7 +75,7 @@ int f = 1;
 
 	for( ;; )
 	{
-		char buf[40];
+		//char buf[40];
 
 		/*sprintf( buf, "%d: %s: %s", xGetCoreID(),
 				pcTaskGetName( xTaskGetCurrentTaskHandle() ),
@@ -98,12 +98,12 @@ int f = 1;
 static void prvQueueReceiveTask( void *pvParameters )
 {
 	vSendString("in recv task");
-unsigned long ulReceivedValue;
-const unsigned long ulExpectedValue = 100UL;
-const char * const pcMessage1 = "Blink1";
-const char * const pcMessage2 = "Blink2";
-const char * const pcFailMessage = "Unexpected value received\r\n";
-int f = 1;
+	unsigned long ulReceivedValue;
+	const unsigned long ulExpectedValue = 100UL;
+	const char * const pcMessage1 = "Blink1";
+	const char * const pcMessage2 = "Blink2";
+	const char * const pcFailMessage = "Unexpected value received\r\n";
+	int f = 1;
 
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
@@ -111,7 +111,7 @@ int f = 1;
 	for( ;; )
 	{
 		vSendString("in recv task loop");
-		char buf[40];
+		//char buf[40];
 
 		/* Wait until something arrives in the queue - this task will block
 		indefinitely provided INCLUDE_vTaskSuspend is set to 1 in

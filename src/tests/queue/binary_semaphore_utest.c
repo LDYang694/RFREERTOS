@@ -855,6 +855,7 @@ void test_xSemaphoreTake_blocking_success_locked_low_prio_pending( void )
 
 void run_binary_semaphore_utest()
 {
+    //success: 27 not impleted:0 failed:2
     test_macro_xSemaphoreTake_xSemaphoreCreateBinary_fail();
     test_macro_xSemaphoreGive_xSemaphoreCreateBinary_success();
     test_macro_xSemaphoreTake_vSemaphoreCreateBinary_success();

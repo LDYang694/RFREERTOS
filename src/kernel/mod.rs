@@ -12,7 +12,6 @@ pub mod linked_list;
 pub mod portable;
 #[macro_use]
 pub mod portmacro;
-pub mod FREERTOS;
 #[macro_use]
 pub mod queue;
 pub mod projdefs;

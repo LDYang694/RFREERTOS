@@ -627,6 +627,7 @@ void test_xQueuePeek_blocking_locked( void )
 
 void run_queue_receive_blocking_utest()
 {
+    //success:14 not impleted:0 failed:2
     test_xQueueReceive_blocking_success_locked_no_pending();
     test_xQueuePeek_blocking_success_locked_no_pending();
     //test_xQueueReceive_blocking_timeout_locked_high_prio_pending(); failed
