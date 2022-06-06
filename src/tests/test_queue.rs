@@ -1,6 +1,5 @@
 use crate::ffi::queue::*;
-use crate::kernel::linked_list::ux_list_remove;
-use crate::kernel::linked_list::v_list_insert;
+use crate::kernel::linked_list::*;
 use crate::kernel::tasks::*;
 use crate::portable::portable::*;
 use crate::portable::portmacro::*;

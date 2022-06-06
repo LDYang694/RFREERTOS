@@ -5,18 +5,14 @@ use crate::kernel::tasks::*;
 use crate::portable::portmacro::*;
 use crate::{
     mtCOVERAGE_TEST_MARKER, portENTER_CRITICAL, portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,
-    taskYIELD_IF_USING_PREEMPTION,
+    taskENTER_CRITICAL, taskEXIT_CRITICAL, taskYIELD_IF_USING_PREEMPTION,
 };
 
-use super::linked_list::ListRealLink;
-use crate::portable::portmacro::{BaseType, UBaseType};
-use crate::{
-    kernel::{
-        linked_list::*,
-        tasks::{vTaskEnterCritical, vTaskExitCritical},
-    },
-    taskENTER_CRITICAL, taskEXIT_CRITICAL,
+use crate::kernel::{
+    linked_list::*,
+    tasks::{vTaskEnterCritical, vTaskExitCritical},
 };
+use crate::portable::portmacro::{BaseType, UBaseType};
 
 use crate::configMAX_PRIORITIES;
 use alloc::boxed::Box;
@@ -27,6 +23,7 @@ use core::arch::asm;
 use core::ffi::c_void;
 use core::{alloc::Layout, mem};
 use spin::RwLock;
+
 pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
 pub const queueQUEUE_TYPE_BASE: u8 = 0;
 pub const queueQUEUE_TYPE_MUTEX: u8 = 1;
@@ -441,8 +438,7 @@ pub fn prvIsQueueEmpty(xQueue: &QueueHandle_t) -> bool {
 }
 
 /// Delete target queue.
-#[no_mangle]
-pub extern "C" fn vQueueDelete(xQueue: QueueHandle_t) {
+pub fn vQueueDelete(xQueue: QueueHandle_t) {
     let alloc_size: usize =
         mem::size_of::<xQUEUE>() + (xQueue.read().uxLength * xQueue.read().uxItemSize) as usize;
     let pxQueue = &*xQueue.write();

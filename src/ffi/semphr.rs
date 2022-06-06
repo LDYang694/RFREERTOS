@@ -12,10 +12,6 @@ use crate::{
     xSemaphoreCreateBinary,
 };
 use alloc::sync::{Arc, Weak};
-use alloc::{fmt::format, format};
-use core::ffi::c_void;
-use core::mem::forget;
-use core::mem::size_of;
 use spin::RwLock;
 
 use super::queue::xQueueGenericSendToC;
@@ -48,14 +44,14 @@ pub extern "C" fn vSemaphoreDeleteToC(xQueue: QueueHandle_c) {
 
 /// The C version of xSemaphoreGive.
 #[no_mangle]
-pub extern "C" fn xSemaphoreGiveToC(mut xQueue: QueueHandle_c) -> BaseType {
+pub extern "C" fn xSemaphoreGiveToC(xQueue: QueueHandle_c) -> BaseType {
     let xReturn = xQueueGenericSendToC(xQueue, 0, semGIVE_BLOCK_TIME, queueSEND_TO_BACK);
     xReturn
 }
 
 /// The C version of xSemaphoreTake.
 #[no_mangle]
-pub extern "C" fn xSemaphoreTakeToC(mut xQueue: QueueHandle_c, xBlockTime: UBaseType) -> BaseType {
+pub extern "C" fn xSemaphoreTakeToC(xQueue: QueueHandle_c, xBlockTime: UBaseType) -> BaseType {
     let xReturn = xQueueReceiveToC(xQueue, 0, xBlockTime);
     xReturn
 }

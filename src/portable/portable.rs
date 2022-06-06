@@ -81,7 +81,7 @@ pub fn v_port_setup_timer_interrupt() {
 
     unsafe {
         pullNextTime = &ULL_NEXT_TIME as *const u64 as u32;
-        uxTimerIncrementsForOneTick = unsafe { CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ };
+        uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ;
         asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
         pullMachineTimerCompareRegister = *ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE + ul_hart_id * 4;
         loop {
@@ -115,8 +115,7 @@ pub fn auto_set_currentTcb() {
 /// Start up scheduler.
 pub fn x_port_start_scheduler() -> BaseType {
     unsafe {
-        xISRStackTop =
-            &(X_ISRSTACK_.read()[unsafe { CONFIG_ISR_STACK_SIZE_WORDS } - 1]) as *const u32;
+        xISRStackTop = &(X_ISRSTACK_.read()[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const u32;
     }
     v_port_setup_timer_interrupt();
     let mut tmp: u32 = 0x800;

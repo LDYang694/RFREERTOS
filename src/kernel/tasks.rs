@@ -1,43 +1,38 @@
 //! task control api
 
 extern crate alloc;
-use crate::configMAX_PRIORITIES;
+use super::config::{configMAX_PRIORITIES, CONFIG_ISR_STACK_SIZE_WORDS, USER_STACK_SIZE};
+use super::kernel::{IDLE_p, IDLE_STACK};
 use crate::kernel::kernel::*;
 use crate::kernel::linked_list::*;
 use crate::kernel::projdefs::*;
 use crate::portable::portable::*;
 use crate::portable::portmacro::*;
+use crate::riscv_virt::*;
 #[cfg(feature = "configUSE_IDLE_HOOK")]
 use crate::vApplicationIdleHook;
-use crate::CONFIG_ISR_STACK_SIZE_WORDS;
 use crate::{
     mtCOVERAGE_TEST_MARKER, portDISABLE_INTERRUPTS, portENABLE_INTERRUPTS, portENTER_CRITICAL,
     portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,
 };
-
 use alloc::format;
+use alloc::string::String;
 use alloc::string::ToString;
 use alloc::sync::{Arc, Weak};
+use core::arch::asm;
+use core::clone;
 use core::cmp::max;
+use core::ffi::c_void;
+use core::ptr::NonNull;
 use spin::RwLock;
+
 pub type StackType_t = usize;
 pub type StackType_t_link = usize;
 pub type Param_link = usize;
 pub type TCB_t_link = Arc<RwLock<TCB_t>>;
 pub type UBaseType_t = usize;
-
 pub type TaskFunction_t = *mut fn(*mut c_void);
 
-use crate::riscv_virt::*;
-use alloc::string::String;
-use core::arch::asm;
-use core::clone;
-use core::ffi::c_void;
-use core::ptr::NonNull;
-
-use super::config::USER_STACK_SIZE;
-use super::kernel::IDLE_p;
-use super::kernel::IDLE_STACK;
 pub static tskIDLE_PRIORITY: UBaseType = 0;
 pub static mut XSCHEDULERRUNNING: BaseType = pdFALSE;
 pub static mut xTickCount: UBaseType = 0;
@@ -152,16 +147,14 @@ pub fn vTaskPrioritySet(pxTask: Option<&TaskHandle_t>, uxNewPriority: UBaseType)
                 *configMAX_PRIORITIES - uxNewPriority,
             );
         }
-        None => unsafe {
-            match get_current_tcb() {
-                Some(x) => {
-                    ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
-                    v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize], &x.xStateListItem);
-                    x.uxPriority = uxNewPriority;
-                    list_item_set_value(&x.xEventListItem, *configMAX_PRIORITIES - uxNewPriority);
-                }
-                None => {}
+        None => match get_current_tcb() {
+            Some(x) => {
+                ux_list_remove(Arc::downgrade(&(*x).xStateListItem));
+                v_list_insert_end(&READY_TASK_LISTS[uxNewPriority as usize], &x.xStateListItem);
+                x.uxPriority = uxNewPriority;
+                list_item_set_value(&x.xEventListItem, *configMAX_PRIORITIES - uxNewPriority);
             }
+            None => {}
         },
     }
     vTaskExitCritical();
@@ -169,14 +162,12 @@ pub fn vTaskPrioritySet(pxTask: Option<&TaskHandle_t>, uxNewPriority: UBaseType)
 
 /// Get priority of target task.
 pub fn uxTaskPriorityGet(pxTask: Option<TaskHandle_t>) -> UBaseType {
-    unsafe {
-        match get_current_tcb() {
-            Some(x) => unsafe {
-                return (*x).uxPriority;
-            },
-            None => {
-                return 0;
-            }
+    match get_current_tcb() {
+        Some(x) => unsafe {
+            return (*x).uxPriority;
+        },
+        None => {
+            return 0;
         }
     }
 }
@@ -254,7 +245,7 @@ pub fn prvInitialiseNewTask<'a>(
     let mut pxTopOfStack: StackType_t_link = pxNewTCB.read().pxStack;
     pxTopOfStack = pxTopOfStack & (!(0x0007usize));
 
-    let mut x: UBaseType = 0;
+    let x: UBaseType = 0;
     //TODO: name length
 
     pxNewTCB.write().pcTaskName = pcName.to_string();
@@ -387,10 +378,8 @@ pub fn taskSELECT_HIGHEST_PRIORITY_TASK() {
     // let target:ListItemWeakLink=list_get_head_entry(&READY_TASK_LISTS[max_prio]);
     // let owner:ListItemOwnerWeakLink=list_item_get_owner(&target);
     let owner: ListItemOwnerWeakLink = list_get_owner_of_next_entry(&READY_TASK_LISTS[max_prio]);
-    unsafe {
-        set_current_tcb(Some(owner));
-        auto_set_currentTcb();
-    }
+    set_current_tcb(Some(owner));
+    auto_set_currentTcb();
 }
 
 /// Find highest priority with valid task.
@@ -414,8 +403,8 @@ pub fn prvAddCurrentTaskToDelayedList(xTicksToWait: TickType, xCanBlockIndefinit
     //todo
     //vTaskEnterCritical();
 
-    let mut xTimeToWake: TickType;
-    let mut xConstTickCount: TickType;
+    let xTimeToWake: TickType;
+    let xConstTickCount: TickType;
 
     unsafe {
         xTimeToWake = xTicksToWait + xTickCount;
@@ -479,7 +468,7 @@ pub extern "C" fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrem
 
     vTaskSuspendAll();
     {
-        let mut xConstTickCount: TickType;
+        let xConstTickCount: TickType;
         unsafe {
             xConstTickCount = xTickCount;
         }
@@ -513,8 +502,6 @@ pub extern "C" fn xTaskDelayUntil(pxPreviousWakeTime: &mut TickType, xTimeIncrem
     } else {
         mtCOVERAGE_TEST_MARKER!();
     }
-
-    xShouldDelay;
 }
 
 /// In case of mtime overflow, swap delayed list and overflow list.

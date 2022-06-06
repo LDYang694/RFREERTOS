@@ -1,7 +1,5 @@
 #![allow(non_snake_case)]
 //! Bidirectional linked list Definition and API
-
-use spin::RwLock;
 extern crate alloc;
 use crate::kernel::riscv_virt::*;
 use crate::portable::portmacro::*;
@@ -11,6 +9,7 @@ use alloc::format;
 use alloc::sync::{Arc, Weak};
 use core::clone::Clone;
 use core::default::Default;
+use spin::RwLock;
 pub type ListItemWeakLink = Weak<RwLock<XListItem>>;
 pub type ListWeakLink = Weak<RwLock<XList>>;
 pub type ListRealLink = Arc<RwLock<XList>>;

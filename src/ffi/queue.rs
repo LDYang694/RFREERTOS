@@ -28,7 +28,7 @@ pub extern "C" fn xQueueCreateToC(
     uxQueueLength: UBaseType,
     uxItemSize: UBaseType,
 ) -> QueueHandle_c {
-    let mut temp = Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
+    let temp = Arc::new(RwLock::new(QueueDefinition::xQueueCreate(
         uxQueueLength,
         uxItemSize,
     )));
@@ -168,9 +168,9 @@ pub extern "C" fn xQueueReceiveFromISRToC(
 /// The C version of xQueuePeekFromISR.
 #[no_mangle]
 pub extern "C" fn xQueuePeekFromISRToC(xQueue: QueueHandle_c, pvBuffer: usize) -> BaseType {
-    let temp: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-    let xReturn = xQueuePeekFromISR(&temp, pvBuffer);
-    let xQueue_ = Arc::into_raw(temp);
+    let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
+    let xReturn = xQueuePeekFromISR(&xQueue_, pvBuffer);
+    let temp = Arc::into_raw(xQueue_);
     xReturn
 }
 
@@ -187,7 +187,7 @@ pub fn xQueueGenericSendToC(
     let mut xTimeout: TimeOut = Default::default();
     loop {
         taskENTER_CRITICAL!();
-        let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
+        let xQueue_ = unsafe { Arc::from_raw(xQueue) };
 
         {
             if xQueue_.read().uxMessagesWaiting < xQueue_.read().uxLength
@@ -273,7 +273,7 @@ pub extern "C" fn xQueueReceiveToC(
     //let xQueue = &mut (*xq.write());
     loop {
         taskENTER_CRITICAL!();
-        let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
+        let xQueue_ = unsafe { Arc::from_raw(xQueue) };
         {
             let uxMessagesWaiting = xQueue_.read().uxMessagesWaiting;
             if uxMessagesWaiting > 0 {
@@ -401,7 +401,7 @@ pub extern "C" fn xQueuePeekToC(
 
     loop {
         taskENTER_CRITICAL!();
-        let mut xQueue_ = unsafe { Arc::from_raw(xQueue) };
+        let xQueue_ = unsafe { Arc::from_raw(xQueue) };
         {
             let uxMessagesWaiting = xQueue_.read().uxMessagesWaiting;
             if uxMessagesWaiting > 0 {
@@ -479,11 +479,9 @@ pub extern "C" fn xQueuePeekToC(
 pub extern "C" fn xQueueResetToC(xQueue: QueueHandle_c) -> BaseType {
     let xReturn: BaseType;
     taskENTER_CRITICAL!();
-    unsafe {
-        let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
-        xReturn = xQueue_.write().xQueueGenericReset(0);
-        let temp = Arc::into_raw(xQueue_);
-    }
+    let xQueue_: QueueHandle_t = unsafe { Arc::from_raw(xQueue) };
+    xReturn = xQueue_.write().xQueueGenericReset(0);
+    let temp = Arc::into_raw(xQueue_);
     taskEXIT_CRITICAL!();
     xReturn
 }
