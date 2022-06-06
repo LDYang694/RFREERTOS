@@ -2,7 +2,39 @@
 extern crate alloc;
 use crate::kernel::projdefs::*;
 use crate::kernel::tasks::*;
-use crate::{portYIELD_WITHIN_API, taskYIELD_IF_USING_PREEMPTION};
+use crate::portable::portmacro::*;
+use crate::{
+    mtCOVERAGE_TEST_MARKER, portENTER_CRITICAL, portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,
+    taskYIELD_IF_USING_PREEMPTION,
+};
+
+use super::linked_list::ListRealLink;
+use crate::portable::portmacro::{BaseType, UBaseType};
+use crate::{
+    kernel::{
+        linked_list::*,
+        tasks::{vTaskEnterCritical, vTaskExitCritical},
+    },
+    taskENTER_CRITICAL, taskEXIT_CRITICAL,
+};
+
+use crate::configMAX_PRIORITIES;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use core::arch::asm;
+use core::ffi::c_void;
+use core::{alloc::Layout, mem};
+use spin::RwLock;
+pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
+pub const queueQUEUE_TYPE_BASE: u8 = 0;
+pub const queueQUEUE_TYPE_MUTEX: u8 = 1;
+pub const queueQUEUE_TYPE_COUNTING_SEMAPHORE: u8 = 2;
+pub const queueQUEUE_TYPE_BINARY_SEMAPHORE: u8 = 3;
+pub const queueQUEUE_TYPE_RECURSIVE_MUTEX: u8 = 4;
+pub type xQUEUE = QueueDefinition;
+pub type Queue_t = xQUEUE;
 
 pub const queueSEND_TO_BACK: BaseType = 1;
 pub const queueOVERWRITE: BaseType = 2;
@@ -35,37 +67,6 @@ macro_rules! prvLockQueue {
         taskEXIT_CRITICAL!();
     };
 }
-
-use super::{
-    linked_list::ListRealLink,
-    portmacro::{BaseType, UBaseType},
-};
-use crate::kernel::portmacro::*;
-use crate::{
-    kernel::{
-        linked_list::*,
-        tasks::{vTaskEnterCritical, vTaskExitCritical},
-    },
-    taskENTER_CRITICAL, taskEXIT_CRITICAL,
-};
-
-use crate::configMAX_PRIORITIES;
-use alloc::boxed::Box;
-use alloc::format;
-use alloc::sync::Arc;
-use alloc::vec::Vec;
-use core::arch::asm;
-use core::ffi::c_void;
-use core::{alloc::Layout, mem};
-use spin::RwLock;
-pub type QueueHandle_t = Arc<RwLock<QueueDefinition>>;
-pub const queueQUEUE_TYPE_BASE: u8 = 0;
-pub const queueQUEUE_TYPE_MUTEX: u8 = 1;
-pub const queueQUEUE_TYPE_COUNTING_SEMAPHORE: u8 = 2;
-pub const queueQUEUE_TYPE_BINARY_SEMAPHORE: u8 = 3;
-pub const queueQUEUE_TYPE_RECURSIVE_MUTEX: u8 = 4;
-pub type xQUEUE = QueueDefinition;
-pub type Queue_t = xQUEUE;
 
 #[derive(Default)]
 pub struct QueueDefinition {

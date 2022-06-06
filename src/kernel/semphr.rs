@@ -1,5 +1,5 @@
-use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
+use crate::portable::portmacro::*;
 use alloc::sync::Arc;
 use spin::RwLock;
 

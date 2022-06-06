@@ -1,14 +1,16 @@
 //! Semaphore ffi for C
 
 use crate::ffi::queue::*;
-use crate::kernel::portable::*;
-use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
 use crate::kernel::riscv_virt::*;
 use crate::kernel::semphr::*;
 use crate::kernel::tasks::*;
-use crate::{portENTER_CRITICAL, portEXIT_CRITICAL, taskENTER_CRITICAL};
-use crate::{vSemaphoreDelete, xSemaphoreCreateBinary};
+use crate::portable::portable::*;
+use crate::portable::portmacro::*;
+use crate::{
+    portENTER_CRITICAL, portEXIT_CRITICAL, taskENTER_CRITICAL, vSemaphoreDelete,
+    xSemaphoreCreateBinary,
+};
 use alloc::sync::{Arc, Weak};
 use alloc::{fmt::format, format};
 use core::ffi::c_void;

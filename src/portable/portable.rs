@@ -1,17 +1,16 @@
 //! portable apis
 
 extern crate alloc;
-use super::projdefs::pdFALSE;
-use crate::config::*;
 use crate::kernel::allocator::DYNAMIC_ALLOCATOR;
-use crate::kernel::kernel::READY_TASK_LISTS;
-use crate::kernel::kernel::{TCB1_p, TCB2_p};
-use crate::linked_list::*;
+use crate::kernel::config::*;
+use crate::kernel::kernel::*;
+use crate::kernel::linked_list::*;
+use crate::kernel::projdefs::pdFALSE;
+use crate::kernel::riscv_virt::*;
+use crate::kernel::tasks::*;
 use crate::portDISABLE_INTERRUPTS;
 use crate::portENABLE_INTERRUPTS;
-use crate::portmacro::*;
-use crate::riscv_virt::*;
-use crate::tasks::*;
+use crate::portable::portmacro::{BaseType, StackType, UBaseType};
 use alloc::alloc::Global;
 use alloc::format;
 use alloc::sync::{Arc, Weak};
@@ -115,8 +114,6 @@ pub fn auto_set_currentTcb() {
 
 /// Start up scheduler.
 pub fn x_port_start_scheduler() -> BaseType {
-    //X_ISRSTACK_.write().insert(0, 1);
-
     unsafe {
         xISRStackTop =
             &(X_ISRSTACK_.read()[unsafe { CONFIG_ISR_STACK_SIZE_WORDS } - 1]) as *const u32;

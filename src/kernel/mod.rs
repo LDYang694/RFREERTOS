@@ -1,17 +1,13 @@
-// pub mod tasks;
-// pub mod
-
 pub mod allocator;
+#[macro_use]
 pub mod config;
 pub mod kernel;
 pub mod ns16550;
 pub mod riscv_virt;
 #[macro_use]
 pub mod tasks;
-pub mod linked_list;
-pub mod portable;
 #[macro_use]
-pub mod portmacro;
+pub mod linked_list;
 #[macro_use]
 pub mod queue;
 pub mod projdefs;

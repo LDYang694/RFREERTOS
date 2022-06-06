@@ -6,20 +6,23 @@
 #![feature(allocator_api)]
 #![feature(core_intrinsics)]
 
+#[macro_use]
 mod ffi;
 #[allow(dead_code)]
+#[macro_use]
 mod kernel;
+#[macro_use]
+mod portable;
 mod tests;
 extern crate alloc;
-//use alloc::format;
+use crate::portable::portmacro::*;
 use alloc::sync::Arc;
 use core::arch::asm;
 use core::ffi::c_void;
 use kernel::projdefs::{pdFALSE, pdTRUE};
-use kernel::{
-    config::*, event_group::*, portmacro::*, queue::*, riscv_virt::*, semphr::*, tasks::*, *,
-};
+use kernel::{config::*, event_group::*, queue::*, riscv_virt::*, semphr::*, tasks::*, *};
 use lazy_static::lazy_static;
+use portable::portmacro::*;
 use spin::RwLock;
 
 #[no_mangle]

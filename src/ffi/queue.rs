@@ -1,11 +1,11 @@
 //! Queue ffi for C
 
 use crate::kernel::linked_list::*;
-use crate::kernel::portable::*;
-use crate::kernel::portmacro::*;
 use crate::kernel::queue::*;
 use crate::kernel::riscv_virt::*;
 use crate::kernel::tasks::*;
+use crate::portable::portable::*;
+use crate::portable::portmacro::{BaseType, TickType, UBaseType};
 use crate::projdefs::*;
 use crate::{
     mtCOVERAGE_TEST_MARKER, portENTER_CRITICAL, portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,

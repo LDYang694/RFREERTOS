@@ -1,6 +1,6 @@
 //! project defines
 
-use crate::kernel::portmacro::*;
+use crate::portable::portmacro::*;
 
 pub const pdTRUE: BaseType = 1;
 pub const pdFALSE: BaseType = 0;

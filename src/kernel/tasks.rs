@@ -4,16 +4,16 @@ extern crate alloc;
 use crate::configMAX_PRIORITIES;
 use crate::kernel::kernel::*;
 use crate::kernel::linked_list::*;
-use crate::kernel::portable::*;
 use crate::kernel::projdefs::*;
-use crate::mtCOVERAGE_TEST_MARKER;
-use crate::portDISABLE_INTERRUPTS;
-use crate::portENABLE_INTERRUPTS;
-use crate::portYIELD;
-use crate::portmacro::*;
+use crate::portable::portable::*;
+use crate::portable::portmacro::*;
 #[cfg(feature = "configUSE_IDLE_HOOK")]
 use crate::vApplicationIdleHook;
 use crate::CONFIG_ISR_STACK_SIZE_WORDS;
+use crate::{
+    mtCOVERAGE_TEST_MARKER, portDISABLE_INTERRUPTS, portENABLE_INTERRUPTS, portENTER_CRITICAL,
+    portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,
+};
 
 use alloc::format;
 use alloc::string::ToString;
@@ -25,14 +25,9 @@ pub type StackType_t_link = usize;
 pub type Param_link = usize;
 pub type TCB_t_link = Arc<RwLock<TCB_t>>;
 pub type UBaseType_t = usize;
-// pub type TaskFunction_t = dyn Fn(usize);
-// pub type TaskFunction_t=fn(*mut c_void);
+
 pub type TaskFunction_t = *mut fn(*mut c_void);
-// use std::cell::RefCell;
-// use alloc::sync::{Arc, Weak};
-use crate::portENTER_CRITICAL;
-use crate::portEXIT_CRITICAL;
-use crate::portYIELD_WITHIN_API;
+
 use crate::riscv_virt::*;
 use alloc::string::String;
 use core::arch::asm;

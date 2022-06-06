@@ -3,8 +3,8 @@
 extern crate libc;
 
 use crate::ffi::ffi::get_str_from_cchar;
-use crate::kernel::portmacro::*;
 use crate::kernel::tasks::*;
+use crate::portable::portmacro::*;
 use crate::{portENTER_CRITICAL, portEXIT_CRITICAL};
 use alloc::sync::Arc;
 use core::ffi::c_void;

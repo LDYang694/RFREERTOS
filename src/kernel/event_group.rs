@@ -1,4 +1,3 @@
-use super::portmacro::*;
 use super::projdefs::pdFALSE;
 use crate::kernel::linked_list::*;
 use crate::kernel::tasks::*;

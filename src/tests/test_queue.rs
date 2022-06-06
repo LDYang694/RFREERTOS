@@ -1,9 +1,9 @@
 use crate::ffi::queue::*;
 use crate::kernel::linked_list::ux_list_remove;
 use crate::kernel::linked_list::v_list_insert;
-use crate::kernel::portable::*;
-use crate::kernel::portmacro::*;
 use crate::kernel::tasks::*;
+use crate::portable::portable::*;
+use crate::portable::portmacro::*;
 use crate::{
     portENTER_CRITICAL, portEXIT_CRITICAL, taskENTER_CRITICAL, taskEXIT_CRITICAL,
     vTaskEnterCritical,

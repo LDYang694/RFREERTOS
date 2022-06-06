@@ -4,8 +4,8 @@
 use spin::RwLock;
 extern crate alloc;
 use crate::kernel::riscv_virt::*;
+use crate::portable::portmacro::*;
 use crate::portable::*;
-use crate::portmacro::*;
 use crate::tasks::*;
 use alloc::format;
 use alloc::sync::{Arc, Weak};

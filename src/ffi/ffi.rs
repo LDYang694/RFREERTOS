@@ -1,15 +1,11 @@
 //! ffi general utils
 
-use crate::kernel::portmacro::*;
 use crate::kernel::riscv_virt::*;
 use crate::portYIELD;
+use crate::portable::portmacro::*;
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
-use alloc::{fmt::format, format};
 use core::arch::asm;
-use core::ffi::c_void;
-use core::mem::forget;
-use core::mem::size_of;
 use spin::RwLock;
 
 /// Transform C char into rust string

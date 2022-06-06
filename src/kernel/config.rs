@@ -1,7 +1,7 @@
 //! Application specific definitions. <br>
 //! equal to FreeRTOSConfig.h
 
-use crate::portmacro::*;
+use crate::portable::portmacro::*;
 use lazy_static::lazy_static;
 
 extern "C" {

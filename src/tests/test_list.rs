@@ -1,7 +1,7 @@
 /*use crate::kernel::config::*;
 use crate::kernel::linked_list::*;
-use crate::kernel::portable::*;
-use crate::kernel::portmacro::*;
+use crate::portable::portable::*;
+use crate::portable::portmacro::*;
 use crate::kernel::riscv_virt::*;
 use crate::kernel::tasks::*;
 use alloc::sync::{Arc, Weak};

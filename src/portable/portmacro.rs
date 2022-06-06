@@ -6,8 +6,6 @@ pub type StackType = u32;
 pub type BaseType = i32;
 pub type UBaseType = u32;
 pub type TickType = u32;
-use crate::tasks::*;
-use crate::vTaskExitCritical;
 pub const PORT_MAX_DELAY: TickType = 0xffffffff;
 pub const PORT_TICK_TYPE_IS_ATOMIC: BaseType = 1;
 pub const PORT_STACK_GROWTH: BaseType = -1;
