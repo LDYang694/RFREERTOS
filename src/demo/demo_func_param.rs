@@ -48,29 +48,28 @@ pub fn main_test_str() {
     let param1: Param_link = &param_str as *const _ as usize;
     let param2: Param_link = &param_b as *const i32 as usize;
     let param3: Param_link = param_str.as_ptr() as usize;
-    unsafe {
-        xQueue = Some(xQueueCreateMutex(queueQUEUE_TYPE_MUTEX));
-    }
-    unsafe {
-        print("xTaskCreate start");
-        let x = print("xTaskCreate 1111");
-        xTaskCreate(
-            task1_str as usize,
-            "task1",
-            USER_STACK_SIZE as u32,
-            Some(param1),
-            2,
-            Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
-        );
-        xTaskCreate(
-            task2_str as usize,
-            "task2",
-            USER_STACK_SIZE as u32,
-            Some(param2),
-            3,
-            Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
-        );
-    }
+
+
+
+    print("xTaskCreate start");
+    let x = print("xTaskCreate 1111");
+    xTaskCreate(
+        task1_str as usize,
+        "task1",
+        USER_STACK_SIZE as u32,
+        Some(param1),
+        2,
+        Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
+    );
+    xTaskCreate(
+        task2_str as usize,
+        "task2",
+        USER_STACK_SIZE as u32,
+        Some(param2),
+        3,
+        Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
+    );
+
     print("start scheduler!!!!!!!!!");
     vTaskStartScheduler();
     loop {

@@ -245,7 +245,12 @@ pub fn prvInitialiseNewTask<'a>(
 ) -> &'a TaskHandle_t {
     let mut pxTopOfStack: StackType_t_link = pxNewTCB.read().pxStack;
     pxTopOfStack = pxTopOfStack & (!(0x0007usize));
-
+    let params = {
+        match pvParameters {
+            Some(x) => x,
+            None => 0,
+        }
+    };
     let x: UBaseType = 0;
     //TODO: name length
 
@@ -266,7 +271,7 @@ pub fn prvInitialiseNewTask<'a>(
 
     unsafe {
         pxNewTCB.write().pxTopOfStack =
-            pxPortInitialiseStack(pxTopOfStack as *mut _, pxTaskCode, 0 as *mut _) as usize;
+            pxPortInitialiseStack(pxTopOfStack as *mut _, pxTaskCode, params as *mut _) as usize;
         pxNewTCB.write().uxCriticalNesting = 0;
     }
 
