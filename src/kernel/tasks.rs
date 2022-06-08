@@ -23,6 +23,7 @@ use core::arch::asm;
 use core::clone;
 use core::cmp::max;
 use core::ffi::c_void;
+use core::mem::size_of;
 use core::ptr::NonNull;
 use spin::RwLock;
 
@@ -70,7 +71,7 @@ extern "C" {
     /// initialise task stack space ( Extern C )
     pub fn pxPortInitialiseStack(
         pxTopOfStack: *mut StackType_t,
-        pxCode: u32,
+        pxCode: usize,
         pvParameters: *mut c_void,
     ) -> *mut StackType_t;
 }
@@ -175,7 +176,7 @@ pub fn uxTaskPriorityGet(pxTask: Option<TaskHandle_t>) -> UBaseType {
 /// Create task (static).
 #[cfg(feature = "configSUPPORT_STATIC_ALLOCATION")]
 pub fn xTaskCreateStatic(
-    pxTaskCode: u32,
+    pxTaskCode: usize,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -234,7 +235,7 @@ pub fn taskRECORD_READY_PRIORITY(uxPriority: UBaseType) {
 
 /// Initialise new task.
 pub fn prvInitialiseNewTask<'a>(
-    pxTaskCode: u32,
+    pxTaskCode: usize,
     pcName: &'a str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -302,12 +303,13 @@ pub extern "C" fn vTaskStartScheduler() {
     }
     if cfg!(feature = "configSUPPORT_STATIC_ALLOCATION") {
         let param: Param_link = 0;
-        let stack2ptr: StackType_t_link = &*IDLE_STACK as *const [u32; USER_STACK_SIZE]
-            as *const u32 as usize
-            + USER_STACK_SIZE * 4
-            - 4;
+        let arch=size_of::<usize>();
+        let stack2ptr: StackType_t_link = &*IDLE_STACK as *const [usize; USER_STACK_SIZE]
+            as *const usize as usize
+            + USER_STACK_SIZE * arch
+            - arch;
         xTaskCreateStatic(
-            prvIdleTask as u32,
+            prvIdleTask as usize,
             "idle",
             USER_STACK_SIZE as u32,
             Some(param),
@@ -607,7 +609,7 @@ pub fn xPortSysTickHandler() {
 /// ```
 ///
 pub fn xTaskCreate(
-    pxTaskCode: u32,
+    pxTaskCode: usize,
     pcName: &str,
     ulStackDepth: u32,
     pvParameters: Option<Param_link>,
@@ -621,16 +623,15 @@ pub fn xTaskCreate(
     use core::mem;
 
     use alloc::alloc::Layout;
-
-    use alloc::vec::Vec;
-    let layout = Layout::from_size_align(ulStackDepth as usize * 4, 4)
+    let arch=size_of::<usize>();
+    let layout = Layout::from_size_align(ulStackDepth as usize * arch, arch)
         .ok()
         .unwrap();
     let stack_ptr: *mut u8;
     unsafe {
         stack_ptr = alloc::alloc::alloc(layout);
     }
-    pxStack = stack_ptr as usize + ulStackDepth as usize * 4 - 4;
+    pxStack = stack_ptr as usize + ulStackDepth as usize * arch - arch;
     // let stack: Vec<usize> = Vec::with_capacity(ulStackDepth as usize);
 
     let pxNewTCB: TCB_t_link = Arc::new(RwLock::new(tskTaskControlBlock::default()));

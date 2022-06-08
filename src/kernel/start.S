@@ -24,6 +24,18 @@
  *
  * 1 tab == 4 spaces!
  */
+ 
+
+#if __riscv_xlen == 64
+#define store_x sd
+#define load_x ld
+#define portWORD_SIZE 8
+#else
+#define store_x sw
+#define load_x lw
+#define portWORD_SIZE 4
+#endif
+
 
 	.section .init
 	.globl _start
@@ -50,20 +62,20 @@ _start:
 	la a2, _edata
 	bgeu a1, a2, 2f
 1:
-	lw t0, (a0)
-	sw t0, (a1)
-	addi a0, a0, 4
-	addi a1, a1, 4
+	load_x t0, (a0)
+	store_x t0, (a1)
+
+	addi a0, a0, 8
+	addi a1, a1, 8
 	bltu a1, a2, 1b
 2:
-
 	// Clear bss section
 	la a0, _bss
 	la a1, _ebss
 	bgeu a0, a1, 2f
 1:
-	sw zero, (a0)
-	addi a0, a0, 4
+	store_x zero, (a0)
+	addi a0, a0, 8
 	bltu a0, a1, 1b
 2:
 

@@ -1,11 +1,11 @@
-OUTPUT_ARCH( "riscv" )
+OUTPUT_ARCH(riscv)
 ENTRY( _start )
 
 MEMORY
 {
 	/* Fake ROM area */
-	rom (rxa) : ORIGIN = 0x80000000, LENGTH = 32M
-	ram (wxa) : ORIGIN = 0x82000000, LENGTH = 32M
+	rom (rxa) : ORIGIN = 0x80000000, LENGTH = 32M /*0x80000000-0x82000000*/
+	ram (wxa) : ORIGIN = 0x82000000, LENGTH = 32M /*0x82000000-0x84000000*/
 }
 
 SECTIONS
@@ -51,7 +51,7 @@ SECTIONS
 		_erodata = .;
 	} >rom AT>rom
 
-	.data.align :
+	.data.align : ALIGN(8)
 	{
 		. = ALIGN(4);
 		_data = .;
@@ -112,7 +112,7 @@ SECTIONS
 	{
 		. = ALIGN(16);
 		/* TODO: replace 512K with __stack_size */
-		. += 512 * 1024 * 4; /* __stack_siz = 512K */
+		. += 2 * 1024 * 1024; /* __stack_siz = 512K */
 		_stack_top = .;
 	} >ram AT>ram
 }

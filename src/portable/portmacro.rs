@@ -2,10 +2,13 @@
 
 use crate::config::*;
 
-pub type StackType = u32;
-pub type BaseType = i32;
-pub type UBaseType = u32;
-pub type TickType = u32;
+pub type StackType = usize;
+pub type BaseType = isize;
+pub type UBaseType = usize;
+pub type TickType = usize;
+#[cfg(target_arch = "riscv64")]
+pub const PORT_MAX_DELAY: TickType = 0xffffffffffffffff;
+#[cfg(target_arch = "riscv32")]
 pub const PORT_MAX_DELAY: TickType = 0xffffffff;
 pub const PORT_TICK_TYPE_IS_ATOMIC: BaseType = 1;
 pub const PORT_STACK_GROWTH: BaseType = -1;

@@ -20,9 +20,9 @@ pub fn get_task_handle() -> TaskHandle_c {
 /// pxTaskBuffer must be initialized with get_task_handle() unless it's NULL.
 #[no_mangle]
 pub extern "C" fn xTaskCreateStaticToC(
-    pxTaskCode: UBaseType,
+    pxTaskCode: usize,
     pcName: usize,
-    ulStackDepth: UBaseType,
+    ulStackDepth: u32,
     pvParameters: usize,
     puxStackBuffer: usize,
     mut pxTaskBuffer: TaskHandle_c,
@@ -54,9 +54,9 @@ pub extern "C" fn xTaskCreateStaticToC(
 /// pxCreatedTask must be initialized with get_task_handle() unless it's NULL.
 #[no_mangle]
 pub extern "C" fn xTaskCreateToC(
-    pxTaskCode: UBaseType,
+    pxTaskCode: usize,
     pcName: usize,
-    ulStackDepth: UBaseType,
+    ulStackDepth: u32,
     pvParameters: usize,
     uxPriority: UBaseType,
     mut pxCreatedTask: TaskHandle_c,

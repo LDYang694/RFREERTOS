@@ -13,7 +13,7 @@ mod ffi;
 mod kernel;
 #[macro_use]
 mod portable;
-mod tests;
+// mod tests;
 extern crate alloc;
 use alloc::sync::Arc;
 use core::arch::asm;
@@ -117,7 +117,7 @@ pub fn main_new_1() {
         print("xTaskCreate start");
         let x = print("xTaskCreate 1111");
         xTaskCreate(
-            task_send as u32,
+            task_send as usize,
             "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
@@ -125,7 +125,7 @@ pub fn main_new_1() {
             Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
         );
         xTaskCreate(
-            task_rec as u32,
+            task_rec as usize,
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),

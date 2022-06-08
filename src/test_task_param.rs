@@ -55,7 +55,7 @@ pub fn main_test_str() {
         print("xTaskCreate start");
         let x = print("xTaskCreate 1111");
         xTaskCreate(
-            task1_str as u32,
+            task1_str as usize,
             "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
@@ -63,7 +63,7 @@ pub fn main_test_str() {
             Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
         );
         xTaskCreate(
-            task2_str as u32,
+            task2_str as usize,
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),

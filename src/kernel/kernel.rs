@@ -17,7 +17,7 @@ use core::panic::PanicInfo;
 use lazy_static::*;
 use spin::RwLock;
 
-global_asm!(include_str!("start.S"));
+// global_asm!(include_str!("start.S"));
 
 lazy_static! {
     //TODO: tmp size
@@ -29,10 +29,10 @@ lazy_static! {
     //TODO:tmp use
     pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     //todo: overflow task list
-    pub static ref TASK1_STACK:[u32;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
-    pub static ref TASK2_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
-    pub static ref TASK3_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
-    pub static ref IDLE_STACK:[u32;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
+    pub static ref TASK1_STACK:[usize;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
+    pub static ref TASK2_STACK:[usize;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
+    pub static ref TASK3_STACK:[usize;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
+    pub static ref IDLE_STACK:[usize;USER_STACK_SIZE]=[0;USER_STACK_SIZE];
     //pub static ref pxCurrentTCB_: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
     pub static ref TCB2_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));
