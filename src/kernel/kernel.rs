@@ -18,7 +18,7 @@ use lazy_static::*;
 use spin::RwLock;
 use super::portmacro::BaseType;
 
-global_asm!(include_str!("start.S"));
+// global_asm!(include_str!("start.S"));
 
 lazy_static! {
     //TODO: tmp size

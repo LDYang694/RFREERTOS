@@ -18,6 +18,7 @@ use alloc::format;
 use alloc::string::ToString;
 use alloc::sync::{Arc, Weak};
 use core::cmp::max;
+use core::mem::size_of;
 use spin::RwLock;
 pub type StackType_t = usize;
 pub type StackType_t_link = usize;
@@ -347,10 +348,11 @@ pub extern "C" fn vTaskStartScheduler() {
     }
     if cfg!(feature = "configSUPPORT_STATIC_ALLOCATION") {
         let param: Param_link = 0;
+        let size_:usize=size_of::<usize>();
         let stack2ptr: StackType_t_link = &*IDLE_STACK as *const [usize; USER_STACK_SIZE]
             as *const usize as usize
-            + USER_STACK_SIZE * 8
-            - 8;
+            + USER_STACK_SIZE * size_
+            - size_;
         xTaskCreateStatic(
             prvIdleTask as usize,
             "idle",
@@ -675,14 +677,15 @@ pub fn xTaskCreate(
     use alloc::alloc::Layout;
 
     use alloc::vec::Vec;
-    let layout = Layout::from_size_align(ulStackDepth as usize * 8, 8)
+    let size_:usize=size_of::<usize>();
+    let layout = Layout::from_size_align(ulStackDepth as usize * size_, size_)
         .ok()
         .unwrap();
     let stack_ptr: *mut u8;
     unsafe {
         stack_ptr = alloc::alloc::alloc(layout);
     }
-    pxStack = stack_ptr as usize + ulStackDepth as usize * 8 - 8;
+    pxStack = stack_ptr as usize + ulStackDepth as usize * size_ - size_;
     // let stack: Vec<usize> = Vec::with_capacity(ulStackDepth as usize);
 
     let pxNewTCB: TCB_t_link = Arc::new(RwLock::new(tskTaskControlBlock::default()));

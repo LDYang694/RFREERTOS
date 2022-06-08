@@ -8,8 +8,10 @@ pub type UBaseType = usize;
 pub type TickType = usize;
 use crate::tasks::*;
 use crate::vTaskExitCritical;
+#[cfg(target_arch = "riscv64")]
 pub const PORT_MAX_DELAY: TickType = 0xffffffffffffffff;
-
+#[cfg(target_arch = "riscv32")]
+pub const PORT_MAX_DELAY: TickType = 0xffffffff;
 pub const PORT_TICK_TYPE_IS_ATOMIC: BaseType = 1;
 pub const PORT_STACK_GROWTH: BaseType = -1;
 pub const PORT_TICK_PERIOD_MS: TickType = 1000 / CONFIG_TICK_RATE_HZ;

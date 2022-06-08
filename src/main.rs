@@ -12,6 +12,7 @@ mod kernel;
 extern crate alloc;
 // use crate::tests::test_list::*;
 // use crate::tests::test_queue::*;
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::{fmt::format, format};
 use core::arch::asm;
@@ -24,7 +25,6 @@ use kernel::{
 };
 use lazy_static::lazy_static;
 use spin::RwLock;
-use alloc::string::String;
 
 #[no_mangle]
 pub extern "C" fn main() -> ! {
@@ -46,12 +46,21 @@ fn task1(t: *mut c_void) {
     let a = 0;
     let b = a + 1;
     vSendString("11111 gogogogo!!!");
+  
 
     loop {
         // delay(10000);
         /*unsafe{
             vTaskPrioritySet(task1handler.clone(),1);
         }*/
+        #[cfg(target_arch = "riscv64")]
+        {
+            vSendString("riscv64gogogo")
+        }
+        #[cfg(target_arch = "riscv32")]
+        {
+            vSendString("riscv32gogogo")
+        }
         vSendString("11111 gogogogo!!!(in loop)");
         //vTaskSuspend(task1handler.clone());
         //vTaskDelay(10);
@@ -91,7 +100,7 @@ fn task3(t: *mut c_void) {
     }
 }
 pub fn main_new() {
-main_new_1();
+    main_new_1();
 }
 
 pub fn testfunc1() {
@@ -174,15 +183,18 @@ pub fn main_new_1() {
     let param1: Param_link = 0;
     let param2: Param_link = 0;
     let param3: Param_link = 0;
-    let stack1ptr: StackType_t_link =
-        &*TASK1_STACK as *const [usize; USER_STACK_SIZE] as *const usize as usize + USER_STACK_SIZE * 8
-            - 8;
-    let stack2ptr: StackType_t_link =
-        &*TASK2_STACK as *const [usize; USER_STACK_SIZE] as *const usize as usize + USER_STACK_SIZE * 8
-            - 8;
-    let stack3ptr: StackType_t_link =
-        &*TASK3_STACK as *const [usize; USER_STACK_SIZE] as *const usize as usize + USER_STACK_SIZE * 8
-            - 8;
+    let stack1ptr: StackType_t_link = &*TASK1_STACK as *const [usize; USER_STACK_SIZE]
+        as *const usize as usize
+        + USER_STACK_SIZE * 8
+        - 8;
+    let stack2ptr: StackType_t_link = &*TASK2_STACK as *const [usize; USER_STACK_SIZE]
+        as *const usize as usize
+        + USER_STACK_SIZE * 8
+        - 8;
+    let stack3ptr: StackType_t_link = &*TASK3_STACK as *const [usize; USER_STACK_SIZE]
+        as *const usize as usize
+        + USER_STACK_SIZE * 8
+        - 8;
     let mut out = String::new();
     out.insert(0, 'p');
     print(&out);
@@ -191,11 +203,15 @@ pub fn main_new_1() {
         print("xTaskCreate start");
         let x = print("xTaskCreate 1111");
         match &*task1handler {
-            Some(x)=>{print("some");}
-            None=>{print("none");}
+            Some(x) => {
+                print("some");
+            }
+            None => {
+                print("none");
+            }
         }
         print("test!");
-        let temp=Arc::clone(&(task1handler.as_ref().unwrap()));
+        let temp = Arc::clone(&(task1handler.as_ref().unwrap()));
         xTaskCreate(
             task1 as usize,
             "task1",
