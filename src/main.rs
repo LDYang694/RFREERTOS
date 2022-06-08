@@ -44,7 +44,7 @@ pub fn main_new() {
 
 fn task_send(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
-    let ulValueToSend = 100;
+    let ulValueToSend:UBaseType = 100;
     let pcMessage1 = "Transfer1";
     let pcMessage2 = "Transfer2";
     let mut f = 1;
@@ -61,16 +61,26 @@ fn task_send(t: *mut c_void) {
         //xSemaphoreGive!(temp);
         //let s=format!("send:{}",ulValueToSend);
         //vSendString(&s);
-        vSendString(&s1);
+        let result: BaseType;
+        vSendString("sending");
         unsafe {
-            let temp = xEvent.as_mut().unwrap().clone();
-            xEventGroupWaitBits(temp, 1, pdTRUE, pdFALSE, 100);
+            //taskENTER_CRITICAL!();
+            result = xQueueSend(
+                &xQueue.as_ref().unwrap().clone(),
+                (&ulValueToSend) as *const UBaseType as usize,
+                10,
+            );
+            //taskEXIT_CRITICAL!();
+            //
+            //result = xSemaphoreGive!(&xQueue.clone().unwrap());
+            //
         }
+        vSendString("send complete");
     }
 }
 fn task_rec(t: *mut c_void) {
     let mut xNextWakeTime: TickType;
-    let mut ulValueToSend = 99;
+    let mut ulValueToSend:UBaseType = 99;
     let ulExpectedValue = 100;
     let pcMessage1 = "success";
     let pcMessage2 = "fail";
@@ -82,11 +92,19 @@ fn task_rec(t: *mut c_void) {
 
     let mut cnt = 0;
     loop {
-        vSendString(&s);
+        vSendString("receiving");
+        let result: BaseType;
         unsafe {
-            let temp = xEvent.as_mut().unwrap().clone();
-            xEventGroupSetBits(temp, 1);
+            //taskENTER_CRITICAL!();
+            result = xQueueReceive(
+                &xQueue.as_ref().unwrap().clone(),
+                (&ulValueToSend) as *const UBaseType as usize,
+                10,
+            );
+            //taskEXIT_CRITICAL!();
+            //result = xSemaphoreTake!(&xQueue.clone().unwrap(), 0);
         }
+        vSendString("receive complete");
     }
 }
 
@@ -129,7 +147,7 @@ pub fn main_new_1() {
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            2,
+            3,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
     }

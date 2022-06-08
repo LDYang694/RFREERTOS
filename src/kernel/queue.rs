@@ -1,20 +1,19 @@
 //! Queue Definition and api
 extern crate alloc;
+use crate::configMAX_PRIORITIES;
 use crate::kernel::projdefs::*;
 use crate::kernel::tasks::*;
-use crate::portable::portmacro::*;
-use crate::{
-    mtCOVERAGE_TEST_MARKER, portENTER_CRITICAL, portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,
-    taskENTER_CRITICAL, taskEXIT_CRITICAL, taskYIELD_IF_USING_PREEMPTION,
-};
-
 use crate::kernel::{
     linked_list::*,
     tasks::{vTaskEnterCritical, vTaskExitCritical},
 };
+use crate::portable::portmacro::*;
 use crate::portable::portmacro::{BaseType, UBaseType};
-
-use crate::configMAX_PRIORITIES;
+use crate::portable::riscv_virt::*;
+use crate::{
+    mtCOVERAGE_TEST_MARKER, portENTER_CRITICAL, portEXIT_CRITICAL, portYIELD, portYIELD_WITHIN_API,
+    taskENTER_CRITICAL, taskEXIT_CRITICAL, taskYIELD_IF_USING_PREEMPTION,
+};
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::sync::Arc;
@@ -284,17 +283,22 @@ pub fn xQueueGenericSend(
     let mut xTimeout: TimeOut = Default::default();
     loop {
         taskENTER_CRITICAL!();
+
         {
-            let mut xQueue_ = xQueue.write();
-            if xQueue_.uxMessagesWaiting < xQueue_.uxLength || xCopyPosition == queueOVERWRITE {
+            //let mut xQueue_ = xQueue.write();
+            if xQueue.read().uxMessagesWaiting < xQueue.read().uxLength
+                || xCopyPosition == queueOVERWRITE
+            {
                 if cfg!(feature = "configUSE_QUEUE_SETS") {
-                    let uxPreviousMessagesWaiting = xQueue_.uxMessagesWaiting;
-                    xYieldRequired = prvCopyDataToQueue(&mut xQueue_, pvItemToQueue, xCopyPosition);
+                    let uxPreviousMessagesWaiting = xQueue.read().uxMessagesWaiting;
+                    xYieldRequired =
+                        prvCopyDataToQueue(&mut xQueue.write(), pvItemToQueue, xCopyPosition);
                     //todo
                 } else {
-                    xYieldRequired = prvCopyDataToQueue(&mut xQueue_, pvItemToQueue, xCopyPosition);
-                    if list_is_empty(&xQueue_.xTasksWaitingToReceive) == false {
-                        if xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToReceive) == true {
+                    xYieldRequired =
+                        prvCopyDataToQueue(&mut xQueue.write(), pvItemToQueue, xCopyPosition);
+                    if list_is_empty(&xQueue.read().xTasksWaitingToReceive) == false {
+                        if xTaskRemoveFromEventList(&xQueue.read().xTasksWaitingToReceive) == true {
                             queueYIELD_IF_USING_PREEMPTION!();
                         } else {
                             mtCOVERAGE_TEST_MARKER!();
@@ -319,9 +323,8 @@ pub fn xQueueGenericSend(
                 }
             }
         }
-        taskEXIT_CRITICAL!();
-
         vTaskSuspendAll();
+        taskEXIT_CRITICAL!();
 
         prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeout, &mut xTicksToWait) == pdFALSE {
@@ -496,29 +499,30 @@ pub fn xQueueReceive(
     loop {
         taskENTER_CRITICAL!();
         {
-            let mut xQueue_ = xQueue.write();
-            let uxMessagesWaiting = xQueue_.uxMessagesWaiting;
+            //let mut xQueue_ = xQueue.write();
+
+            let uxMessagesWaiting = xQueue.read().uxMessagesWaiting;
             if uxMessagesWaiting > 0 {
                 //TODO:
-                pcOriginalReadPosition = xQueue_.pcReadFrom;
-                if xQueue_.uxItemSize > 0 {
-                    prvCopyDataFromQueue(&mut xQueue_, pvBuffer);
+                pcOriginalReadPosition = xQueue.read().pcReadFrom;
+                if xQueue.read().uxItemSize > 0 {
+                    prvCopyDataFromQueue(&mut xQueue.write(), pvBuffer);
                 }
 
-                xQueue_.uxMessagesWaiting = uxMessagesWaiting - 1;
+                xQueue.write().uxMessagesWaiting = uxMessagesWaiting - 1;
 
                 if cfg!(feature = "configUSE_MUTEXES") {
-                    if xQueue_.ucQueueType == queueQUEUE_TYPE_MUTEX
-                        || xQueue_.ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
+                    if xQueue.read().ucQueueType == queueQUEUE_TYPE_MUTEX
+                        || xQueue.write().ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
                     {
-                        xQueue_.xMutexHolder = pvTaskIncrementMutexHeldCount();
+                        xQueue.write().xMutexHolder = pvTaskIncrementMutexHeldCount();
                     } else {
                         mtCOVERAGE_TEST_MARKER!();
                     }
                 }
 
-                if list_is_empty(&xQueue_.xTasksWaitingToSend) == false {
-                    if xTaskRemoveFromEventList(&xQueue_.xTasksWaitingToSend) != false {
+                if list_is_empty(&xQueue.read().xTasksWaitingToSend) == false {
+                    if xTaskRemoveFromEventList(&xQueue.read().xTasksWaitingToSend) != false {
                         queueYIELD_IF_USING_PREEMPTION!();
                     } else {
                         mtCOVERAGE_TEST_MARKER!();
@@ -541,9 +545,9 @@ pub fn xQueueReceive(
                 }
             }
         }
-        // {if xQueue.uxMessagesWaiting<xQueue.uxLength||xC}
-        taskEXIT_CRITICAL!();
         vTaskSuspendAll();
+        taskEXIT_CRITICAL!();
+
         prvLockQueue!(xQueue);
         if xTaskCheckForTimeOut(&mut xTimeOut, &mut xTicksToWait) == pdFALSE {
             if prvIsQueueEmpty(xQueue) != false {
