@@ -2,11 +2,11 @@
 
 use crate::ffi::queue::*;
 use crate::kernel::queue::*;
-use crate::kernel::riscv_virt::*;
 use crate::kernel::semphr::*;
 use crate::kernel::tasks::*;
 use crate::portable::portable::*;
 use crate::portable::portmacro::*;
+use crate::portable::riscv_virt::*;
 use crate::{
     portENTER_CRITICAL, portEXIT_CRITICAL, taskENTER_CRITICAL, vSemaphoreDelete,
     xSemaphoreCreateBinary,

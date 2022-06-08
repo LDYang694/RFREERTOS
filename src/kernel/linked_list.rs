@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 //! Bidirectional linked list Definition and API
 extern crate alloc;
-use crate::kernel::riscv_virt::*;
 use crate::portable::portmacro::*;
+use crate::portable::riscv_virt::*;
 use crate::portable::*;
 use crate::tasks::*;
 use alloc::format;

@@ -8,7 +8,7 @@ extern crate alloc;
 use crate::allocator::init_heap;
 use crate::config::*;
 use crate::linked_list::*;
-use crate::riscv_virt::*;
+use crate::portable::riscv_virt::*;
 use crate::tasks::*;
 use alloc::sync::Arc;
 use core::arch::global_asm;

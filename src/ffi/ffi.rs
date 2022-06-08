@@ -1,8 +1,8 @@
 //! ffi general utils
 
-use crate::kernel::riscv_virt::*;
 use crate::portYIELD;
 use crate::portable::portmacro::*;
+use crate::portable::riscv_virt::*;
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use core::arch::asm;

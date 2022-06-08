@@ -1,6 +1,6 @@
-
 extern crate alloc;
 use crate::kernel;
+use crate::portable::riscv_virt::*;
 use crate::task1handler;
 use crate::task2handler;
 use crate::xQueue;
@@ -13,12 +13,11 @@ use core::{borrow::Borrow, ffi::c_void, mem::size_of};
 use kernel::projdefs::{pdPASS, pdTRUE};
 use kernel::queue::QueueDefinition;
 use kernel::{
-    config::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*, riscv_virt::*,
-    semphr::*, tasks::*, *,
+    config::*, kernel::*, linked_list::*, portable::*, portmacro::*, queue::*, semphr::*, tasks::*,
+    *,
 };
 use lazy_static::{__Deref, lazy_static};
 use spin::RwLock;
-
 
 fn task1_str(t: *mut c_void) {
     let a = 0;

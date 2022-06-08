@@ -8,7 +8,7 @@ use crate::kernel::linked_list::*;
 use crate::kernel::projdefs::*;
 use crate::portable::portable::*;
 use crate::portable::portmacro::*;
-use crate::riscv_virt::*;
+use crate::portable::riscv_virt::*;
 #[cfg(feature = "configUSE_IDLE_HOOK")]
 use crate::vApplicationIdleHook;
 use crate::{

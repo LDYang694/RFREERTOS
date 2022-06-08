@@ -15,14 +15,15 @@ mod kernel;
 mod portable;
 mod tests;
 extern crate alloc;
-use crate::portable::portmacro::*;
 use alloc::sync::Arc;
 use core::arch::asm;
 use core::ffi::c_void;
 use kernel::projdefs::{pdFALSE, pdTRUE};
-use kernel::{config::*, event_group::*, queue::*, riscv_virt::*, semphr::*, tasks::*, *};
+use kernel::{config::*, event_group::*, queue::*, semphr::*, tasks::*, *};
 use lazy_static::lazy_static;
 use portable::portmacro::*;
+use portable::portmacro::*;
+use portable::riscv_virt::*;
 use spin::RwLock;
 
 #[no_mangle]
