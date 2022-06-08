@@ -61,11 +61,19 @@ fn task_send(t: *mut c_void) {
         //xSemaphoreGive!(temp);
         //let s=format!("send:{}",ulValueToSend);
         //vSendString(&s);
-        vSendString(&s1);
+        let result: BaseType;
+        vSendString("sending");
         unsafe {
-            let temp = xEvent.as_mut().unwrap().clone();
-            xEventGroupWaitBits(temp, 1, pdTRUE, pdFALSE, 100);
+            /*result = xQueueSend(
+                &xQueue.as_ref().unwrap().clone(),
+                (&ulValueToSend) as *const BaseType as usize,
+                0,
+            );*/
+            //taskENTER_CRITICAL!();
+            result = xSemaphoreGive!(&xQueue.clone().unwrap());
+            //taskEXIT_CRITICAL!();
         }
+        vSendString("send complete");
     }
 }
 fn task_rec(t: *mut c_void) {
@@ -82,11 +90,19 @@ fn task_rec(t: *mut c_void) {
 
     let mut cnt = 0;
     loop {
-        vSendString(&s);
+        vSendString("receiving");
+        let result: BaseType;
         unsafe {
-            let temp = xEvent.as_mut().unwrap().clone();
-            xEventGroupSetBits(temp, 1);
+            /*result = xQueueReceive(
+                &xQueue.as_ref().unwrap().clone(),
+                (&ulValueToSend) as *const BaseType as usize,
+                0,
+            )*/
+            //taskENTER_CRITICAL!();
+            result = xSemaphoreTake!(&xQueue.clone().unwrap(), 1000);
+            //taskEXIT_CRITICAL!();
         }
+        vSendString("receive complete");
     }
 }
 
