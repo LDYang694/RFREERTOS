@@ -64,14 +64,16 @@ fn task_send(t: *mut c_void) {
         let result: BaseType;
         vSendString("sending");
         unsafe {
-            /*result = xQueueSend(
+            //taskENTER_CRITICAL!();
+            result = xQueueSend(
                 &xQueue.as_ref().unwrap().clone(),
                 (&ulValueToSend) as *const BaseType as usize,
-                0,
-            );*/
-            //taskENTER_CRITICAL!();
-            result = xSemaphoreGive!(&xQueue.clone().unwrap());
+                10,
+            );
             //taskEXIT_CRITICAL!();
+            //
+            //result = xSemaphoreGive!(&xQueue.clone().unwrap());
+            //
         }
         vSendString("send complete");
     }
@@ -93,14 +95,14 @@ fn task_rec(t: *mut c_void) {
         vSendString("receiving");
         let result: BaseType;
         unsafe {
-            /*result = xQueueReceive(
+            //taskENTER_CRITICAL!();
+            result = xQueueReceive(
                 &xQueue.as_ref().unwrap().clone(),
                 (&ulValueToSend) as *const BaseType as usize,
-                0,
-            )*/
-            //taskENTER_CRITICAL!();
-            result = xSemaphoreTake!(&xQueue.clone().unwrap(), 1000);
+                10,
+            );
             //taskEXIT_CRITICAL!();
+            //result = xSemaphoreTake!(&xQueue.clone().unwrap(), 0);
         }
         vSendString("receive complete");
     }
@@ -145,7 +147,7 @@ pub fn main_new_1() {
             "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            2,
+            3,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
     }
