@@ -1,1 +1,0 @@
-initSidebarItems({"constant":[["PORT_BYTE_ALIGNMENT",""],["PORT_CRITICAL_NESTING_IN_TCB",""],["PORT_MAX_DELAY",""],["PORT_STACK_GROWTH",""],["PORT_TICK_PERIOD_MS",""],["PORT_TICK_TYPE_IS_ATOMIC",""],["USE_PORT_OPTIMISED_TASK_SELECTION",""]],"type":[["BaseType",""],["StackType",""],["TickType",""],["UBaseType",""]]});

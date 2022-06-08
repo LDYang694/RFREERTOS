@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["get_str_from_cchar","Transform C char into rust string"],["rustAssert","Assert from C"],["rustMalloc","Malloc memory from C"],["rustPrint","Print from C. Does not support formatting."],["rustVSendString","vSendString from C. Does not support formatting."],["rustYield","Yield from C"]]});

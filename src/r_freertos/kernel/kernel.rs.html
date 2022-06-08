@@ -73,39 +73,26 @@
 <span id="66">66</span>
 <span id="67">67</span>
 <span id="68">68</span>
-<span id="69">69</span>
-<span id="70">70</span>
-<span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
-</pre><pre class="rust"><code><span class="attribute">#![<span class="ident">no_std</span>]</span>
-<span class="comment">// #![feature(alloc_error_handler)]</span>
+</pre><pre class="rust"><code><span class="comment">// #![feature(alloc_error_handler)]</span>
 <span class="comment">// #![no_main]</span>
 
 <span class="doccomment">//! lazy static globals and kernel macros</span>
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
-
-
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::allocator::init_heap</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::linked_list</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portable</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::riscv_virt</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portable::riscv_virt</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::tasks</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::projdefs</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">alloc::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">core::arch::global_asm</span>;
-<span class="kw">use</span> <span class="ident">core::ffi::c_void</span>;
 <span class="kw">use</span> <span class="ident">core::include_str</span>;
 <span class="kw">use</span> <span class="ident">core::panic::PanicInfo</span>;
 <span class="kw">use</span> <span class="ident">lazy_static</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">spin::RwLock</span>;
 
-<span class="macro">global_asm!</span>(<span class="macro">include_str!</span>(<span class="string">&quot;start.S&quot;</span>));
+<span class="comment">// global_asm!(include_str!(&quot;start.S&quot;));</span>
 
 <span class="macro">lazy_static!</span> {
     <span class="comment">//TODO: tmp size</span>
@@ -117,25 +104,22 @@
     <span class="comment">//TODO:tmp use</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">CURRENT_TCB</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">RwLock::new</span>(<span class="prelude-val">None</span>);
     <span class="comment">//todo: overflow task list</span>
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK1_STACK</span>:[<span class="ident">u32</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span> [<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>] ;
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK2_STACK</span>:[<span class="ident">u32</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK3_STACK</span>:[<span class="ident">u32</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">IDLE_STACK</span>:[<span class="ident">u32</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK1_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span> [<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>] ;
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK2_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK3_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">IDLE_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
     <span class="comment">//pub static ref pxCurrentTCB_: RwLock&lt;Option&lt;TaskHandle_t&gt;&gt; = RwLock::new(None);</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TCB1_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TCB2_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TCB3_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">IDLE_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
 }
+
+<span class="doccomment">/// get current task handle as Arc</span>
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">get_current_task_handle</span> {
     () =&gt; {
-        <span class="ident"><span class="kw">crate</span>::CURRENT_TCB</span>
-            .<span class="ident">read</span>()
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">as_ref</span>()
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">clone</span>()
+        <span class="ident"><span class="kw">crate</span>::CURRENT_TCB</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>()
     };
 }
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SchedulerState</span> {
@@ -144,17 +128,19 @@
     <span class="ident">Running</span>,
 }
 
-
+<span class="doccomment">/// Init kernel during start.</span>
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kernel_init</span>() {
     <span class="ident">init_heap</span>();
 }
 
+<span class="doccomment">/// Handle panic.&lt;br&gt;</span>
+<span class="doccomment">/// Will loop when panic.</span>
 <span class="attribute">#[<span class="ident">panic_handler</span>]</span>
 <span class="kw">fn</span> <span class="ident">panic</span>(<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident">PanicInfo</span>) -&gt; <span class="op">!</span> {
     <span class="ident">print</span>(<span class="string">&quot;R_FreeRTOS paniced!&quot;</span>);
     <span class="kw">loop</span> {}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (e71440575 2022-06-02)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (5435ed691 2022-06-07)" ></div>
 </body></html>

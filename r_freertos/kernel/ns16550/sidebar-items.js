@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["readb","read byte from target address"],["v_out_ns16550","write byte to serial interface  stall until writing is completed"],["writeb","write byte to target address"]],"struct":[["Device",""]]});

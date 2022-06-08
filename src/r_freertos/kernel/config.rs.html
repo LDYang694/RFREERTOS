@@ -51,26 +51,32 @@
 <span id="44">44</span>
 <span id="45">45</span>
 <span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Application specific definitions. &lt;br&gt;</span>
 <span class="doccomment">//! equal to FreeRTOSConfig.h</span>
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portmacro</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::portable::portmacro</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">lazy_static::lazy_static</span>;
 
-<span class="kw">const</span> <span class="ident">CLINT_ADDR</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0x02000000</span>;
+<span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">CLINT_ADDR_</span>: <span class="ident">UBaseType</span>;
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">CONFIG_TICK_RATE_HZ</span>: <span class="ident">TickType</span>;
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">CONFIG_CPU_CLOCK_HZ</span>: <span class="ident">UBaseType</span>;
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">CONFIG_ISR_STACK_SIZE_WORDS</span>: <span class="ident">usize</span>;
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">configMAX_PRIORITIES_</span>: <span class="ident">UBaseType</span>;
+}
 
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONFIG_MTIME_BASE_ADDRESS</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="ident">CLINT_ADDR</span><span class="op">+</span><span class="number">0xbff8</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONFIG_MTIMECMP_BASE_ADDRESS</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="ident">CLINT_ADDR</span><span class="op">+</span><span class="number">0x4000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONFIG_ISR_STACK_SIZE_WORDS</span>:<span class="ident">usize</span> <span class="op">=</span> <span class="number">2048</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONFIG_TICK_RATE_HZ</span>:<span class="ident">TickType</span> <span class="op">=</span> <span class="number">1000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONFIG_CPU_CLOCK_HZ</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">1000000</span>;
+<span class="macro">lazy_static!</span> {
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">CONFIG_MTIME_BASE_ADDRESS</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">CLINT_ADDR_</span> <span class="op">+</span> <span class="number">0xbff8</span> };
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">CONFIG_MTIMECMP_BASE_ADDRESS</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">CLINT_ADDR_</span> <span class="op">+</span> <span class="number">0x4000</span> };
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">portTICK_RATE_MS</span>: <span class="ident">TickType</span> <span class="op">=</span> <span class="number">1000</span> <span class="op">/</span> <span class="kw">unsafe</span> { <span class="ident">CONFIG_TICK_RATE_HZ</span> };
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">configMAX_PRIORITIES</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">configMAX_PRIORITIES_</span> };
+}
+
+<span class="comment">// Cannot copy from config.h. Must manually set.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">KERNEL_HEAP_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x400000</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">USER_STACK_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x10000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PORT_ISR_STACK_FILL_BYTE</span>: <span class="ident">BaseType</span> <span class="op">=</span> <span class="number">0xee</span>;
-
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PRIM_HART</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CLINT_MSIP</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0x0000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CLINT_MTIMECMP</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0x4000</span>;
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CLINT_MTIME</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0xbff8</span>;
 
 <span class="comment">/* register definitions */</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">REG_RBR</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x00</span>; <span class="comment">/* Receiver buffer reg. */</span>
@@ -87,16 +93,14 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">REG_BRDH</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x01</span>; <span class="comment">/* Divisor latch (MSB) */</span>
 
 <span class="comment">/* Line status */</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_DR</span>: <span class="ident">u8</span> <span class="op">=</span> 	<span class="number">0x01</span>; <span class="comment">/* Data ready */</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_OE</span>: <span class="ident">u8</span> <span class="op">=</span> 	<span class="number">0x02</span>; <span class="comment">/* Overrun error */</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_PE</span>: <span class="ident">u8</span> <span class="op">=</span> 	<span class="number">0x04</span>; <span class="comment">/* Parity error */</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_FE</span>: <span class="ident">u8</span> <span class="op">=</span> 	<span class="number">0x08</span>; <span class="comment">/* Framing error */</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_BI</span>: <span class="ident">u8</span> <span class="op">=</span> 	<span class="number">0x10</span>; <span class="comment">/* Break interrupt */</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_DR</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x01</span>; <span class="comment">/* Data ready */</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_OE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x02</span>; <span class="comment">/* Overrun error */</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_PE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x04</span>; <span class="comment">/* Parity error */</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_FE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x08</span>; <span class="comment">/* Framing error */</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_BI</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x10</span>; <span class="comment">/* Break interrupt */</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_THRE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x20</span>; <span class="comment">/* Transmitter holding register empty */</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_TEMT</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x40</span>; <span class="comment">/* Transmitter empty */</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LSR_EIRF</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x80</span>; <span class="comment">/* Error in RCVR FIFO */</span>
-
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">configMAX_PRIORITIES</span>:<span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">16</span>;
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (e71440575 2022-06-02)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (5435ed691 2022-06-07)" ></div>
 </body></html>

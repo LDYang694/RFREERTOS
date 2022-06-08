@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["prvInitialiseMutex",""],["xQueueCreateMutex",""],["xSemaphoreCreateCounting",""]],"static":[["semGIVE_BLOCK_TIME",""],["semSEMAPHORE_QUEUE_ITEM_LENGTH",""]],"type":[["SemaphoreHandle_t",""]]});
+initSidebarItems({"fn":[["prvInitialiseMutex","Initialise mutex."],["xQueueCreateMutex","Create mutex."],["xSemaphoreCreateCounting","Create counting Semaphore."]],"static":[["semGIVE_BLOCK_TIME",""],["semSEMAPHORE_QUEUE_ITEM_LENGTH",""]],"type":[["SemaphoreHandle_t",""]]});
