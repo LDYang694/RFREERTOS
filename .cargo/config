@@ -1,10 +1,10 @@
 [target.riscv32imac-unknown-none-elf]
 rustflags = [
-    "-C", "link-arg=-Tsrc/fake_rom.lds"
+  "-C", "link-arg=-Tsrc/fake_rom.lds","-A","unused","-A","non_camel_case_types","-A","non_upper_case_globals"
 ]
 [target.riscv64imac-unknown-none-elf]
 rustflags = [
-    "-C", "link-arg=-Tsrc/fake_rom.lds"
+    "-C", "link-arg=-Tsrc/fake_rom.lds","-A","unused","-A","non_camel_case_types","-A","non_upper_case_globals"
 ]
 
 [build]

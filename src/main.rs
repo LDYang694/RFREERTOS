@@ -5,7 +5,6 @@
 #![feature(box_into_inner)]
 #![feature(allocator_api)]
 #![feature(core_intrinsics)]
-
 #[macro_use]
 mod ffi;
 #[allow(dead_code)]

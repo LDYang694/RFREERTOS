@@ -1,3 +1,4 @@
+#![allow(warnings)]
 extern crate cc;
 use std::env;
 fn main() {

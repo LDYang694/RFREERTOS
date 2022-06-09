@@ -1,5 +1,4 @@
 //! portable apis
-
 extern crate alloc;
 use crate::kernel::allocator::DYNAMIC_ALLOCATOR;
 use crate::kernel::config::*;
