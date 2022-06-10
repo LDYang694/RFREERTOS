@@ -52,11 +52,23 @@ pub enum SchedulerState {
     Suspended,
     Running,
 }
-
+extern "C" {
+    fn sys_clock_init();
+    fn sys_uart0_init();
+    fn table_val_set();
+    fn all_interrupt_enable();
+    fn clint_timer_init();
+}
 /// Init kernel during start.
 #[no_mangle]
 pub extern "C" fn kernel_init() {
+    unsafe {
+        sys_clock_init();
+        sys_uart0_init();
+        table_val_set();
+    }
     init_heap();
+    print("kernel init");
 }
 
 /// Handle panic.<br>

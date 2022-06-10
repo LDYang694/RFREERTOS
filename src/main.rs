@@ -27,7 +27,7 @@ use portable::riscv_virt::*;
 use spin::RwLock;
 
 #[no_mangle]
-pub extern "C" fn main() -> ! {
+pub extern "C" fn main_rust() -> ! {
     main_new();
     loop {}
 }

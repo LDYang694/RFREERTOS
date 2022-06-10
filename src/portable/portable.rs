@@ -22,10 +22,14 @@ use spin::RwLock;
 // use crate::pxCurrentTCB;
 extern "C" {
     fn xPortStartFirstTask();
+    fn clint_timer_cmp_set_val(val: i32);
+    fn all_interrupt_enable();
+    pub fn clint_timer_init();
+    fn counter() -> u64;
 }
 
 #[no_mangle]
-pub static mut uxTimerIncrementsForOneTick: UBaseType = 0;
+pub static mut uxTimerIncrementsForOneTick: UBaseType = 24000000;
 
 #[no_mangle]
 pub static mut pxCurrentTCB: UBaseType = 0;
@@ -72,27 +76,36 @@ fn get_mtime() -> u64 {
 
 /// Setup timer interrupt during startup.
 pub fn v_port_setup_timer_interrupt() {
-    let mut ul_hart_id: UBaseType;
-    let pul_time_high: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
-    let pul_time_low: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS) as *const UBaseType;
-    let mut ul_current_time_low: UBaseType;
-    let mut ul_current_time_high: UBaseType;
+    unsafe{
+        clint_timer_init();
+        // clint_timer_cmp_set_val(1000);
+        
+    }
+    // return;
+    // let mut ul_hart_id: UBaseType;
+    // let pul_time_high: *const UBaseType = (CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
+    // let pul_time_low: *const UBaseType = CONFIG_MTIME_BASE_ADDRESS as *const UBaseType;
+    // let mut ul_current_time_low: UBaseType;
+    // let mut ul_current_time_high: UBaseType;
 
     unsafe {
         pullNextTime = &ULL_NEXT_TIME as *const u64 as usize;
-        uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ;
-        asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
-        pullMachineTimerCompareRegister = *ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE + ul_hart_id * 4;
-        loop {
-            ul_current_time_high = *pul_time_high;
-            ul_current_time_low = *pul_time_low;
-            if ul_current_time_high == *pul_time_high {
-                break;
-            }
-        }
-        ULL_NEXT_TIME = ul_current_time_high as u64;
-        ULL_NEXT_TIME <<= 32;
-        ULL_NEXT_TIME += (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
+        // uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ * 10;
+        // asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
+        pullMachineTimerCompareRegister = *ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE;
+        // pullMachineTimerCompareRegister = ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE + ul_hart_id * 4;
+        // loop {
+        //     ul_current_time_high = *pul_time_high;
+        //     ul_current_time_low = *pul_time_low;
+        //     if ul_current_time_high == *pul_time_high {
+        //         break;
+        //     }
+        // }
+        // ULL_NEXT_TIME = ul_current_time_high as u64;
+        // ULL_NEXT_TIME <<= 32;
+        // ULL_NEXT_TIME += (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
+        ULL_NEXT_TIME = counter();
+        ULL_NEXT_TIME += uxTimerIncrementsForOneTick as u64;
         let pointer: *mut u64 = pullMachineTimerCompareRegister as *mut u64;
         *pointer = ULL_NEXT_TIME;
         ULL_NEXT_TIME += uxTimerIncrementsForOneTick as u64;
@@ -100,6 +113,35 @@ pub fn v_port_setup_timer_interrupt() {
 
     //todo
 }
+// pub fn v_port_setup_timer_interrupt() {
+//     let mut ul_hart_id: UBaseType;
+//     let pul_time_high: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
+//     let pul_time_low: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS) as *const UBaseType;
+//     let mut ul_current_time_low: UBaseType;
+//     let mut ul_current_time_high: UBaseType;
+
+//     unsafe {
+//         pullNextTime = &ULL_NEXT_TIME as *const u64 as usize;
+//         uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ;
+//         asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
+//         pullMachineTimerCompareRegister = *ULL_MACHINE_TIMER_COMPARE_REGISTER_BASE + ul_hart_id * 4;
+//         loop {
+//             ul_current_time_high = *pul_time_high;
+//             ul_current_time_low = *pul_time_low;
+//             if ul_current_time_high == *pul_time_high {
+//                 break;
+//             }
+//         }
+//         ULL_NEXT_TIME = ul_current_time_high as u64;
+//         ULL_NEXT_TIME <<= 32;
+//         ULL_NEXT_TIME += (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
+//         let pointer: *mut u64 = pullMachineTimerCompareRegister as *mut u64;
+//         *pointer = ULL_NEXT_TIME;
+//         ULL_NEXT_TIME += uxTimerIncrementsForOneTick as u64;
+//     }
+
+//     //todo
+// }
 
 /// Copy current tcb to pxCurrentTCB for C interface.
 pub fn auto_set_currentTcb() {
@@ -117,14 +159,14 @@ pub fn x_port_start_scheduler() -> BaseType {
         xISRStackTop = &(X_ISRSTACK_.read()[CONFIG_ISR_STACK_SIZE_WORDS - 1]) as *const usize;
     }
     v_port_setup_timer_interrupt();
-    let mut tmp: usize = 0x800;
-    if *CONFIG_MTIME_BASE_ADDRESS != 0 && *CONFIG_MTIMECMP_BASE_ADDRESS != 0 {
-        tmp = 0x880;
-    }
+    // let mut tmp: usize = 0x800;
+    // if *CONFIG_MTIME_BASE_ADDRESS != 0 && *CONFIG_MTIMECMP_BASE_ADDRESS != 0 {
+    //     tmp = 0x880;
+    // }
     print("start first task");
     unsafe {
         auto_set_currentTcb();
-        asm!("csrs mie,{0}",in(reg) tmp);
+        // asm!("csrs mie,{0}",in(reg) tmp);
         xPortStartFirstTask();
     }
     pdFALSE

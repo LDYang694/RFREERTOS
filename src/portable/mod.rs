@@ -2,5 +2,6 @@
 pub mod portable;
 #[macro_use]
 pub mod portmacro;
-pub mod ns16550;
+// pub mod ns16550;
 pub mod riscv_virt;
+pub mod uart0;

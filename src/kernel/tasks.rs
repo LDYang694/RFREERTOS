@@ -74,6 +74,7 @@ extern "C" {
         pxCode: usize,
         pvParameters: *mut c_void,
     ) -> *mut StackType_t;
+    fn all_interrupt_enable();
 }
 
 #[derive(Default)]
