@@ -75,24 +75,22 @@ pub fn main_new() {
         )));
     }
 
-    unsafe {
-        xTaskCreate(
-            task_high_priority as usize,
-            "task_high_priority",
-            USER_STACK_SIZE as u32,
-            Some(param1),
-            3,
-            Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
-        );
-        xTaskCreate(
-            task_low_priority as usize,
-            "task_low_priority ",
-            USER_STACK_SIZE as u32,
-            Some(param2),
-            2,
-            Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
-        );
-    }
+    xTaskCreate(
+        task_high_priority as usize,
+        "task_high_priority",
+        USER_STACK_SIZE as u32,
+        Some(param1),
+        3,
+        Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
+    );
+    xTaskCreate(
+        task_low_priority as usize,
+        "task_low_priority ",
+        USER_STACK_SIZE as u32,
+        Some(param2),
+        2,
+        Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
+    );
 
     print("start scheduler");
     vTaskStartScheduler();

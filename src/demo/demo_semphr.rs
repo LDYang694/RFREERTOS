@@ -78,24 +78,22 @@ pub fn main_new() {
         //xQueue = Some(Arc::new(RwLock::new(xSemaphoreCreateCounting(5,2))));
     }
 
-    unsafe {
-        xTaskCreate(
-            task_give as usize,
-            "task1",
-            USER_STACK_SIZE as u32,
-            Some(param1),
-            2,
-            Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
-        );
-        xTaskCreate(
-            task_take as usize,
-            "task2",
-            USER_STACK_SIZE as u32,
-            Some(param2),
-            3,
-            Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
-        );
-    }
+    xTaskCreate(
+        task_give as usize,
+        "task1",
+        USER_STACK_SIZE as u32,
+        Some(param1),
+        2,
+        Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
+    );
+    xTaskCreate(
+        task_take as usize,
+        "task2",
+        USER_STACK_SIZE as u32,
+        Some(param2),
+        3,
+        Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
+    );
 
     print("start scheduler");
     vTaskStartScheduler();

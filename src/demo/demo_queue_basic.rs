@@ -91,24 +91,22 @@ pub fn main_new() {
         xQueue = Some(xQueueCreate(2, 4));
     }
 
-    unsafe {
-        xTaskCreate(
-            task_send as usize,
-            "task1",
-            USER_STACK_SIZE as u32,
-            Some(param1),
-            3,
-            Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
-        );
-        xTaskCreate(
-            task_rec as usize,
-            "task2",
-            USER_STACK_SIZE as u32,
-            Some(param2),
-            3,
-            Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
-        );
-    }
+    xTaskCreate(
+        task_send as usize,
+        "task1",
+        USER_STACK_SIZE as u32,
+        Some(param1),
+        3,
+        Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
+    );
+    xTaskCreate(
+        task_rec as usize,
+        "task2",
+        USER_STACK_SIZE as u32,
+        Some(param2),
+        3,
+        Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
+    );
 
     print("start scheduler");
     vTaskStartScheduler();
