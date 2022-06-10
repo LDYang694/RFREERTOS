@@ -40,7 +40,7 @@ extern "C" {
 fn task_high_priority(t: *mut c_void) {
     let mut pxPreviousWakeTime: TickType = 0;
     loop {
-        vSendString("high priority task running");
+        vSendString("high priority task running ");
         xTaskDelayUntil(&mut pxPreviousWakeTime, 100);
         vSendString(&format!(
             "after delay:pxPreviousWakeTime={}",
@@ -50,7 +50,7 @@ fn task_high_priority(t: *mut c_void) {
 }
 fn task_low_priority(t: *mut c_void) {
     loop {
-        vSendString("low priority task running");
+        vSendString("low priority task running ");
     }
 }
 
