@@ -513,7 +513,7 @@ pub fn xQueueReceive(
 
                 if cfg!(feature = "configUSE_MUTEXES") {
                     if xQueue.read().ucQueueType == queueQUEUE_TYPE_MUTEX
-                        || xQueue.write().ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
+                        || xQueue.read().ucQueueType == queueQUEUE_TYPE_RECURSIVE_MUTEX
                     {
                         xQueue.write().xMutexHolder = pvTaskIncrementMutexHeldCount();
                     } else {
@@ -531,6 +531,7 @@ pub fn xQueueReceive(
                     //list empty
                     mtCOVERAGE_TEST_MARKER!();
                 }
+
                 taskEXIT_CRITICAL!();
                 return pdPASS;
             } else {

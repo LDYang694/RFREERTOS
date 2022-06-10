@@ -23,29 +23,14 @@ use kernel::projdefs::{pdFALSE, pdTRUE};
 use kernel::{config::*, event_group::*, queue::*, semphr::*, tasks::*, *};
 use lazy_static::lazy_static;
 use portable::portmacro::*;
+use portable::portmacro::*;
 use portable::riscv_virt::*;
 use spin::RwLock;
 
-#[no_mangle]
-pub extern "C" fn main() -> ! {
-    main_new();
-    loop {}
-}
-
-extern "C" {
-    fn main_blinky() -> BaseType;
-    fn test_() -> BaseType;
-}
-
 fn task_high_priority(t: *mut c_void) {
-    let mut pxPreviousWakeTime: TickType = 0;
     loop {
         vSendString("high priority task running");
-        xTaskDelayUntil(&mut pxPreviousWakeTime, 100);
-        vSendString(&format!(
-            "after delay:pxPreviousWakeTime={}",
-            pxPreviousWakeTime
-        ));
+        vTaskDelay(10);
     }
 }
 fn task_low_priority(t: *mut c_void) {
@@ -60,20 +45,10 @@ lazy_static! {
     pub static ref task2handler: Option<TaskHandle_t> =
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
-static mut xQueue: Option<QueueHandle_t> = None;
-static mut xEvent: Option<EventGroupHandle> = None;
+
 pub fn main_new() {
     let param1: Param_link = 0;
     let param2: Param_link = 0;
-    let param3: Param_link = 0;
-
-    unsafe {
-        //xQueue = Some(xQueueCreate(2, 4));
-        xQueue = Some(Arc::new(RwLock::new(xSemaphoreCreateBinary!())));
-        xEvent = Some(Arc::new(RwLock::new(
-            EventGroupDefinition::xEventGroupCreate(),
-        )));
-    }
 
     unsafe {
         xTaskCreate(

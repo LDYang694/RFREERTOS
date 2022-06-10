@@ -12,7 +12,7 @@ mod ffi;
 mod kernel;
 #[macro_use]
 mod portable;
-// mod tests;
+
 extern crate alloc;
 use alloc::format;
 use alloc::sync::Arc;
@@ -23,34 +23,55 @@ use kernel::projdefs::{pdFALSE, pdTRUE};
 use kernel::{config::*, event_group::*, queue::*, semphr::*, tasks::*, *};
 use lazy_static::lazy_static;
 use portable::portmacro::*;
+use portable::portmacro::*;
 use portable::riscv_virt::*;
 use spin::RwLock;
 
-#[no_mangle]
-pub extern "C" fn main() -> ! {
-    main_new();
-    loop {}
-}
-
-extern "C" {
-    fn main_blinky() -> BaseType;
-    fn test_() -> BaseType;
-}
-
-fn task_high_priority(t: *mut c_void) {
-    let mut pxPreviousWakeTime: TickType = 0;
+fn task_send(t: *mut c_void) {
+    let ulValueToSend: UBaseType = 100;
+    let mut cnt = 0;
     loop {
-        vSendString("high priority task running");
-        xTaskDelayUntil(&mut pxPreviousWakeTime, 100);
-        vSendString(&format!(
-            "after delay:pxPreviousWakeTime={}",
-            pxPreviousWakeTime
-        ));
+        let result: BaseType;
+        vSendString("sending");
+        unsafe {
+            result = xQueueSend(
+                &xQueue.as_ref().unwrap().clone(),
+                (&ulValueToSend) as *const UBaseType as usize,
+                10,
+            );
+        }
+        if result == pdFALSE {
+            vSendString("send fail");
+        } else {
+            vSendString("send success");
+        }
     }
 }
-fn task_low_priority(t: *mut c_void) {
+fn task_rec(t: *mut c_void) {
+    let mut ulValueReceived: UBaseType = 99;
     loop {
-        vSendString("low priority task running");
+        vSendString("receiving");
+        let result: BaseType;
+        unsafe {
+            result = xQueueReceive(
+                &xQueue.as_ref().unwrap().clone(),
+                (&ulValueReceived) as *const UBaseType as usize,
+                10,
+            );
+        }
+        if result == pdFALSE {
+            vSendString("recv fail");
+        } else {
+            if ulValueReceived == ulExpectedValue {
+                vSendString("recv success");
+            } else {
+                vSendString(&format!(
+                    "received {} expected {}",
+                    ulValueReceived, ulExpectedValue
+                ));
+            }
+        }
+        ulValueReceived = 99;
     }
 }
 
@@ -61,35 +82,30 @@ lazy_static! {
         Some(Arc::new(RwLock::new(tskTaskControlBlock::default())));
 }
 static mut xQueue: Option<QueueHandle_t> = None;
-static mut xEvent: Option<EventGroupHandle> = None;
 pub fn main_new() {
     let param1: Param_link = 0;
     let param2: Param_link = 0;
     let param3: Param_link = 0;
 
     unsafe {
-        //xQueue = Some(xQueueCreate(2, 4));
-        xQueue = Some(Arc::new(RwLock::new(xSemaphoreCreateBinary!())));
-        xEvent = Some(Arc::new(RwLock::new(
-            EventGroupDefinition::xEventGroupCreate(),
-        )));
+        xQueue = Some(xQueueCreate(2, 4));
     }
 
     unsafe {
         xTaskCreate(
-            task_high_priority as usize,
-            "task_high_priority",
+            task_send as usize,
+            "task1",
             USER_STACK_SIZE as u32,
             Some(param1),
             3,
             Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
         );
         xTaskCreate(
-            task_low_priority as usize,
-            "task_low_priority ",
+            task_rec as usize,
+            "task2",
             USER_STACK_SIZE as u32,
             Some(param2),
-            2,
+            3,
             Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
         );
     }
