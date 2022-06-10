@@ -6,7 +6,7 @@ rustup default nightly
 rustup target add riscv32imac-unknown-none-elf
 
 # 构建项目
-cargo build
+参考makefile，build生成可在硬件上运行的Image（需要配置.cargo/config中的玄铁工具链路径），run32和run64则可以在qemu上运行。
 
 # 在qemu上运行
 qemu-system-riscv32 -nographic -machine virt -net none   -chardev stdio,id=con,mux=on \

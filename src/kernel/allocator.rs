@@ -2,7 +2,6 @@
 //! use buddy_system_allocator and wrap as SimpleAllocator
 use super::tasks::{vTaskEnterCritical, vTaskExitCritical};
 use crate::kernel::config::KERNEL_HEAP_SIZE;
-use alloc::format;
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
 

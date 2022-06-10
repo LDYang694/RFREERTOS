@@ -2,8 +2,8 @@
 rustflags = [
     "-C", "link-arg=-Tsrc/link.ld","-A","non_camel_case_types","-A","non_upper_case_globals"
 ]
-linker = "/root/Downloads/XuanTie/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.6/bin/riscv64-unknown-elf-ld"
-ar = "/root/Downloads/XuanTie/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.6/bin/riscv64-unknown-elf-gcc-ar"
+linker = "../../Downloads/XuanTie/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.6/bin/riscv64-unknown-elf-ld"
+ar = "../../Downloads/XuanTie/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.6/bin/riscv64-unknown-elf-gcc-ar"
 
 [build]
 target = "riscv64gc-unknown-none-elf"

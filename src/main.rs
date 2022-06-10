@@ -18,8 +18,7 @@ use alloc::format;
 use alloc::sync::Arc;
 use core::arch::asm;
 use core::ffi::c_void;
-use core::intrinsics::size_of;
-use kernel::projdefs::{pdFALSE, pdTRUE};
+use kernel::projdefs::{pdTRUE};
 use kernel::{config::*, event_group::*, queue::*, semphr::*, tasks::*, *};
 use lazy_static::lazy_static;
 use portable::portmacro::*;
@@ -41,7 +40,7 @@ fn task_high_priority(t: *mut c_void) {
     let mut pxPreviousWakeTime: TickType = 0;
     loop {
         vSendString("high priority task running ");
-        xTaskDelayUntil(&mut pxPreviousWakeTime, 100);
+        xTaskDelayUntil(&mut pxPreviousWakeTime, 1000);
         vSendString(&format!(
             "after delay:pxPreviousWakeTime={}",
             pxPreviousWakeTime
@@ -65,7 +64,6 @@ static mut xEvent: Option<EventGroupHandle> = None;
 pub fn main_new() {
     let param1: Param_link = 0;
     let param2: Param_link = 0;
-    let param3: Param_link = 0;
 
     unsafe {
         //xQueue = Some(xQueueCreate(2, 4));
@@ -75,24 +73,23 @@ pub fn main_new() {
         )));
     }
 
-    unsafe {
-        xTaskCreate(
-            task_high_priority as usize,
-            "task_high_priority",
-            USER_STACK_SIZE as u32,
-            Some(param1),
-            3,
-            Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
-        );
-        xTaskCreate(
-            task_low_priority as usize,
-            "task_low_priority ",
-            USER_STACK_SIZE as u32,
-            Some(param2),
-            2,
-            Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
-        );
-    }
+
+    xTaskCreate(
+        task_high_priority as usize,
+        "task_high_priority",
+        USER_STACK_SIZE as u32,
+        Some(param1),
+        3,
+        Some(Arc::clone(&(task1handler.as_ref().unwrap()))),
+    );
+    xTaskCreate(
+        task_low_priority as usize,
+        "task_low_priority ",
+        USER_STACK_SIZE as u32,
+        Some(param2),
+        2,
+        Some(Arc::clone(&(task2handler.as_ref().unwrap()))),
+    );
 
     print("start scheduler");
     vTaskStartScheduler();

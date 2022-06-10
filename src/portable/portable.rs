@@ -1,35 +1,25 @@
 //! portable apis
 extern crate alloc;
-use crate::kernel::allocator::DYNAMIC_ALLOCATOR;
 use crate::kernel::config::*;
-use crate::kernel::kernel::*;
 use crate::kernel::linked_list::*;
 use crate::kernel::projdefs::pdFALSE;
 use crate::kernel::tasks::*;
-use crate::portDISABLE_INTERRUPTS;
-use crate::portENABLE_INTERRUPTS;
 use crate::portable::portmacro::{BaseType, StackType, UBaseType};
 use crate::portable::riscv_virt::*;
-use alloc::alloc::Global;
-use alloc::format;
-use alloc::sync::{Arc, Weak};
+use alloc::sync::{Arc};
 use alloc::vec::Vec;
-use core::arch::asm;
-use core::intrinsics::forget;
 use lazy_static::lazy_static;
 use spin::RwLock;
 //use crate::pxCurrentTCB_;
 // use crate::pxCurrentTCB;
 extern "C" {
     fn xPortStartFirstTask();
-    fn clint_timer_cmp_set_val(val: i32);
-    fn all_interrupt_enable();
     pub fn clint_timer_init();
     fn counter() -> u64;
 }
 
 #[no_mangle]
-pub static mut uxTimerIncrementsForOneTick: UBaseType = 24000000;
+pub static mut uxTimerIncrementsForOneTick: UBaseType = 0;
 
 #[no_mangle]
 pub static mut pxCurrentTCB: UBaseType = 0;
@@ -64,8 +54,8 @@ fn get_mtime() -> u64 {
     let pul_time_high: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS + 4) as *const UBaseType;
     let pul_time_low: *const UBaseType = (*CONFIG_MTIME_BASE_ADDRESS) as *const UBaseType;
     unsafe {
-        let mut ul_current_time_low: UBaseType = *pul_time_high;
-        let mut ul_current_time_high: UBaseType = *pul_time_low;
+        let ul_current_time_low: UBaseType = *pul_time_high;
+        let ul_current_time_high: UBaseType = *pul_time_low;
         result = ul_current_time_high as u64;
         result = result << 32;
         result += (ul_current_time_low + uxTimerIncrementsForOneTick) as u64;
@@ -89,6 +79,7 @@ pub fn v_port_setup_timer_interrupt() {
     // let mut ul_current_time_high: UBaseType;
 
     unsafe {
+        uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ;
         pullNextTime = &ULL_NEXT_TIME as *const u64 as usize;
         // uxTimerIncrementsForOneTick = CONFIG_CPU_CLOCK_HZ / CONFIG_TICK_RATE_HZ * 10;
         // asm!("csrr {0}, mhartid",out(reg) ul_hart_id);
