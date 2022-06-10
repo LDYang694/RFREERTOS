@@ -50,7 +50,7 @@ impl XListItem {
 impl Default for ListItemT {
     fn default() -> Self {
         ListItemT {
-            x_item_value: 0, //TODO: set
+            x_item_value: 0,
             px_next: Default::default(),
             px_previous: Default::default(),
             pv_owner: Default::default(),

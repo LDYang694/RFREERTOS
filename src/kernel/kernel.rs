@@ -20,13 +20,11 @@ use spin::RwLock;
 // global_asm!(include_str!("start.S"));
 
 lazy_static! {
-    //TODO: tmp size
     pub static ref READY_TASK_LISTS: [ListRealLink; 16] = Default::default();
     pub static ref DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref OVERFLOW_DELAYED_TASK_LIST: ListRealLink = Default::default();
     pub static ref SUSPENDED_TASK_LIST: ListRealLink = Default::default();
     pub static ref PENDING_READY_LIST: ListRealLink = Default::default();
-    //TODO:tmp use
     pub static ref CURRENT_TCB: RwLock<Option<TaskHandle_t>> = RwLock::new(None);
     //todo: overflow task list
     // pub static ref TASK1_STACK:[usize;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;
