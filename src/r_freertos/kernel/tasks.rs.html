@@ -1166,6 +1166,11 @@
 <span id="1159">1159</span>
 <span id="1160">1160</span>
 <span id="1161">1161</span>
+<span id="1162">1162</span>
+<span id="1163">1163</span>
+<span id="1164">1164</span>
+<span id="1165">1165</span>
+<span id="1166">1166</span>
 </pre><pre class="rust"><code><span class="doccomment">//! task control api</span>
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
@@ -1413,7 +1418,12 @@
 ) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">TaskHandle_t</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pxTopOfStack</span>: <span class="ident">StackType_t_link</span> <span class="op">=</span> <span class="ident">pxNewTCB</span>.<span class="ident">read</span>().<span class="ident">pxStack</span>;
     <span class="ident">pxTopOfStack</span> <span class="op">=</span> <span class="ident">pxTopOfStack</span> <span class="op">&amp;</span> (<span class="op">!</span>(<span class="number">0x0007usize</span>));
-
+    <span class="kw">let</span> <span class="ident">params</span> <span class="op">=</span> {
+        <span class="kw">match</span> <span class="ident">pvParameters</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">x</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="number">0</span>,
+        }
+    };
     <span class="kw">let</span> <span class="ident">x</span>: <span class="ident">UBaseType</span> <span class="op">=</span> <span class="number">0</span>;
     <span class="comment">//TODO: name length</span>
 
@@ -1434,7 +1444,7 @@
 
     <span class="kw">unsafe</span> {
         <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">pxTopOfStack</span> <span class="op">=</span>
-            <span class="ident">pxPortInitialiseStack</span>(<span class="ident">pxTopOfStack</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>, <span class="ident">pxTaskCode</span>, <span class="number">0</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>) <span class="kw">as</span> <span class="ident">usize</span>;
+            <span class="ident">pxPortInitialiseStack</span>(<span class="ident">pxTopOfStack</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>, <span class="ident">pxTaskCode</span>, <span class="ident">params</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>) <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="ident">pxNewTCB</span>.<span class="ident">write</span>().<span class="ident">uxCriticalNesting</span> <span class="op">=</span> <span class="number">0</span>;
     }
 
