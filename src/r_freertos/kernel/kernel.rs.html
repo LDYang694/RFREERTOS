@@ -71,8 +71,6 @@
 <span id="64">64</span>
 <span id="65">65</span>
 <span id="66">66</span>
-<span id="67">67</span>
-<span id="68">68</span>
 </pre><pre class="rust"><code><span class="comment">// #![feature(alloc_error_handler)]</span>
 <span class="comment">// #![no_main]</span>
 
@@ -95,13 +93,11 @@
 <span class="comment">// global_asm!(include_str!(&quot;start.S&quot;));</span>
 
 <span class="macro">lazy_static!</span> {
-    <span class="comment">//TODO: tmp size</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">READY_TASK_LISTS</span>: [<span class="ident">ListRealLink</span>; <span class="number">16</span>] <span class="op">=</span> <span class="ident">Default::default</span>();
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">DELAYED_TASK_LIST</span>: <span class="ident">ListRealLink</span> <span class="op">=</span> <span class="ident">Default::default</span>();
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">OVERFLOW_DELAYED_TASK_LIST</span>: <span class="ident">ListRealLink</span> <span class="op">=</span> <span class="ident">Default::default</span>();
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">SUSPENDED_TASK_LIST</span>: <span class="ident">ListRealLink</span> <span class="op">=</span> <span class="ident">Default::default</span>();
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">PENDING_READY_LIST</span>: <span class="ident">ListRealLink</span> <span class="op">=</span> <span class="ident">Default::default</span>();
-    <span class="comment">//TODO:tmp use</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">CURRENT_TCB</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">RwLock::new</span>(<span class="prelude-val">None</span>);
     <span class="comment">//todo: overflow task list</span>
     <span class="comment">// pub static ref TASK1_STACK:[usize;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;</span>
