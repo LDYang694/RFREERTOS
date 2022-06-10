@@ -104,14 +104,14 @@
     <span class="comment">//TODO:tmp use</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">CURRENT_TCB</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TaskHandle_t</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">RwLock::new</span>(<span class="prelude-val">None</span>);
     <span class="comment">//todo: overflow task list</span>
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK1_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span> [<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>] ;
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK2_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TASK3_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
+    <span class="comment">// pub static ref TASK1_STACK:[usize;USER_STACK_SIZE]= [0;USER_STACK_SIZE] ;</span>
+    <span class="comment">// pub static ref TASK2_STACK:[usize;USER_STACK_SIZE]=[0;USER_STACK_SIZE];</span>
+    <span class="comment">// pub static ref TASK3_STACK:[usize;USER_STACK_SIZE]=[0;USER_STACK_SIZE];</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">IDLE_STACK</span>:[<span class="ident">usize</span>;<span class="ident">USER_STACK_SIZE</span>]<span class="op">=</span>[<span class="number">0</span>;<span class="ident">USER_STACK_SIZE</span>];
     <span class="comment">//pub static ref pxCurrentTCB_: RwLock&lt;Option&lt;TaskHandle_t&gt;&gt; = RwLock::new(None);</span>
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TCB1_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TCB2_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TCB3_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
+    <span class="comment">// pub static ref TCB1_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));</span>
+    <span class="comment">// pub static ref TCB2_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));</span>
+    <span class="comment">// pub static ref TCB3_p:TCB_t_link = Arc::new(RwLock::new(TCB_t::default()));</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">IDLE_p</span>:<span class="ident">TCB_t_link</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">TCB_t::default</span>()));
 }
 
@@ -142,5 +142,5 @@
     <span class="kw">loop</span> {}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (5435ed691 2022-06-07)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="r_freertos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (420c970cb 2022-06-09)" ></div>
 </body></html>
