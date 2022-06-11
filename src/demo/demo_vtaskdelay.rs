@@ -27,6 +27,12 @@ use portable::portmacro::*;
 use portable::riscv_virt::*;
 use spin::RwLock;
 
+#[no_mangle]
+pub extern "C" fn main() -> ! {
+    main_new();
+    loop {}
+}
+
 fn task_high_priority(t: *mut c_void) {
     loop {
         vSendString("high priority task running");

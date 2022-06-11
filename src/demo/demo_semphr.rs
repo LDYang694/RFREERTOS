@@ -27,6 +27,12 @@ use portable::portmacro::*;
 use portable::riscv_virt::*;
 use spin::RwLock;
 
+#[no_mangle]
+pub extern "C" fn main() -> ! {
+    main_new();
+    loop {}
+}
+
 fn task_give(t: *mut c_void) {
     let ulValueToSend: UBaseType = 100;
     loop {
